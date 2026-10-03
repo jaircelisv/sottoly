@@ -124,7 +124,7 @@ Una línea JSON por mensaje. Claves, enums y tipos en inglés; el contenido huma
 
 El Motor arma los Turnos a partir de los Segmentos. La App no emite Turnos.
 
-- Cerrar el Turno con un hueco ≥ 700 ms entre el `t1` de un Segmento y el `t0` del siguiente, o con un cambio de `speaker`.
+- Cerrar el Turno con un hueco ≥ 400 ms (`turns.gapSeconds`) entre el `t1` de un Segmento y el `t0` del siguiente, o con un cambio de `speaker`. Con el padding del VAD (480 ms antes, 400 ms después) eso es un silencio real de ≥ 1,28 s entre Segmentos; el latido `clock` cierra el Turno 0,8 s después del fin del habla (2026-10-03: antes 700 ms).
 - Evaluar la Compuerta al cerrar un Turno de la Contraparte, al cerrar un Turno del Usuario, y cada 10 s de habla continua de un mismo hablante (sin cerrar el Turno).
 - Implementar la lógica de Turnos como función pura sobre Segmentos (y latidos `clock`), probada con fixtures sin audio.
 - Si llega a hacer falta el latido `clock`, emitirlo desde `engine_bridge.rs` (archivo nuevo), nunca editando Meetily.

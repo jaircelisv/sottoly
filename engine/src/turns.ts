@@ -24,6 +24,9 @@ export interface TurnOptions {
   continuousSeconds: number;
 }
 
+/** Tolerancia de punto flotante para comparar segundos (3.4 - 3 = 0.39999…). */
+const EPSILON = 1e-9;
+
 export const DEFAULT_TURN_OPTIONS: TurnOptions = { gapSeconds: 0.7, continuousSeconds: 10 };
 
 export class TurnAssembler {
@@ -36,7 +39,7 @@ export class TurnAssembler {
     const events: TurnEvent[] = [];
     const open = this.open;
 
-    if (open && (segment.speaker !== open.speaker || segment.t0 - open.t1 >= this.options.gapSeconds)) {
+    if (open && (segment.speaker !== open.speaker || segment.t0 - open.t1 >= this.options.gapSeconds - EPSILON)) {
       events.push(this.close());
     }
 
@@ -66,7 +69,7 @@ export class TurnAssembler {
 
   /** Latido del reloj de audio: cierra el Turno si ya pasó el hueco desde su último Segmento. */
   tick(t: number): TurnEvent[] {
-    if (this.open && t - this.open.t1 >= this.options.gapSeconds) return [this.close()];
+    if (this.open && t - this.open.t1 >= this.options.gapSeconds - EPSILON) return [this.close()];
     return [];
   }
 

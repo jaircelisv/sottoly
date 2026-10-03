@@ -3,6 +3,6 @@
   "draft":         { "provider": "anthropic", "model": "claude-haiku-4-5-20251001", "max_tokens": 200 },
   "gate_fallback": { "provider": "anthropic", "model": "claude-haiku-4-5-20251001" },
   "window_seconds": 90,
-  "turns": { "gapSeconds": 0.7, "continuousSeconds": 10 },
+  "turns": { "gapSeconds": 0.4, "continuousSeconds": 10 },
   "antinoise": { "min_seconds_between_same_role": 30, "max_suggestions_per_meeting": 20 }
 }
