@@ -70,6 +70,9 @@ pub fn current_segment_latency_ms(audio_end_s: f64) -> Option<f64> {
 /// Mínimo de muestras para mandar un fragmento a transcribir (50 ms a 16 kHz), igual que pipeline.rs.
 pub const MIN_SEGMENT_SAMPLES: usize = 800;
 
+/// Duración máxima de un Segmento en vivo (issue #756 de Meetily).
+pub const MAX_SEGMENT_SECONDS: f64 = 10.0;
+
 fn clamp_to_vad_range(samples: &[f32]) -> Vec<f32> {
     samples.iter().map(|s| s.clamp(-1.0, 1.0)).collect()
 }
@@ -77,6 +80,10 @@ fn clamp_to_vad_range(samples: &[f32]) -> Vec<f32> {
 pub trait SpeechSegmenter {
     fn process(&mut self, samples: &[f32]) -> Result<Vec<SpeechSegment>>;
     fn flush(&mut self) -> Result<Vec<SpeechSegment>>;
+    /// Habla aún sin cerrar: inicio en ms y muestras a 16 kHz desde ese inicio.
+    fn active_speech(&self) -> Option<(f64, &[f32])> {
+        None
+    }
 }
 
 impl SpeechSegmenter for ContinuousVadProcessor {
@@ -87,17 +94,77 @@ impl SpeechSegmenter for ContinuousVadProcessor {
     fn flush(&mut self) -> Result<Vec<SpeechSegment>> {
         ContinuousVadProcessor::flush(self)
     }
+
+    fn active_speech(&self) -> Option<(f64, &[f32])> {
+        ContinuousVadProcessor::active_speech(self)
+    }
+}
+
+const SAMPLES_PER_MS: f64 = 16.0;
+const MAX_SEGMENT_SAMPLES: usize = (MAX_SEGMENT_SECONDS * 1000.0 * SAMPLES_PER_MS) as usize;
+
+/// Corta la habla en curso cada `MAX_SEGMENT_SECONDS` sin tocar el estado del VAD:
+/// recuerda cuántas muestras de la habla actual ya salió y las quita del Segmento que cierra.
+struct BoundedSegmenter<S: SpeechSegmenter> {
+    inner: S,
+    emitted: usize,
+}
+
+impl<S: SpeechSegmenter> BoundedSegmenter<S> {
+    fn new(inner: S) -> Self {
+        Self { inner, emitted: 0 }
+    }
+
+    fn process(&mut self, samples: &[f32]) -> Result<Vec<SpeechSegment>> {
+        let closed = self.inner.process(samples)?;
+        let mut out = self.trim_closed(closed);
+        out.extend(self.cut_active());
+        Ok(out)
+    }
+
+    fn flush(&mut self) -> Result<Vec<SpeechSegment>> {
+        let closed = self.inner.flush()?;
+        Ok(self.trim_closed(closed))
+    }
+
+    /// El primer Segmento que cierra es la habla que ya se fue cortando: sale solo lo que falta.
+    fn trim_closed(&mut self, mut closed: Vec<SpeechSegment>) -> Vec<SpeechSegment> {
+        if let Some(first) = closed.first_mut() {
+            let skip = std::mem::take(&mut self.emitted).min(first.samples.len());
+            first.samples.drain(..skip);
+            first.start_timestamp_ms += skip as f64 / SAMPLES_PER_MS;
+        }
+        closed
+    }
+
+    fn cut_active(&mut self) -> Vec<SpeechSegment> {
+        let mut out = Vec::new();
+        if let Some((start_ms, speech)) = self.inner.active_speech() {
+            while speech.len() - self.emitted.min(speech.len()) >= MAX_SEGMENT_SAMPLES {
+                let from = self.emitted;
+                let to = from + MAX_SEGMENT_SAMPLES;
+                out.push(SpeechSegment {
+                    samples: speech[from..to].to_vec(),
+                    start_timestamp_ms: start_ms + from as f64 / SAMPLES_PER_MS,
+                    end_timestamp_ms: start_ms + to as f64 / SAMPLES_PER_MS,
+                    confidence: 0.9,
+                });
+                self.emitted = to;
+            }
+        }
+        out
+    }
 }
 
 pub struct SpeakerSplitter<S: SpeechSegmenter> {
-    mic: S,
-    system: S,
+    mic: BoundedSegmenter<S>,
+    system: BoundedSegmenter<S>,
     next_chunk_id: u64,
 }
 
 impl<S: SpeechSegmenter> SpeakerSplitter<S> {
     pub fn new(mic: S, system: S, first_chunk_id: u64) -> Self {
-        Self { mic, system, next_chunk_id: first_chunk_id }
+        Self { mic: BoundedSegmenter::new(mic), system: BoundedSegmenter::new(system), next_chunk_id: first_chunk_id }
     }
 
     /// Procesa una ventana de cada flujo y devuelve los fragmentos listos para transcribir.
@@ -191,8 +258,8 @@ mod tests {
     fn each_stream_goes_to_its_own_segmenter() {
         let mut splitter = SpeakerSplitter::new(FakeSegmenter::default(), FakeSegmenter::default(), 0);
         splitter.process(&[0.1, 0.2], &[0.3]).unwrap();
-        assert_eq!(splitter.mic.seen, vec![vec![0.1, 0.2]]);
-        assert_eq!(splitter.system.seen, vec![vec![0.3]]);
+        assert_eq!(splitter.mic.inner.seen, vec![vec![0.1, 0.2]]);
+        assert_eq!(splitter.system.inner.seen, vec![vec![0.3]]);
     }
 
     #[test]
@@ -258,26 +325,84 @@ mod tests {
     fn samples_outside_the_vad_range_are_clamped_before_segmenting() {
         let mut splitter = SpeakerSplitter::new(FakeSegmenter::default(), FakeSegmenter::default(), 0);
         splitter.process(&[1.7, -2.0, 0.5], &[3.0]).unwrap();
-        assert_eq!(splitter.mic.seen, vec![vec![1.0, -1.0, 0.5]]);
-        assert_eq!(splitter.system.seen, vec![vec![1.0]]);
+        assert_eq!(splitter.mic.inner.seen, vec![vec![1.0, -1.0, 0.5]]);
+        assert_eq!(splitter.system.inner.seen, vec![vec![1.0]]);
+    }
+
+    fn fixture_voice() -> Vec<f32> {
+        let bytes = include_bytes!("../../tests/fixtures/sottoly/voz-sintetica-16k.s16le");
+        bytes
+            .chunks_exact(2)
+            .map(|b| i16::from_le_bytes([b[0], b[1]]) as f32 / i16::MAX as f32)
+            .collect()
+    }
+
+    /// El fixture no tiene pausas de más de ~200 ms: repetido 8 veces son ~31 s de habla sin un
+    /// silencio que el VAD (redención de 500 ms) acepte como cierre.
+    fn continuous_voice() -> Vec<f32> {
+        let voice = fixture_voice();
+        voice.iter().copied().cycle().take(voice.len() * 8).collect()
+    }
+
+    /// Pasa los dos flujos por un SpeakerSplitter con el VAD real (Silero), en ventanas de 50 ms.
+    fn split_with_real_vad(mic: &[f32], system: &[f32]) -> Vec<AudioChunk> {
+        let new_vad = || ContinuousVadProcessor::new(16000, 500).unwrap();
+        let mut splitter = SpeakerSplitter::new(new_vad(), new_vad(), 0);
+        let mut chunks = Vec::new();
+        for (mic, sys) in mic.chunks(800).zip(system.chunks(800)) {
+            chunks.extend(splitter.process(mic, sys).expect("el VAD rechazó la ventana"));
+        }
+        chunks.extend(splitter.flush().unwrap());
+        chunks
+    }
+
+    fn duration_s(chunk: &AudioChunk) -> f64 {
+        chunk.data.len() as f64 / chunk.sample_rate as f64
     }
 
     #[test]
     fn real_vad_accepts_loud_audio_on_both_streams() {
-        let bytes = include_bytes!("../../tests/fixtures/sottoly/voz-sintetica-16k.s16le");
-        let loud: Vec<f32> = bytes
-            .chunks_exact(2)
-            .map(|b| 3.0 * i16::from_le_bytes([b[0], b[1]]) as f32 / i16::MAX as f32)
-            .collect();
-        let new_vad = || ContinuousVadProcessor::new(16000, 500).unwrap();
-        let mut splitter = SpeakerSplitter::new(new_vad(), new_vad(), 0);
-        let mut chunks = Vec::new();
-        for (mic, sys) in loud.chunks(800).zip(loud.chunks(800)) {
-            chunks.extend(splitter.process(mic, sys).expect("el VAD rechazó audio fuera de rango"));
-        }
-        chunks.extend(splitter.flush().unwrap());
+        let loud: Vec<f32> = fixture_voice().iter().map(|s| 3.0 * s).collect();
+        let chunks = split_with_real_vad(&loud, &loud);
         assert!(chunks.iter().any(|c| matches!(c.device_type, DeviceType::Microphone)));
         assert!(chunks.iter().any(|c| matches!(c.device_type, DeviceType::System)));
+    }
+
+    /// Issue #756 de Meetily: con habla continua el VAD no cierra nunca y entregó un Segmento
+    /// de 41 s en la App real. El Motor queda ciego todo ese tiempo.
+    #[test]
+    fn continuous_speech_is_cut_into_segments_of_at_most_10_seconds() {
+        let continuous = continuous_voice();
+        let chunks = split_with_real_vad(&vec![0.0; continuous.len()], &continuous);
+
+        let durations: Vec<f64> = chunks.iter().map(duration_s).collect();
+        let total: f64 = durations.iter().sum();
+        assert!(total > 25.0 && total < 32.0, "se perdió o se duplicó habla: {durations:?}");
+        assert!(
+            durations.iter().all(|d| *d <= MAX_SEGMENT_SECONDS),
+            "Segmentos de más de {MAX_SEGMENT_SECONDS} s: {durations:?}"
+        );
+        // Los Segmentos acotados llegan mientras se habla, no todos al final.
+        assert!(chunks.len() >= 3, "{durations:?}");
+    }
+
+    /// Los cortes no pierden ni duplican audio, y cada Segmento conserva su hora de inicio.
+    #[test]
+    fn cut_segments_are_contiguous_and_keep_their_start_time() {
+        let continuous = continuous_voice();
+        let chunks = split_with_real_vad(&continuous, &vec![0.0; continuous.len()]);
+
+        assert!(chunks.len() >= 3);
+        for pair in chunks.windows(2) {
+            let expected_start = pair[0].timestamp + duration_s(&pair[0]);
+            assert!(
+                (pair[1].timestamp - expected_start).abs() < 0.001,
+                "hueco o solape entre Segmentos: {} + {} != {}",
+                pair[0].timestamp,
+                duration_s(&pair[0]),
+                pair[1].timestamp
+            );
+        }
     }
 
     #[test]
@@ -292,32 +417,15 @@ mod tests {
     /// Con el VAD real (Silero): voz sintética solo por el micrófono → solo fragmentos del Usuario.
     #[test]
     fn real_vad_attributes_speech_to_the_stream_that_carries_it() {
-        let bytes = include_bytes!("../../tests/fixtures/sottoly/voz-sintetica-16k.s16le");
-        let voice: Vec<f32> = bytes
-            .chunks_exact(2)
-            .map(|b| i16::from_le_bytes([b[0], b[1]]) as f32 / i16::MAX as f32)
-            .collect();
+        let voice = fixture_voice();
         let silence = vec![0.0f32; voice.len()];
 
-        let new_vad = || ContinuousVadProcessor::new(16000, 500).unwrap();
-        let mut splitter = SpeakerSplitter::new(new_vad(), new_vad(), 0);
-
-        let mut chunks = Vec::new();
-        for (mic, sys) in voice.chunks(800).zip(silence.chunks(800)) {
-            chunks.extend(splitter.process(mic, sys).unwrap());
-        }
-        chunks.extend(splitter.flush().unwrap());
-
+        let chunks = split_with_real_vad(&voice, &silence);
         assert!(!chunks.is_empty(), "el VAD no detectó la voz sintética");
         assert!(chunks.iter().all(|c| matches!(c.device_type, DeviceType::Microphone)));
 
         // Mismo audio por el sistema → solo Contraparte.
-        let mut splitter = SpeakerSplitter::new(new_vad(), new_vad(), 0);
-        let mut chunks = Vec::new();
-        for (mic, sys) in silence.chunks(800).zip(voice.chunks(800)) {
-            chunks.extend(splitter.process(mic, sys).unwrap());
-        }
-        chunks.extend(splitter.flush().unwrap());
+        let chunks = split_with_real_vad(&silence, &voice);
         assert!(!chunks.is_empty());
         assert!(chunks.iter().all(|c| matches!(c.device_type, DeviceType::System)));
     }
