@@ -41,6 +41,8 @@ pub mod audio;
 pub mod config;
 pub mod console_utils;
 pub mod database;
+// SOTTOLY: puente App ↔ Motor (sidecar)
+pub mod engine_bridge;
 pub mod notifications;
 pub mod ollama;
 pub mod onboarding;

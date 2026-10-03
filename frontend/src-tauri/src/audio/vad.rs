@@ -173,6 +173,11 @@ impl ContinuousVadProcessor {
         Some((start_ms, self.session.get_current_speech()))
     }
 
+    // SOTTOLY: audio ya procesado por el VAD, en ms, para el latido `clock`.
+    pub fn processed_ms(&self) -> f64 {
+        (self.processed_samples as f64 / VAD_SAMPLE_RATE as f64) * 1000.0
+    }
+
     /// Flush any remaining audio and return final speech segments
     pub fn flush(&mut self) -> Result<Vec<SpeechSegment>> {
         debug!("VAD flush: in_speech={}, current_speech_len={}, buffer_len={}, speech_segments_queued={}",
