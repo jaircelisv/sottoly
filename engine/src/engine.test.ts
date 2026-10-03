@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { Engine, type EngineConfig, type EngineLog } from "./engine";
+import { Engine, type StreamMessage, type EngineConfig, type EngineLog } from "./engine";
 import type { ChoiceAnswer, ChoiceEvaluator } from "./gate";
 import type { Drafter } from "./draft";
 import type { Role } from "./roles";
@@ -41,15 +41,17 @@ const seg = (speaker: "user" | "counterpart", t0: number, t1: number, text: stri
 
 function build(overrides: Partial<{ evaluate: ChoiceEvaluator; draft: Drafter; config: EngineConfig }> = {}) {
   const logs: EngineLog[] = [];
+  const stream: StreamMessage[] = [];
   const engine = new Engine({
     roles,
     evaluate: overrides.evaluate ?? moneyGate,
     draft: overrides.draft ?? drafter,
     config: overrides.config ?? config,
     log: (l) => logs.push(l),
+    onStream: (m) => stream.push(m),
     now: () => 0,
   });
-  return { engine, logs };
+  return { engine, logs, stream };
 }
 
 describe("Engine", () => {
@@ -59,8 +61,52 @@ describe("Engine", () => {
     expect(await engine.handle(seg("counterpart", 0, 3, "El plan anual cuesta dos millones."))).toEqual([]);
     const out = await engine.handle(seg("user", 3.1, 4, "Ok."));
     expect(out).toEqual([
-      expect.objectContaining({ type: "suggestion", role: "cfo", role_label: "CFO", persona: "Betty", confidence: 0.9 }),
+      expect.objectContaining({ type: "suggestion", id: "s1", role: "cfo", role_label: "CFO", persona: "Betty", confidence: 0.9 }),
     ]);
+  });
+
+  test("la Redacción sale en streaming: deltas con texto acumulado y el final con el mismo id", async () => {
+    const { engine, stream } = build({
+      draft: async (_prompt, onText) => {
+        onText?.("Pregunta si");
+        onText?.("Pregunta si incluye IVA.");
+        return { text: "Pregunta si incluye IVA.", reason: "Precio sin impuestos." };
+      },
+    });
+    await engine.handle(seg("counterpart", 0, 3, "Son dos millones."));
+    const [final] = await engine.handle(seg("user", 3.1, 4, "Ok."));
+    expect(stream).toEqual([
+      { type: "suggestion_delta", id: "s1", role: "cfo", role_label: "CFO", persona: "Betty", text: "Pregunta si" },
+      { type: "suggestion_delta", id: "s1", role: "cfo", role_label: "CFO", persona: "Betty", text: "Pregunta si incluye IVA." },
+    ]);
+    expect(final).toMatchObject({ id: "s1", text: "Pregunta si incluye IVA.", reason: "Precio sin impuestos." });
+  });
+
+  test("los deltas no pasan de 20 palabras", async () => {
+    const long = Array.from({ length: 25 }, (_, i) => `p${i + 1}`).join(" ");
+    const { engine, stream } = build({
+      draft: async (_prompt, onText) => {
+        onText?.(long);
+        return { text: long, reason: "x" };
+      },
+    });
+    await engine.handle(seg("counterpart", 0, 3, "Son dos millones."));
+    await engine.handle(seg("user", 3.1, 4, "Ok."));
+    expect(stream[0]).toMatchObject({ type: "suggestion_delta" });
+    expect((stream[0] as { text: string }).text.split(" ")).toHaveLength(20);
+  });
+
+  test("si la Redacción falla después de emitir deltas, se cancela la tarjeta parcial", async () => {
+    const { engine, stream, logs } = build({
+      draft: async (_prompt, onText) => {
+        onText?.("Pregunta si");
+        throw new Error("stream cortado");
+      },
+    });
+    await engine.handle(seg("counterpart", 0, 3, "Son dos millones."));
+    expect(await engine.handle(seg("user", 3.1, 4, "Ok."))).toEqual([]);
+    expect(stream.at(-1)).toEqual({ type: "suggestion_cancel", id: "s1" });
+    expect(logs).toContainEqual(expect.objectContaining({ event: "provider_failed", stage: "draft" }));
   });
 
   test("no habla cuando la Compuerta elige none", async () => {
