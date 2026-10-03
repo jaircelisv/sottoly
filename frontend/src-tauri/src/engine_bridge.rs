@@ -12,6 +12,11 @@ use serde::{Deserialize, Serialize};
 
 use crate::audio::speaker::Speaker;
 
+/// Un Mutex envenenado (pánico en otro hilo) no debe apagar el puente: se sigue con su valor.
+fn lock<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
+    m.lock().unwrap_or_else(|e| e.into_inner())
+}
+
 /// Mensajes app → engine (`engine/src/protocol.ts`).
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(tag = "type", rename_all = "lowercase")]
@@ -72,7 +77,7 @@ impl EngineBridge {
     }
 
     pub fn send(&self, message: &EngineMessage) -> std::io::Result<()> {
-        let mut guard = self.stdin.lock().unwrap_or_else(|e| e.into_inner());
+        let mut guard = lock(&self.stdin);
         let stdin = guard.as_mut().ok_or_else(|| std::io::Error::other("el Motor ya se cerró"))?;
         stdin.write_all(message.to_line().as_bytes())?;
         stdin.flush()
@@ -80,7 +85,7 @@ impl EngineBridge {
 
     /// Cierra el stdin (el Motor cierra la Reunión y sale) y espera a que termine.
     pub fn finish(mut self) -> std::io::Result<()> {
-        self.stdin.lock().unwrap_or_else(|e| e.into_inner()).take();
+        lock(&self.stdin).take();
         let status = self.child.wait()?;
         if let Some(reader) = self.reader.take() {
             let _ = reader.join();
@@ -172,7 +177,7 @@ pub const PENDING_TIMEOUT: Duration = Duration::from_secs(2);
 static CLOCK: std::sync::Mutex<Option<EngineClock>> = std::sync::Mutex::new(None);
 
 fn with_clock<T>(f: impl FnOnce(&mut EngineClock) -> T) -> T {
-    let mut guard = CLOCK.lock().unwrap_or_else(|e| e.into_inner());
+    let mut guard = lock(&CLOCK);
     f(guard.get_or_insert_with(|| EngineClock::new(CLOCK_INTERVAL_S, PENDING_TIMEOUT)))
 }
 
@@ -193,7 +198,7 @@ pub fn next_clock() -> Option<EngineMessage> {
 
 /// Nueva grabación: el tiempo de audio vuelve a cero.
 pub fn reset_clock() {
-    *CLOCK.lock().unwrap_or_else(|e| e.into_inner()) = None;
+    *lock(&CLOCK) = None;
 }
 
 // --- App ---------------------------------------------------------------------------------------
@@ -296,7 +301,7 @@ fn start_session<R: tauri::Runtime>(app: tauri::AppHandle<R>) {
         }
     });
     info!("SOTTOLY: Motor en marcha");
-    *SESSION.lock().unwrap_or_else(|e| e.into_inner()) = Some(Session { bridge, running });
+    *lock(&SESSION) = Some(Session { bridge, running });
 }
 
 fn send_segment(payload: &str) {
@@ -304,7 +309,7 @@ fn send_segment(payload: &str) {
     if let EngineMessage::Segment { t0, .. } = &segment {
         on_segment_delivered(*t0);
     }
-    if let Some(session) = SESSION.lock().unwrap_or_else(|e| e.into_inner()).as_ref() {
+    if let Some(session) = lock(&SESSION).as_ref() {
         if let Err(e) = session.bridge.send(&segment) {
             warn!("SOTTOLY: no se pudo mandar el Segmento al Motor: {}", e);
         }
@@ -312,7 +317,7 @@ fn send_segment(payload: &str) {
 }
 
 fn stop_session() {
-    let Some(session) = SESSION.lock().unwrap_or_else(|e| e.into_inner()).take() else { return };
+    let Some(session) = lock(&SESSION).take() else { return };
     session.running.store(false, std::sync::atomic::Ordering::SeqCst);
     // El Motor cierra la Reunión al ver EOF; puede tardar (Compuerta + Redacción), fuera del hilo de eventos.
     std::thread::spawn(move || {
