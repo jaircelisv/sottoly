@@ -1,15 +1,58 @@
 // SOTTOLY: puente App ↔ Motor (SPEC §4). Archivo nuevo para no tocar Meetily (ADR-0001).
 // Habla con el sidecar `sottoly-engine` por stdin/stdout, una línea JSON por mensaje.
 
+use std::process::Command;
 use std::time::{Duration, Instant};
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+
+use crate::audio::speaker::Speaker;
 
 /// Mensajes app → engine (`engine/src/protocol.ts`).
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum EngineMessage {
+    Segment { speaker: Speaker, text: String, t0: f64, t1: f64 },
+    Session { event: SessionEvent, #[serde(skip_serializing_if = "Option::is_none")] roles: Option<Vec<String>> },
     Clock { t: f64 },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum SessionEvent {
+    Start,
+    End,
+}
+
+/// Sugerencia del Motor (engine → app). Es también el payload del evento `suggestion` del overlay.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type", rename = "suggestion")]
+pub struct SuggestionMessage {
+    pub role: String,
+    pub persona: String,
+    pub text: String,
+    pub reason: String,
+    pub confidence: f64,
+}
+
+/// Proceso del Motor con su stdin abierto. Cada Sugerencia que imprime llega a `on_suggestion`.
+pub struct EngineBridge;
+
+impl EngineBridge {
+    pub fn spawn(command: Command, on_suggestion: impl Fn(SuggestionMessage) + Send + 'static) -> std::io::Result<Self> {
+        let _ = (command, on_suggestion);
+        unimplemented!()
+    }
+
+    pub fn send(&self, message: &EngineMessage) -> std::io::Result<()> {
+        let _ = message;
+        unimplemented!()
+    }
+
+    /// Cierra el stdin (el Motor cierra la Reunión y sale) y espera a que termine.
+    pub fn finish(self) -> std::io::Result<()> {
+        unimplemented!()
+    }
 }
 
 impl EngineMessage {
@@ -113,6 +156,84 @@ mod tests {
 
     fn clock() -> EngineClock {
         EngineClock::new(0.25, Duration::from_secs(2))
+    }
+
+    use std::sync::mpsc;
+
+    #[test]
+    fn segment_and_session_serialize_like_the_engine_protocol() {
+        let segment = EngineMessage::Segment { speaker: Speaker::Counterpart, text: "Son 18 millones.".into(), t0: 7.2, t1: 11.4 };
+        assert_eq!(
+            segment.to_line(),
+            "{\"type\":\"segment\",\"speaker\":\"counterpart\",\"text\":\"Son 18 millones.\",\"t0\":7.2,\"t1\":11.4}\n"
+        );
+        let start = EngineMessage::Session { event: SessionEvent::Start, roles: Some(vec!["cfo".into()]) };
+        assert_eq!(start.to_line(), "{\"type\":\"session\",\"event\":\"start\",\"roles\":[\"cfo\"]}\n");
+        let end = EngineMessage::Session { event: SessionEvent::End, roles: None };
+        assert_eq!(end.to_line(), "{\"type\":\"session\",\"event\":\"end\"}\n");
+    }
+
+    /// Sidecar falso: lo que no es una Sugerencia válida se ignora sin tumbar el puente.
+    #[test]
+    fn bridge_reads_suggestions_and_skips_other_lines() {
+        let mut fake = Command::new("sh");
+        fake.arg("-c").arg(concat!(
+            "read line; ",
+            "echo 'no es json'; ",
+            "echo '{\"type\":\"summary\",\"decisions\":[]}'; ",
+            "echo '{\"type\":\"suggestion\",\"role\":\"cfo\",\"persona\":\"Betty\",",
+            "\"text\":\"Pregunta si incluye IVA.\",\"reason\":\"Precio sin impuestos.\",\"confidence\":0.9}'"
+        ));
+        let (tx, rx) = mpsc::channel();
+        let bridge = EngineBridge::spawn(fake, move |s| tx.send(s).unwrap()).unwrap();
+        bridge.send(&EngineMessage::Clock { t: 1.0 }).unwrap();
+        bridge.finish().unwrap();
+
+        let got: Vec<SuggestionMessage> = rx.try_iter().collect();
+        assert_eq!(got.len(), 1);
+        assert_eq!(got[0].persona, "Betty");
+        assert_eq!(got[0].text, "Pregunta si incluye IVA.");
+    }
+
+    #[derive(Deserialize)]
+    struct Fixture {
+        roles: Vec<String>,
+        segments: Vec<FixtureSegment>,
+    }
+
+    #[derive(Deserialize)]
+    struct FixtureSegment {
+        speaker: Speaker,
+        text: String,
+        t0: f64,
+        t1: f64,
+    }
+
+    /// Integración: el Motor real (`bun engine/src/main.ts`) con Jev y Sonnet grabados.
+    /// Una Reunión sintética entra por el puente y la Sugerencia de Betty sale por el callback.
+    #[test]
+    fn real_engine_with_recorded_providers_suggests_through_the_bridge() {
+        let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let fixture: Fixture = serde_json::from_str(
+            &std::fs::read_to_string(repo.join("evals/fixtures/contador-iva.json")).unwrap(),
+        )
+        .unwrap();
+
+        let mut engine = Command::new("bun");
+        engine.arg(repo.join("engine/src/main.ts")).env("SOTTOLY_PROVIDERS", "recorded");
+        let (tx, rx) = mpsc::channel();
+        let bridge = EngineBridge::spawn(engine, move |s| tx.send(s).unwrap()).expect("¿bun en el PATH?");
+
+        bridge.send(&EngineMessage::Session { event: SessionEvent::Start, roles: Some(fixture.roles) }).unwrap();
+        for s in fixture.segments {
+            bridge.send(&EngineMessage::Segment { speaker: s.speaker, text: s.text, t0: s.t0, t1: s.t1 }).unwrap();
+        }
+        bridge.finish().unwrap();
+
+        let got: Vec<SuggestionMessage> = rx.try_iter().collect();
+        assert_eq!(got.len(), 1, "{got:?}");
+        assert_eq!(got[0].role, "cfo");
+        assert_eq!(got[0].persona, "Betty");
     }
 
     #[test]
