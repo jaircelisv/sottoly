@@ -7,12 +7,28 @@
       "cfo": 0.21
     }
   },
+  "2b34e1212649726c560979547c30196df2fc962e580562e671e4a1393a839047": {
+    "choice": "cfo",
+    "probabilities": {
+      "ceo_adversarial": 0.02,
+      "cfo": 0.98,
+      "none": 0
+    }
+  },
   "2e0b3c4d1c953d20c175b93d8961500db823d8cb52f8690971d31ffbb16cbccf": {
     "choice": "cfo",
     "probabilities": {
       "cfo": 0.97,
       "none": 0,
       "ceo_adversarial": 0.03
+    }
+  },
+  "3018bc3e2f781c3a088874920e928ac71f57d8d3242c2b9d34671c547f1748cd": {
+    "choice": "cfo",
+    "probabilities": {
+      "ceo_adversarial": 0.11,
+      "cfo": 0.89,
+      "none": 0
     }
   },
   "314496ec3be971d341e11baaea493d521e866d1f0bbf622170b689a1b60a51ed": {
@@ -37,6 +53,14 @@
       "none": 0.14,
       "cfo": 0.51,
       "ceo_adversarial": 0.35
+    }
+  },
+  "3e6ed794af164b5c25e61762144c2c21b1b375e4e0203350811ce07b51ca36b0": {
+    "choice": "cfo",
+    "probabilities": {
+      "none": 0,
+      "ceo_adversarial": 0.17,
+      "cfo": 0.83
     }
   },
   "42cbd22bed4c8073848673b3786fa792f61b0c754de630027e995a5505608e3c": {
@@ -95,12 +119,44 @@
       "ceo_adversarial": 0.54
     }
   },
+  "86519563ad2af6795dbb415ab6b157c9337b943d2f7faf67f25f76d6185c0917": {
+    "choice": "cfo",
+    "probabilities": {
+      "cfo": 0.99,
+      "ceo_adversarial": 0.01,
+      "none": 0
+    }
+  },
+  "8c068701ac9a2ef4a0f0d59ff668106e575a6b14a4c94d0dda60a233f16882e1": {
+    "choice": "cfo",
+    "probabilities": {
+      "none": 0,
+      "cfo": 0.83,
+      "ceo_adversarial": 0.17
+    }
+  },
+  "8ccc499b23123131f5b7deda788f909000f77defb377ab38caf7c8e2600ae55d": {
+    "choice": "cfo",
+    "probabilities": {
+      "ceo_adversarial": 0.01,
+      "none": 0,
+      "cfo": 0.99
+    }
+  },
   "909f78cde0ad7f9c7b17f5c838fd67cc8255f5bddcd08d70a7c9dbf95c423181": {
     "choice": "none",
     "probabilities": {
       "ceo_adversarial": 0,
       "none": 1,
       "cfo": 0
+    }
+  },
+  "979b755e40489038817aa3de0860e077f8eb78782626b9f8d856ab4410b0c832": {
+    "choice": "cfo",
+    "probabilities": {
+      "none": 0,
+      "ceo_adversarial": 0.01,
+      "cfo": 0.99
     }
   },
   "9b731017eb0c17f8a782f3bbd05cabee55f79cf519bc9c6b34d2a80a66c68fc5": {
@@ -117,6 +173,22 @@
       "none": 0,
       "ceo_adversarial": 0.01,
       "cfo": 0.99
+    }
+  },
+  "a83a369043a289dbbd5934939473345bf2342cdbfc404bdb3e29a8d8ad3287e2": {
+    "choice": "cfo",
+    "probabilities": {
+      "ceo_adversarial": 0.5,
+      "cfo": 0.5,
+      "none": 0
+    }
+  },
+  "ae0b753b6547b8a28d4146531b0d5945671d40d31ba9b6f31c04abee4bf269fa": {
+    "choice": "cfo",
+    "probabilities": {
+      "cfo": 0.98,
+      "none": 0,
+      "ceo_adversarial": 0.02
     }
   },
   "b10d1ed277c27fcecaabae392119969157ff2ecba06e9f1b7506b855b443a4a5": {
@@ -157,6 +229,14 @@
       "ceo_adversarial": 0.01,
       "none": 0.99,
       "cfo": 0
+    }
+  },
+  "e57fa5ebe4ba8333549a891199474bc0a509f3657c4f72d43fab17f46c569e6a": {
+    "choice": "cfo",
+    "probabilities": {
+      "cfo": 0.87,
+      "ceo_adversarial": 0.13,
+      "none": 0
     }
   },
   "f19b36824fe23b9100a3758a1c76ea947f4432370bd438ecfb56dc1f0721e582": {

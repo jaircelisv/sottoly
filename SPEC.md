@@ -80,7 +80,7 @@ Privacidad: Meetily guarda por defecto el audio (`auto_save: true`) y las transc
 │                                       engine_bridge.rs (stdio JSONL)  │       │
 │  ┌──────────────────────── Motor (sidecar, Bun) ──────────────────────▼────┐  │
 │  │ Segmentos ─► Turnos ─► Compuerta ─► Redacción ─► Verificación ─► Sugerencia │
-│  │                        (Jev Choice) (Sonnet)    (Jev Score, v1)          │  │
+│  │                        (Jev Choice) (Haiku)     (Jev Score, v1)          │  │
 │  └────────────────────────────────────────────────────────┬─────────────────┘  │
 │                                                           ▼                    │
 │                                     Overlay: tarjeta "Betty · CFO"             │
@@ -97,7 +97,7 @@ Objetivo: fin de un Turno de la Contraparte → Sugerencia visible en **< 2 s en
 | Chunk de audio + VAD | 300–600 ms |
 | STT local (Parakeet en Apple Silicon) | 200–400 ms |
 | Compuerta (Jev) | 70–500 ms |
-| Redacción (Sonnet, streaming) | 500–800 ms |
+| Redacción (Haiku 4.5, streaming) | 500–800 ms |
 | Overlay | < 50 ms |
 
 ### Protocolo App ↔ Motor (`engine/src/protocol.ts`)
@@ -139,7 +139,7 @@ El Motor arma los Turnos a partir de los Segmentos. La App no emite Turnos.
 
 ### Redacción
 
-- Una Sugerencia = máximo 15 palabras + motivo en una línea.
+- Una Sugerencia: se piden 10–14 palabras (con ejemplos de forma) + motivo en una línea. Tope duro de 20: lo que pase se recorta al último signo de puntuación, sin reintentos (decisión del 2026-10-03: con "máximo 15, si no se descarta" la prueba de punta a punta dio 0 Sugerencias).
 - Streaming, `max_tokens` bajo, prompt caching del prompt de cada Rol.
 - La Persona solo afecta la Redacción (tono) y la UI (nombre en la tarjeta).
 
@@ -157,14 +157,14 @@ Los modelos viven en la configuración del Motor, nunca en los archivos de Rol n
 ```jsonc
 {
   "gate":          { "provider": "jev",       "model": "jev-1.13.0" },
-  "draft":         { "provider": "anthropic", "model": "claude-sonnet-5-5", "max_tokens": 200 },
+  "draft":         { "provider": "anthropic", "model": "claude-haiku-4-5-20251001", "max_tokens": 200 },
   "gate_fallback": { "provider": "anthropic", "model": "claude-haiku-4-5-20251001" }
 }
 ```
 
 - Implementar `ModelProvider` con el Vercel AI SDK: Anthropic (`@ai-sdk/anthropic`) y Jev (`@ai-sdk/typesafe-ai`, función `experimental_evaluate()`; Choice admite 1–255 opciones, Score 2–10 niveles). OpenAI, OpenRouter y Ollama quedan detrás de la misma interfaz, sin UI en el MVP.
 - "Sonnet" en este documento significa `claude-sonnet-5-5`. Actualizar un ID es una decisión explícita.
-- Si Sonnet pone en riesgo los 2 s, probar Haiku 4.5 también para la Redacción (cambiar una línea de config).
+- Redacción con Haiku 4.5 desde el 2026-10-03: Sonnet 5.5 tardaba 2,2–3,2 s, a veces gastaba los 200 tokens en thinking adaptativo (que no se puede apagar) y escribía 16–19 palabras.
 
 ### Distribución del Motor
 

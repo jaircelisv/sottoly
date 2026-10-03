@@ -1,7 +1,7 @@
 // Orquestador del Motor: Segmentos → Turnos → Compuerta → Redacción → Sugerencia (SPEC §4).
 // Sin E/S: los proveedores se inyectan, así el pipeline completo se prueba con respuestas grabadas.
 import { evaluateGate, slideWindow, type ChoiceEvaluator, type GateDecision, type WindowSegment } from "./gate";
-import { buildDraftPrompt, validateDraft, type Drafter } from "./draft";
+import { buildDraftPrompt, finalizeDraft, type Drafter } from "./draft";
 import type { InboundMessage, SuggestionMessage } from "./protocol";
 import { selectBoard, type Role } from "./roles";
 import { TurnAssembler, type TurnEvent, type TurnOptions } from "./turns";
@@ -114,7 +114,7 @@ export class Engine {
 
     let draft;
     try {
-      draft = validateDraft(await this.deps.draft(buildDraftPrompt(role, window)));
+      draft = finalizeDraft(await this.deps.draft(buildDraftPrompt(role, window)));
     } catch (error) {
       this.deps.log?.({ event: "provider_failed", stage: "draft", error: String(error) });
       return null;

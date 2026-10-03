@@ -98,10 +98,18 @@ describe("Engine", () => {
     expect(await engine.handle(seg("user", 8.1, 9, "Ok."))).toEqual([]);
   });
 
-  test("descarta una Redacción de más de 15 palabras", async () => {
-    const { engine, logs } = build({
-      draft: async () => ({ text: "uno dos tres cuatro cinco seis siete ocho nueve diez once doce trece catorce quince dieciséis", reason: "x" }),
-    });
+  // Antes se descartaba todo lo que pasaba de 15 palabras (0 Sugerencias en la prueba de punta
+  // a punta del 2026-10-03); el autor decidió recortar a 20 sin reintentos.
+  test("una Redacción de más de 20 palabras se recorta al último signo y se muestra", async () => {
+    const long = "Pide el desglose, el IVA y la moneda antes de aceptar uno dos tres cuatro cinco seis siete ocho nueve diez once doce";
+    const { engine } = build({ draft: async () => ({ text: long, reason: "x" }) });
+    await engine.handle(seg("counterpart", 0, 3, "Son dos millones."));
+    const [suggestion] = await engine.handle(seg("user", 3.1, 4, "Ok."));
+    expect(suggestion.text).toBe("Pide el desglose");
+  });
+
+  test("descarta una Redacción sin texto", async () => {
+    const { engine, logs } = build({ draft: async () => ({ text: " ", reason: "x" }) });
     await engine.handle(seg("counterpart", 0, 3, "Son dos millones."));
     expect(await engine.handle(seg("user", 3.1, 4, "Ok."))).toEqual([]);
     expect(logs).toContainEqual({ event: "suggestion_suppressed", role: "cfo", reason: "invalid_draft" });

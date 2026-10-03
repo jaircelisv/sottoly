@@ -64,3 +64,21 @@ exports[`contrato de la Compuerta con respuestas grabadas renovacion-contradicci
   "suggestions": 1,
 }
 `;
+
+exports[`contrato de la Compuerta con respuestas grabadas e2e-2026-10-03 1`] = `
+{
+  "decisions": [
+    "cfo",
+    "cfo",
+    "cfo",
+    "cfo",
+    "cfo",
+    "cfo",
+    "cfo",
+    "cfo",
+    "cfo",
+    "none",
+  ],
+  "suggestions": 3,
+}
+`;

@@ -39,10 +39,10 @@ describe("finalizeDraft", () => {
     );
   });
 
-  test("termina en ? o . si el corte cae en uno", () => {
+  test("conserva el signo si el corte cae en un cierre de frase (? . !)", () => {
     const text =
-      "¿Los dos millones incluyen IVA? Pregunta también por la moneda, el plazo de pago, el anticipo y la renovación automática del contrato.";
-    expect(finalizeDraft({ text, reason: "x" })?.text).toBe("¿Los dos millones incluyen IVA?");
+      "¿Los dos millones incluyen IVA y retenciones en la factura anual? Pregunta también por la moneda el plazo y el anticipo.";
+    expect(finalizeDraft({ text, reason: "x" })?.text).toBe("¿Los dos millones incluyen IVA y retenciones en la factura anual?");
   });
 
   test("sin puntuación dentro del tope deja las primeras 20 palabras", () => {

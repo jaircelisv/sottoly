@@ -5,7 +5,17 @@ import type { WindowSegment } from "./gate";
 import { renderWindow } from "./gate";
 import type { Role } from "./roles";
 
-export const MAX_SUGGESTION_WORDS = 15;
+/** Lo que se le pide al modelo. */
+export const TARGET_WORDS = { min: 10, max: 14 };
+/** Tope duro: lo que pase se recorta al último signo de puntuación (sin reintentos). */
+export const HARD_MAX_WORDS = 20;
+
+/** Ejemplos de forma (no de contenido) para que la Redacción salga corta. */
+const EXAMPLES = [
+  "Pregunta si los dos millones incluyen IVA y en qué moneda se facturan.",
+  "Antes de aceptar el anticipo, pide el calendario de pagos por escrito.",
+  "Pide que la renovación automática tenga un aviso previo de sesenta días.",
+];
 
 export const Draft = z.object({
   text: z.string().min(1),
@@ -27,7 +37,8 @@ export function buildDraftPrompt(role: Pick<Role, "role" | "persona" | "objectiv
     `Objetivo: ${role.objective}`,
     role.instructions,
     `No opines sobre: ${role.limits.join(", ")}.`,
-    `Responde con una sugerencia para el Usuario de máximo ${MAX_SUGGESTION_WORDS} palabras, en el idioma de la reunión, y el motivo en una línea.`,
+    `Responde con una sugerencia para el Usuario de entre ${TARGET_WORDS.min} y ${TARGET_WORDS.max} palabras, en el idioma de la reunión, y el motivo en una línea. Una sola idea: lo más urgente.`,
+    `Ejemplos de sugerencia (la forma, no el contenido):\n${EXAMPLES.map((e) => `- ${e}`).join("\n")}`,
   ].join("\n\n");
   const prompt = `Transcripción reciente de la reunión:\n${renderWindow(window)}\n\n¿Qué debería hacer o preguntar el Usuario ahora?`;
   return { system, prompt };
@@ -37,11 +48,21 @@ export function countWords(text: string): number {
   return text.trim().split(/\s+/).filter(Boolean).length;
 }
 
-/** Devuelve la Sugerencia limpia, o null si incumple el formato (no se muestra). */
-export function validateDraft(draft: Draft): Draft | null {
-  const text = draft.text.trim();
+/** Recorta a HARD_MAX_WORDS palabras, hasta el último signo de puntuación dentro del tope. */
+function clampWords(text: string): string {
+  const words = text.split(/\s+/).filter(Boolean);
+  if (words.length <= HARD_MAX_WORDS) return text;
+  const head = words.slice(0, HARD_MAX_WORDS).join(" ");
+  const cut = Math.max(...[".", "?", "!", ";", ":", ","].map((p) => head.lastIndexOf(p)));
+  if (cut <= 0) return head;
+  // Se conserva un cierre de frase (. ? !); una pausa (, ; :) no se deja al final.
+  return /[.?!]/.test(head[cut]) ? head.slice(0, cut + 1) : head.slice(0, cut).trimEnd();
+}
+
+/** Sugerencia lista para mostrar, o null si el texto o el motivo vienen vacíos. */
+export function finalizeDraft(draft: Draft): Draft | null {
+  const text = clampWords(draft.text.trim());
   const reason = draft.reason.trim().replace(/\s*\n\s*/g, " ");
   if (!text || !reason) return null;
-  if (countWords(text) > MAX_SUGGESTION_WORDS) return null;
   return { text, reason };
 }
