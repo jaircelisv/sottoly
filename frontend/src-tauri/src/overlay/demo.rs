@@ -20,6 +20,7 @@ pub struct DemoSuggestion {
     #[serde(rename = "type")]
     pub kind: &'static str,
     pub role: &'static str,
+    pub role_label: &'static str,
     pub persona: &'static str,
     pub text: &'static str,
     pub reason: &'static str,
@@ -127,10 +128,17 @@ mod tests {
 
     #[test]
     fn alterna_betty_y_sheldon() {
-        let who: Vec<_> = (0..4).map(|n| (suggestion(n).persona, suggestion(n).role)).collect();
+        let who: Vec<_> = (0..4)
+            .map(|n| (suggestion(n).persona, suggestion(n).role, suggestion(n).role_label))
+            .collect();
         assert_eq!(
             who,
-            [("Betty", "cfo"), ("Sheldon", "ceo"), ("Betty", "cfo"), ("Sheldon", "ceo")]
+            [
+                ("Betty", "cfo", "CFO"),
+                ("Sheldon", "ceo", "CEO adversarial"),
+                ("Betty", "cfo", "CFO"),
+                ("Sheldon", "ceo", "CEO adversarial"),
+            ]
         );
     }
 
@@ -150,6 +158,8 @@ mod tests {
             assert_eq!(json["type"], "suggestion");
             assert!(s.role.chars().all(|c| c.is_ascii_lowercase() || c == '_'));
             assert!(!s.persona.is_empty() && !s.reason.is_empty());
+            assert!(!s.role_label.is_empty());
+            assert_eq!(json["role_label"], s.role_label);
             assert!((0.0..=1.0).contains(&s.confidence));
             // SPEC §4 Redacción: máximo 15 palabras.
             assert!(s.text.split_whitespace().count() <= 15, "{}", s.text);

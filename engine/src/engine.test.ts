@@ -59,7 +59,7 @@ describe("Engine", () => {
     expect(await engine.handle(seg("counterpart", 0, 3, "El plan anual cuesta dos millones."))).toEqual([]);
     const out = await engine.handle(seg("user", 3.1, 4, "Ok."));
     expect(out).toEqual([
-      expect.objectContaining({ type: "suggestion", role: "cfo", persona: "Betty", confidence: 0.9 }),
+      expect.objectContaining({ type: "suggestion", role: "cfo", role_label: "CFO", persona: "Betty", confidence: 0.9 }),
     ]);
   });
 
