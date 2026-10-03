@@ -303,7 +303,7 @@ Un PR se integra solo si pasan todos los checks requeridos. Ninguna tarea está 
 
 **Branch protection en `main`:** checks requeridos, sin push directo, PR obligatorio.
 
-**Alcance del fin de semana:** viernes, CI con `bun test` + gitleaks + branch protection; sábado, unitarias, contrato y E2E del Motor con los 5 fixtures a medida que se construye; domingo, 2–3 specs de Playwright del overlay. Después del Build Day: `cargo test` en CI con macOS, evals con modelos reales.
+**Alcance del fin de semana:** viernes, CI con `bun test` + gitleaks + branch protection; sábado, unitarias, contrato y E2E del Motor con los 5 fixtures a medida que se construye; domingo, specs de Playwright del overlay en CI (WebKit, check requerido `overlay (playwright)`, con el check de que `overlay.js` coincide con el build). `cargo test` en CI con macOS ya entró antes del Build Day. Después del Build Day: evals con modelos reales.
 
 ---
 
@@ -334,7 +334,7 @@ Un PR se integra solo si pasan todos los checks requeridos. Ninguna tarea está 
 No construir antes del Build Day:
 
 - Verificación (Check) y respaldo de la Compuerta con Haiku.
-- `cargo test` en CI, Playwright en CI y runner de evals con modelos reales (quedan los fixtures + `bun test`).
+- Runner de evals con modelos reales (quedan los fixtures + `bun test`). `cargo test` y Playwright del overlay ya corren en CI como checks requeridos.
 - Firma, notarización y pilotos.
 - Marca de Decisión en vivo.
 - Roles CTO y CMO activos, Abogado, Due diligence.
@@ -349,7 +349,7 @@ No construir antes del Build Day:
 
 | Fase | Contenido |
 |---|---|
-| Pilotos | Firma y notarización, 5 pilotos fundadores, Ajustes → Modelos ("Key de Anthropic", "Key de Jev", "Probar conexión", Keychain), Verificación, respaldo con Haiku, CI completo (`cargo test` en macOS, Playwright) + job nocturno de evals con modelos reales |
+| Pilotos | Firma y notarización, 5 pilotos fundadores, Ajustes → Modelos ("Key de Anthropic", "Key de Jev", "Probar conexión", Keychain), Verificación, respaldo con Haiku, Playwright de Ajustes en CI + job nocturno de evals con modelos reales |
 | v1 | Roles CTO, CMO, Abogado y Due diligence (datos públicos de gobierno por MCP); Notas por MCP en solo lectura; Memoria y login en Cloud; `counterpart_id` con diarización; Compuerta local con modelos abiertos tipo Jev (Laya, Open-Jev); Intel |
 | v1.1 | Transcripción en la nube opcional (Deepgram) implementando `TranscriptionProvider` |
 | v2 | Bot en Meet y Teams, voz con toggle explícito, Roles compartibles |
