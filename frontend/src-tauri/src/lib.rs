@@ -477,6 +477,7 @@ pub fn run() {
         .manage(audio::init_system_audio_state())
         .manage(summary::summary_engine::ModelManagerState(Arc::new(tokio::sync::Mutex::new(None))))
         .setup(|_app| {
+            crate::engine_bridge::install(_app.handle()); // SOTTOLY: puente App ↔ Motor
             #[cfg(target_os = "windows")]
             match _app.path().resolve(
                 "onnxruntime.dll",

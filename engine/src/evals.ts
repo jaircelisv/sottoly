@@ -3,6 +3,7 @@ import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
 import { Engine, type EngineConfig, type EngineLog } from "./engine";
+import type { Draft, Drafter, DraftPrompt } from "./draft";
 import type { ChoiceAnswer, ChoiceEvaluator, ChoiceQuestion, GateDecision } from "./gate";
 import { Speaker } from "./protocol";
 import type { Role } from "./roles";
@@ -40,19 +41,19 @@ export function recordingKey(model: string, state: string, question: ChoiceQuest
   return new Bun.CryptoHasher("sha256").update(JSON.stringify({ model, state, question })).digest("hex");
 }
 
-export class Recordings {
-  private entries: Record<string, ChoiceAnswer>;
+export class Recordings<T = ChoiceAnswer> {
+  private entries: Record<string, T>;
   private dirty = false;
 
   constructor(private readonly path: string) {
     this.entries = existsSync(path) ? JSON.parse(readFileSync(path, "utf8")) : {};
   }
 
-  get(key: string): ChoiceAnswer | undefined {
+  get(key: string): T | undefined {
     return this.entries[key];
   }
 
-  set(key: string, answer: ChoiceAnswer) {
+  set(key: string, answer: T) {
     this.entries[key] = answer;
     this.dirty = true;
   }
@@ -80,6 +81,28 @@ export function recordingEvaluator(model: string, live: ChoiceEvaluator, recordi
     const answer = await live(state, question);
     recordings.set(recordingKey(model, state, question), answer);
     return answer;
+  };
+}
+
+export function draftRecordingKey(model: string, prompt: DraftPrompt): string {
+  return new Bun.CryptoHasher("sha256").update(JSON.stringify({ model, ...prompt })).digest("hex");
+}
+
+/** Reproduce Redacciones grabadas. Un prompt nuevo falla: hay que volver a grabar. */
+export function replayDrafter(model: string, recordings: Recordings<Draft>): Drafter {
+  return async (prompt) => {
+    const draft = recordings.get(draftRecordingKey(model, prompt));
+    if (!draft) throw new Error("missing draft recording: corre el sidecar con SOTTOLY_PROVIDERS=record");
+    return draft;
+  };
+}
+
+/** Llama al modelo real y guarda cada Redacción. */
+export function recordingDrafter(model: string, live: Drafter, recordings: Recordings<Draft>): Drafter {
+  return async (prompt) => {
+    const draft = await live(prompt);
+    recordings.set(draftRecordingKey(model, prompt), draft);
+    return draft;
   };
 }
 
