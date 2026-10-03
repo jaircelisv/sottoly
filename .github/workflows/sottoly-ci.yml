@@ -68,3 +68,32 @@ jobs:
       - name: cargo test
         working-directory: frontend/src-tauri
         run: cargo test --no-fail-fast
+
+  overlay:
+    name: overlay (playwright)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - name: Dependencias del Motor (el overlay importa engine/src/protocol.ts)
+        working-directory: engine
+        run: bun install --frozen-lockfile
+      - name: Dependencias del overlay
+        working-directory: overlay
+        run: bun install --frozen-lockfile
+      - name: Typecheck
+        working-directory: overlay
+        run: bunx tsc --noEmit
+      - name: overlay.js versionado coincide con el build
+        working-directory: overlay
+        run: bun test scripts
+      - name: WebKit (motor de WKWebView)
+        working-directory: overlay
+        run: bunx playwright install --with-deps webkit
+      - name: Playwright
+        working-directory: overlay
+        env:
+          CI: "1"
+        run: bunx playwright test

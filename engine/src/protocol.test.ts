@@ -43,6 +43,7 @@ describe("encodeOutbound", () => {
     const line = encodeOutbound({
       type: "suggestion",
       role: "cfo",
+      role_label: "CFO",
       persona: "Betty",
       text: "Pregunta si ese valor incluye IVA.",
       reason: "Mencionó un precio sin aclarar impuestos.",
@@ -50,12 +51,21 @@ describe("encodeOutbound", () => {
     });
     expect(line.endsWith("\n")).toBe(true);
     expect(line.trim().includes("\n")).toBe(false);
-    expect(JSON.parse(line).role).toBe("cfo");
+    expect(JSON.parse(line)).toMatchObject({ role: "cfo", role_label: "CFO" });
+  });
+
+  test("rechaza una Sugerencia sin role_label (nombre visible del Rol)", () => {
+    expect(() =>
+      encodeOutbound({ type: "suggestion", role: "cfo", persona: "Betty", text: "x", reason: "y", confidence: 0.5 } as never),
+    ).toThrow();
+    expect(() =>
+      encodeOutbound({ type: "suggestion", role: "cfo", role_label: "", persona: "Betty", text: "x", reason: "y", confidence: 0.5 }),
+    ).toThrow();
   });
 
   test("rechaza una confianza fuera de [0, 1]", () => {
     expect(() =>
-      encodeOutbound({ type: "suggestion", role: "cfo", persona: "Betty", text: "x", reason: "y", confidence: 1.5 }),
+      encodeOutbound({ type: "suggestion", role: "cfo", role_label: "CFO", persona: "Betty", text: "x", reason: "y", confidence: 1.5 }),
     ).toThrow();
   });
 
