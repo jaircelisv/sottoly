@@ -110,12 +110,13 @@ Una línea JSON por mensaje. Claves, enums y tipos en inglés; el contenido huma
 { "type": "session", "event": "start" | "end", "roles": ["cfo", "ceo"] }
 { "type": "clock", "t": 131.2 }            // solo si la medición de la Fase 1 lo exige
 // engine → app
-{ "type": "suggestion", "role": "cfo", "persona": "Betty",
+{ "type": "suggestion", "role": "cfo", "role_label": "CFO", "persona": "Betty",
   "text": "Pregunta si ese valor incluye IVA.",
   "reason": "Mencionó un precio sin aclarar impuestos.", "confidence": 0.82 }
 { "type": "summary", "decisions": [ /* Decision[] */ ] }
 ```
 
+- `role_label`: nombre visible del Rol (campo `role` del archivo de Rol); lo muestra la tarjeta del overlay junto a la Persona. El overlay nunca ve `gate_option`.
 - `speaker: "mixed"`: cuando no se pueden separar los canales (plan de recorte o reunión presencial). La Compuerta no asume quién dijo qué.
 - `counterpart_id` (c1, c2…) llega en v1 con diarización, sin cambiar `speaker`.
 

@@ -130,6 +130,7 @@ export class Engine {
     return {
       type: "suggestion",
       role: role.id,
+      role_label: role.role,
       persona: role.persona,
       text: draft.text,
       reason: draft.reason,

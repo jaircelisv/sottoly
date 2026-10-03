@@ -65,13 +65,13 @@ const SHELDON: [(&str, &str); 3] = [
 
 /// La n-ésima Sugerencia de la demo: pares de Betty, impares de Sheldon.
 pub fn suggestion(n: usize) -> DemoSuggestion {
-    let (role, persona, pool, confidence) = if n % 2 == 0 {
-        ("cfo", "Betty", &BETTY, 0.82)
+    let (role, role_label, persona, pool, confidence) = if n % 2 == 0 {
+        ("cfo", "CFO", "Betty", &BETTY, 0.82)
     } else {
-        ("ceo", "Sheldon", &SHELDON, 0.88)
+        ("ceo", "CEO adversarial", "Sheldon", &SHELDON, 0.88)
     };
     let (text, reason) = pool[(n / 2) % pool.len()];
-    DemoSuggestion { kind: "suggestion", role, persona, text, reason, confidence }
+    DemoSuggestion { kind: "suggestion", role, role_label, persona, text, reason, confidence }
 }
 
 /// Arranca la demo si corresponde. Llamado desde overlay::init.

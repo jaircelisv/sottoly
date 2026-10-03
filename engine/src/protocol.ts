@@ -38,6 +38,8 @@ export type InboundMessage = z.infer<typeof InboundMessage>;
 export const SuggestionMessage = z.object({
   type: z.literal("suggestion"),
   role: RoleId,
+  /** Nombre visible del Rol (campo `role` del frontmatter), para la tarjeta del overlay. */
+  role_label: z.string().min(1),
   persona: z.string().min(1),
   text: z.string().min(1),
   reason: z.string().min(1),
