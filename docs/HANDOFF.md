@@ -136,3 +136,27 @@ bun ../evals/runner/run.ts              # reproduce grabaciones
 10. Después del Build Day: transcripciones (SQLite + `transcripts.json`) apagadas por defecto y comando de borrado; propuesta upstream de la prueba de Meetily; tap solo de los procesos de la Reunión.
 
 Corte de la Fase 1 ya no aplica: la separación funciona. Si algo la rompe antes del demo, `SOTTOLY_SPEAKER_SEPARATION=0`.
+
+---
+
+## 7. Prueba de punta a punta (2026-10-03, 00:27)
+
+App real desde `main` + #24, sin modo demo, 10 frases de `phrases.txt` por el audio del sistema. Micrófono: los AirPods (modo llamada, 24 kHz) en vez del micrófono del MacBook. No afecta a la Contraparte (tap digital), pero hay que corregirlo antes del demo.
+
+**Resultado: 0 Sugerencias.** Transcripción 10/10 como Contraparte. Compuerta: `cfo` en 9 Turnos (p 0,83–0,99) y `none` en "cerramos esta semana", 196–367 ms. La Redacción falló en los 9:
+
+1. **`invalid_draft` (8 de 9):** Sonnet escribe 16–19 palabras y `validateDraft` descarta todo lo que pasa de 15. Pasa más cuando la ventana trae varias cifras ("No acepte aún: pida precio final con IVA, moneda, anticipo, aviso de renovación y tope del aumento.").
+2. **`AI_NoOutputGeneratedError` (1 de 9, intermitente):** `claude-sonnet-5-5` abre un bloque de thinking adaptativo que se come los 200 tokens (`stop_reason: max_tokens`, sin texto). El thinking no se puede apagar en ese modelo: el SDK baja al mínimo (`between_tools`) y así salen 6/6, pero 2 siguen pasando de 15 palabras.
+3. **Latencia de la Redacción:** Sonnet 2,2–3,2 s, Haiku 4.5 1,7–2,8 s (`generateText` sin streaming, salida estructurada). Haiku: 6/6 con ≤ 15 palabras. El presupuesto del SPEC es 500–800 ms.
+
+Latencia medida, fin del habla → decisión de la Compuerta: p50 1.246 ms, p90 1.812 ms (Segmento + cierre del Turno por el latido + Jev). Con 2 s de Redacción, la tarjeta llegaría a ~3,2 s (p50). No hubo tarjeta, así que no hay medición fin del habla → tarjeta.
+
+**Decisiones para mañana (del autor):**
+- Modelo de Redacción: Haiku 4.5 (`claude-haiku-4-5-20251001`, ya permitido por el SPEC como cambio de una línea) o seguir con Sonnet.
+- Regla de 15 palabras: recortar o pedir de nuevo en vez de descartar, o subir el tope.
+- Streaming de la Redacción (SPEC §4) para bajar el tiempo a la primera palabra.
+- Bajar el fin del habla → Compuerta: `turns.gapSeconds` 0,7 s sobre `t1`, que ya trae 400 ms de post-pad.
+
+**Arranque de la App en desarrollo:** si la ventana principal se abre mientras Next todavía compila, queda colgada con `ChunkLoadError: Loading chunk app/layout failed (timeout)` y las recargas no llegan a Next. Solución: levantar `pnpm dev`, precalentar con `curl http://localhost:3118/` y lanzar `pnpm tauri dev --config '{"build":{"beforeDevCommand":""}}' -- --features coreml`.
+
+**PRs apilados:** al integrar un PR cuya base no es `main`, el código queda en la rama de abajo (pasó con #16–#18 y #22–#23). Abrir cada PR contra `main`.
