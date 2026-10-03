@@ -1,7 +1,7 @@
 // Overlay de Sottoly: muestra una Sugerencia a la vez, sin robar el foco.
 import { emit, listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { parseSuggestion, roleLabel, type SuggestionMessage } from "./suggestion";
+import { parseSuggestion, type SuggestionMessage } from "./suggestion";
 
 const VISIBLE_MS = 12_000;
 const FADE_MS = 400;
@@ -40,7 +40,7 @@ function hide() {
 function show(suggestion: SuggestionMessage) {
   clearTimers();
   current = suggestion;
-  who.textContent = `${suggestion.persona} · ${roleLabel(suggestion.role)}`;
+  who.textContent = `${suggestion.persona} · ${suggestion.role_label}`;
   text.textContent = suggestion.text;
   reason.textContent = suggestion.reason;
   card.classList.remove("fading");

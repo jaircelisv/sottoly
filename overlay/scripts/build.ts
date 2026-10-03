@@ -4,21 +4,26 @@ import { cp, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 
 const root = join(import.meta.dir, "..");
-const outdir = join(root, "../frontend/public/overlay");
+export const OUTDIR = join(root, "../frontend/public/overlay");
 
-await mkdir(outdir, { recursive: true });
-const result = await Bun.build({
-  entrypoints: [join(root, "src/main.ts")],
-  outdir,
-  naming: "overlay.js",
-  target: "browser",
-  minify: true,
-  banner: "// Generado por overlay/scripts/build.ts. No editar a mano.",
-});
-if (!result.success) {
-  for (const log of result.logs) console.error(log);
-  process.exit(1);
+export async function buildOverlay(outdir: string = OUTDIR): Promise<void> {
+  await mkdir(outdir, { recursive: true });
+  const result = await Bun.build({
+    entrypoints: [join(root, "src/main.ts")],
+    outdir,
+    naming: "overlay.js",
+    target: "browser",
+    minify: true,
+    banner: "// Generado por overlay/scripts/build.ts. No editar a mano.",
+  });
+  if (!result.success) {
+    throw new AggregateError(result.logs, "bun build falló");
+  }
+  await cp(join(root, "index.html"), join(outdir, "index.html"));
+  await cp(join(root, "overlay.css"), join(outdir, "overlay.css"));
 }
-await cp(join(root, "index.html"), join(outdir, "index.html"));
-await cp(join(root, "overlay.css"), join(outdir, "overlay.css"));
-console.log(`overlay → ${outdir}`);
+
+if (import.meta.main) {
+  await buildOverlay();
+  console.log(`overlay → ${OUTDIR}`);
+}

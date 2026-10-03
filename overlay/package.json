@@ -6,6 +6,7 @@
   "scripts": {
     "build": "bun run scripts/build.ts",
     "test": "playwright test",
+    "test:build": "bun test scripts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
