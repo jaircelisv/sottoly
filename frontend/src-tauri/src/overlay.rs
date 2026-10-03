@@ -18,13 +18,13 @@ pub const TOP_MARGIN: f64 = 40.0;
 pub const MUTE_SHORTCUT: &str = "CommandOrControl+Shift+Period";
 pub const MUTE_EVENT: &str = "overlay-mute-toggle";
 
-/// Permisos mínimos de la ventana overlay: solo eventos (escuchar `suggestion`,
-/// emitir `suggestion-feedback`).
+/// Permisos mínimos de la ventana overlay: eventos (escuchar `suggestion`,
+/// emitir `suggestion-feedback`) y dejar pasar el ratón cuando no hay tarjeta.
 pub const CAPABILITY: &str = r#"{
   "identifier": "overlay",
   "description": "Ventana overlay de Sottoly: eventos de Sugerencias",
   "windows": ["overlay"],
-  "permissions": ["core:event:default"]
+  "permissions": ["core:event:default", "core:window:allow-set-ignore-cursor-events"]
 }"#;
 
 /// Posición lógica (x, y) para centrar la ventana arriba del monitor.
