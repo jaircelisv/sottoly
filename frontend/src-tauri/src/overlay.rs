@@ -40,6 +40,8 @@ pub fn top_center(monitor_width: f64, window_width: f64) -> (f64, f64) {
 pub fn init<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
     app.add_capability(CAPABILITY)?;
     create_window(app)?;
+    #[cfg(debug_assertions)]
+    demo::start(app);
     register_mute_shortcut(app)
 }
 
