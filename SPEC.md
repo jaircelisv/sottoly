@@ -156,7 +156,7 @@ Los modelos viven en la configuración del Motor, nunca en los archivos de Rol n
 ```jsonc
 {
   "gate":          { "provider": "jev",       "model": "jev-1.13.0" },
-  "draft":         { "provider": "anthropic", "model": "claude-sonnet-5-5", "max_tokens": 80 },
+  "draft":         { "provider": "anthropic", "model": "claude-sonnet-5-5", "max_tokens": 200 },
   "gate_fallback": { "provider": "anthropic", "model": "claude-haiku-4-5-20251001" }
 }
 ```
