@@ -4,7 +4,8 @@
 // (SPEC §7: no copiar el modo "invisible"). La página vive en overlay/ y se
 // empaqueta en frontend/public/overlay/.
 
-use tauri::{AppHandle, Runtime};
+use tauri::{AppHandle, Emitter, Manager, Runtime, WebviewUrl, WebviewWindowBuilder};
+use tauri_plugin_global_shortcut::ShortcutState;
 
 pub const LABEL: &str = "overlay";
 pub const URL: &str = "overlay/index.html";
@@ -28,13 +29,59 @@ pub const CAPABILITY: &str = r#"{
 
 /// Posición lógica (x, y) para centrar la ventana arriba del monitor.
 pub fn top_center(monitor_width: f64, window_width: f64) -> (f64, f64) {
-    todo!("{monitor_width} {window_width}")
+    (((monitor_width - window_width) / 2.0).max(0.0), TOP_MARGIN)
 }
 
 /// Crea la ventana overlay y registra el atajo de silencio.
-pub fn init<R: Runtime>(_app: &AppHandle<R>) -> tauri::Result<()> {
-    todo!()
+pub fn init<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
+    app.add_capability(CAPABILITY)?;
+    create_window(app)?;
+    register_mute_shortcut(app)
 }
+
+fn create_window<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
+    let monitor_width = app
+        .primary_monitor()?
+        .map(|m| m.size().to_logical::<f64>(m.scale_factor()).width)
+        .unwrap_or(WIDTH);
+    let (x, y) = top_center(monitor_width, WIDTH);
+
+    WebviewWindowBuilder::new(app, LABEL, WebviewUrl::App(URL.into()))
+        .title("Sottoly")
+        .inner_size(WIDTH, HEIGHT)
+        .position(x, y)
+        .decorations(false)
+        .transparent(true)
+        .shadow(false)
+        .resizable(false)
+        .always_on_top(true)
+        .visible_on_all_workspaces(true)
+        .skip_taskbar(true)
+        // Sin robar el foco: nunca pasa a ser la ventana activa, pero acepta el clic.
+        .focused(false)
+        .focusable(false)
+        .accept_first_mouse(true)
+        // Visible al compartir pantalla (SPEC §7).
+        .content_protected(false)
+        .build()?;
+    Ok(())
+}
+
+fn register_mute_shortcut<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
+    let plugin = tauri_plugin_global_shortcut::Builder::new()
+        .with_shortcuts([MUTE_SHORTCUT])
+        .map_err(|e| tauri::Error::Anyhow(e.into()))?
+        .with_handler(|app, _shortcut, event| {
+            if event.state() == ShortcutState::Pressed {
+                if let Err(e) = app.emit_to(LABEL, MUTE_EVENT, ()) {
+                    log::warn!("overlay: no se pudo emitir {MUTE_EVENT}: {e}");
+                }
+            }
+        })
+        .build();
+    app.plugin(plugin)
+}
+
 
 #[cfg(test)]
 mod tests {
