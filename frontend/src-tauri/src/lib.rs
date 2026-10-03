@@ -54,6 +54,7 @@ pub mod summary;
 pub mod tray;
 pub mod utils;
 pub mod whisper_engine;
+pub mod overlay; // SOTTOLY: ventana overlay de Sugerencias
 
 use audio::{list_audio_devices, AudioDevice, trigger_audio_permission};
 use log::{error as log_error, info as log_info};
@@ -475,6 +476,11 @@ pub fn run() {
         .manage(audio::init_system_audio_state())
         .manage(summary::summary_engine::ModelManagerState(Arc::new(tokio::sync::Mutex::new(None))))
         .setup(|_app| {
+            // SOTTOLY: ventana overlay de Sugerencias y atajo para silenciarla.
+            if let Err(e) = overlay::init(_app.handle()) {
+                log::error!("overlay: {e}");
+            }
+
             #[cfg(target_os = "windows")]
             match _app.path().resolve(
                 "onnxruntime.dll",
