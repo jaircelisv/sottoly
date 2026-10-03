@@ -73,6 +73,9 @@ pub const MIN_SEGMENT_SAMPLES: usize = 800;
 /// Duración máxima de un Segmento en vivo (issue #756 de Meetily).
 pub const MAX_SEGMENT_SECONDS: f64 = 10.0;
 
+/// Audio mínimo que un Segmento conserva antes del inicio de la voz.
+pub const PRE_ROLL_MIN_MS: f64 = 250.0;
+
 fn clamp_to_vad_range(samples: &[f32]) -> Vec<f32> {
     samples.iter().map(|s| s.clamp(-1.0, 1.0)).collect()
 }
@@ -419,6 +422,42 @@ mod tests {
 
     fn duration_s(chunk: &AudioChunk) -> f64 {
         chunk.data.len() as f64 / chunk.sample_rate as f64
+    }
+
+    fn with_silence_around(voice: &[f32], before_s: f64, after_s: f64) -> Vec<f32> {
+        let mut audio = vec![0.0f32; (before_s * 16000.0) as usize];
+        audio.extend_from_slice(voice);
+        audio.extend(vec![0.0f32; (after_s * 16000.0) as usize]);
+        audio
+    }
+
+    /// Inicios de frase cortados en la App real ("~~Facturamos~~ anual…"): Silero confirma la voz
+    /// ~225 ms después de que empieza, y con 300 ms de pad al Segmento le quedaban ~75 ms.
+    #[test]
+    fn segment_keeps_a_pre_roll_before_the_voice_onset() {
+        let audio = with_silence_around(&fixture_voice(), 1.0, 1.0);
+        let onset_s = audio.iter().position(|s| s.abs() > 0.02).unwrap() as f64 / 16000.0;
+
+        let chunks = split_with_real_vad(&audio, &vec![0.0; audio.len()]);
+
+        let pre_roll_ms = (onset_s - chunks[0].timestamp) * 1000.0;
+        assert!(pre_roll_ms >= PRE_ROLL_MIN_MS, "pre-roll de {pre_roll_ms:.0} ms antes de la voz");
+    }
+
+    /// El pre-roll no puede ir más atrás del audio que Silero ya borró al cerrar el Segmento
+    /// anterior (entraría en pánico). Peor caso: la voz vuelve justo al cumplirse la redención.
+    #[test]
+    fn pre_roll_never_reaches_into_the_previous_segment() {
+        let voice = fixture_voice();
+        let mut audio = with_silence_around(&voice, 1.0, 0.0);
+        for gap_ms in [520, 560, 600, 700] {
+            audio.extend(vec![0.0f32; gap_ms * 16]);
+            audio.extend_from_slice(&voice);
+        }
+        audio.extend(vec![0.0f32; 16000]);
+
+        let chunks = split_with_real_vad(&audio, &vec![0.0; audio.len()]);
+        assert!(chunks.len() >= 2, "{} Segmentos", chunks.len());
     }
 
     #[test]
