@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sottoly</title>
+    <link rel="stylesheet" href="overlay.css" />
+    <script type="module" src="overlay.js"></script>
+  </head>
+  <body>
+    <main data-testid="overlay">
+      <article data-testid="suggestion-card" class="card" role="status" aria-live="polite" hidden>
+        <header data-testid="suggestion-who" class="who"></header>
+        <p data-testid="suggestion-text" class="text"></p>
+        <p data-testid="suggestion-reason" class="reason"></p>
+        <footer class="actions">
+          <button type="button" data-feedback="useful">Útil</button>
+          <button type="button" data-feedback="not-useful">No útil</button>
+        </footer>
+      </article>
+      <p data-testid="muted-indicator" class="muted" hidden>Silenciado</p>
+    </main>
+  </body>
+</html>
