@@ -38,6 +38,8 @@ pub enum SessionEvent {
 #[serde(tag = "type", rename = "suggestion")]
 pub struct SuggestionMessage {
     pub role: String,
+    /// Nombre visible del Rol ("CFO"); el overlay lo exige (protocolo, #20).
+    pub role_label: String,
     pub persona: String,
     pub text: String,
     pub reason: String,
@@ -386,6 +388,7 @@ mod tests {
     fn suggestion_log_line_has_the_emission_time_in_ms() {
         let s = SuggestionMessage {
             role: "cfo".into(),
+            role_label: "CFO".into(),
             persona: "Betty".into(),
             text: "Pregunta si incluye IVA.".into(),
             reason: "Precio sin impuestos.".into(),
@@ -421,7 +424,7 @@ mod tests {
             "read line; ",
             "echo 'no es json'; ",
             "echo '{\"type\":\"summary\",\"decisions\":[]}'; ",
-            "echo '{\"type\":\"suggestion\",\"role\":\"cfo\",\"persona\":\"Betty\",",
+            "echo '{\"type\":\"suggestion\",\"role\":\"cfo\",\"role_label\":\"CFO\",\"persona\":\"Betty\",",
             "\"text\":\"Pregunta si incluye IVA.\",\"reason\":\"Precio sin impuestos.\",\"confidence\":0.9}'"
         ));
         let (tx, rx) = mpsc::channel();
