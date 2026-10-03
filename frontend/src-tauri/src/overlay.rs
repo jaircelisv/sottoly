@@ -7,6 +7,10 @@
 use tauri::{AppHandle, Emitter, Manager, Runtime, WebviewUrl, WebviewWindowBuilder};
 use tauri_plugin_global_shortcut::ShortcutState;
 
+// Modo de prueba (SOTTOLY_DEMO_SUGGESTIONS=1): no existe en builds de producción.
+#[cfg(debug_assertions)]
+pub mod demo;
+
 pub const LABEL: &str = "overlay";
 pub const URL: &str = "overlay/index.html";
 pub const WIDTH: f64 = 396.0;
