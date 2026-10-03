@@ -7,6 +7,10 @@
 use tauri::{AppHandle, Emitter, Manager, Runtime, WebviewUrl, WebviewWindowBuilder};
 use tauri_plugin_global_shortcut::ShortcutState;
 
+// Modo de prueba (SOTTOLY_DEMO_SUGGESTIONS=1): no existe en builds de producción.
+#[cfg(debug_assertions)]
+pub mod demo;
+
 pub const LABEL: &str = "overlay";
 pub const URL: &str = "overlay/index.html";
 pub const WIDTH: f64 = 396.0;
@@ -36,6 +40,8 @@ pub fn top_center(monitor_width: f64, window_width: f64) -> (f64, f64) {
 pub fn init<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
     app.add_capability(CAPABILITY)?;
     create_window(app)?;
+    #[cfg(debug_assertions)]
+    demo::start(app);
     register_mute_shortcut(app)
 }
 
