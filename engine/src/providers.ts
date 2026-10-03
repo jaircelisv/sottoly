@@ -16,8 +16,9 @@ export function jevEvaluator(modelId: string): ChoiceEvaluator {
   };
 }
 
-export function anthropicDrafter(modelId: string, maxTokens: number): Drafter {
-  const model = createAnthropic()(modelId);
+/** `fetch` solo para pruebas (API simulada con respuestas grabadas). */
+export function anthropicDrafter(modelId: string, maxTokens: number, fetch?: typeof globalThis.fetch): Drafter {
+  const model = createAnthropic({ fetch, apiKey: fetch ? "recorded" : undefined })(modelId);
   return async ({ system, prompt }) => {
     const { output } = await generateText({
       model,
