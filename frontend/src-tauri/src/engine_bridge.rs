@@ -38,6 +38,8 @@ pub enum SessionEvent {
 #[serde(tag = "type", rename = "suggestion")]
 pub struct SuggestionMessage {
     pub role: String,
+    /// Nombre visible del Rol ("CFO"); el overlay lo exige (protocolo, #20).
+    pub role_label: String,
     pub persona: String,
     pub text: String,
     pub reason: String,
@@ -206,6 +208,11 @@ pub fn reset_clock() {
 /// Evento de Tauri con cada Sugerencia (lo escucha el overlay).
 pub const SUGGESTION_EVENT: &str = "suggestion";
 
+/// Línea de log por Sugerencia emitida (medición fin del habla → tarjeta, como SOTTOLY_LATENCY).
+fn suggestion_log_line(s: &SuggestionMessage, unix_ms: u128) -> String {
+    format!("SOTTOLY_SUGGESTION at_ms={} role={} persona={} text={:?}", unix_ms, s.role, s.persona, s.text)
+}
+
 /// Keys que el Motor lee del entorno; en la App salen del Keychain (servicio = nombre).
 const KEYCHAIN_KEYS: [&str; 2] = ["TYPESAFE_AI_API_KEY", "ANTHROPIC_API_KEY"];
 
@@ -276,6 +283,8 @@ fn start_session<R: tauri::Runtime>(app: tauri::AppHandle<R>) {
     stop_session();
     let emitter = app.clone();
     let bridge = match EngineBridge::spawn(engine_command(), move |s| {
+        let now_ms = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_millis()).unwrap_or(0);
+        info!("{}", suggestion_log_line(&s, now_ms));
         if let Err(e) = emitter.emit(SUGGESTION_EVENT, &s) {
             warn!("SOTTOLY: no se pudo emitir la Sugerencia: {}", e);
         }
@@ -365,6 +374,32 @@ mod tests {
         assert_eq!(end.to_line(), "{\"type\":\"session\",\"event\":\"end\"}\n");
     }
 
+    /// El overlay valida la Sugerencia con el zod del protocolo, que exige `role_label` (#20):
+    /// el puente no puede descartarlo al pasar por serde.
+    #[test]
+    fn bridge_forwards_role_label_to_the_overlay() {
+        let line = r#"{"type":"suggestion","role":"cfo","role_label":"CFO","persona":"Betty","text":"Pregunta si incluye IVA.","reason":"Precio sin impuestos.","confidence":0.9}"#;
+        let s: SuggestionMessage = serde_json::from_str(line).unwrap();
+        let out = serde_json::to_value(&s).unwrap();
+        assert_eq!(out["role_label"], "CFO");
+    }
+
+    #[test]
+    fn suggestion_log_line_has_the_emission_time_in_ms() {
+        let s = SuggestionMessage {
+            role: "cfo".into(),
+            role_label: "CFO".into(),
+            persona: "Betty".into(),
+            text: "Pregunta si incluye IVA.".into(),
+            reason: "Precio sin impuestos.".into(),
+            confidence: 0.9,
+        };
+        assert_eq!(
+            suggestion_log_line(&s, 1_759_465_000_123),
+            "SOTTOLY_SUGGESTION at_ms=1759465000123 role=cfo persona=Betty text=\"Pregunta si incluye IVA.\""
+        );
+    }
+
     #[test]
     fn final_transcript_updates_become_segments_and_partials_do_not() {
         let update = |partial: bool| {
@@ -389,7 +424,7 @@ mod tests {
             "read line; ",
             "echo 'no es json'; ",
             "echo '{\"type\":\"summary\",\"decisions\":[]}'; ",
-            "echo '{\"type\":\"suggestion\",\"role\":\"cfo\",\"persona\":\"Betty\",",
+            "echo '{\"type\":\"suggestion\",\"role\":\"cfo\",\"role_label\":\"CFO\",\"persona\":\"Betty\",",
             "\"text\":\"Pregunta si incluye IVA.\",\"reason\":\"Precio sin impuestos.\",\"confidence\":0.9}'"
         ));
         let (tx, rx) = mpsc::channel();
