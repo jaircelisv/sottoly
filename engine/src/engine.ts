@@ -1,8 +1,8 @@
 // Orquestador del Motor: Segmentos → Turnos → Compuerta → Redacción → Sugerencia (SPEC §4).
 // Sin E/S: los proveedores se inyectan, así el pipeline completo se prueba con respuestas grabadas.
 import { evaluateGate, slideWindow, type ChoiceEvaluator, type GateDecision, type WindowSegment } from "./gate";
-import { buildDraftPrompt, finalizeDraft, type Drafter } from "./draft";
-import type { InboundMessage, SuggestionMessage } from "./protocol";
+import { buildDraftPrompt, finalizeDraft, headWords, type Drafter } from "./draft";
+import type { InboundMessage, SuggestionCancel, SuggestionDelta, SuggestionMessage } from "./protocol";
 import { selectBoard, type Role } from "./roles";
 import { TurnAssembler, type TurnEvent, type TurnOptions } from "./turns";
 
@@ -21,12 +21,17 @@ export type EngineLog =
   | { event: "suggestion_suppressed"; role: string; reason: "cooldown" | "repeated" | "meeting_cap" | "invalid_draft" }
   | { event: "provider_failed"; stage: "gate" | "draft"; error: string };
 
+/** Lo que sale mientras se redacta, antes del final que devuelve `handle`. */
+export type StreamMessage = SuggestionDelta | SuggestionCancel;
+
 export interface EngineDeps {
   roles: Role[];
   evaluate: ChoiceEvaluator;
   draft: Drafter;
   config: EngineConfig;
   log?: (entry: EngineLog) => void;
+  /** Deltas y cancelaciones de la Redacción en streaming (la App los manda a la tarjeta al momento). */
+  onStream?: (message: StreamMessage) => void;
   now?: () => number;
 }
 
@@ -37,6 +42,7 @@ export class Engine {
   private lastByRole = new Map<string, number>();
   private shown = new Set<string>();
   private suggestionCount = 0;
+  private draftCount = 0;
 
   constructor(private readonly deps: EngineDeps) {
     this.turns = new TurnAssembler(deps.config.turns);
@@ -67,6 +73,7 @@ export class Engine {
     this.lastByRole.clear();
     this.shown.clear();
     this.suggestionCount = 0;
+    this.draftCount = 0;
   }
 
   private async process(events: TurnEvent[]): Promise<SuggestionMessage[]> {
@@ -112,26 +119,45 @@ export class Engine {
       return this.suppress(role.id, "cooldown");
     }
 
+    const id = `s${++this.draftCount}`;
+    const header = { id, role: role.id, role_label: role.role, persona: role.persona };
+    let shown = "";
+    const onText = (text: string) => {
+      const head = headWords(text);
+      if (!head || head === shown) return;
+      shown = head;
+      this.deps.onStream?.({ type: "suggestion_delta", ...header, text: head });
+    };
+    // Si ya hubo deltas y no sale el final, la tarjeta parcial se quita.
+    const cancel = () => {
+      if (shown) this.deps.onStream?.({ type: "suggestion_cancel", id });
+    };
+
     let draft;
     try {
-      draft = finalizeDraft(await this.deps.draft(buildDraftPrompt(role, window)));
+      draft = finalizeDraft(await this.deps.draft(buildDraftPrompt(role, window), onText));
     } catch (error) {
       this.deps.log?.({ event: "provider_failed", stage: "draft", error: String(error) });
+      cancel();
       return null;
     }
-    if (!draft) return this.suppress(role.id, "invalid_draft");
+    if (!draft) {
+      cancel();
+      return this.suppress(role.id, "invalid_draft");
+    }
 
     const key = draft.text.toLowerCase();
-    if (this.shown.has(key)) return this.suppress(role.id, "repeated");
+    if (this.shown.has(key)) {
+      cancel();
+      return this.suppress(role.id, "repeated");
+    }
 
     this.shown.add(key);
     this.lastByRole.set(role.id, event.turn.t1);
     this.suggestionCount++;
     return {
       type: "suggestion",
-      role: role.id,
-      role_label: role.role,
-      persona: role.persona,
+      ...header,
       text: draft.text,
       reason: draft.reason,
       confidence: decision.probability,

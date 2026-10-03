@@ -93,8 +93,8 @@ impl EngineBridge {
         let reader = std::thread::spawn(move || {
             for line in BufReader::new(stdout).lines().map_while(Result::ok) {
                 match serde_json::from_str::<EngineEvent>(&line) {
-                    Ok(event @ EngineEvent::Suggestion(_)) => on_event(event),
-                    _ => debug!("SOTTOLY engine: línea ignorada en stdout"),
+                    Ok(event) => on_event(event),
+                    Err(_) => debug!("SOTTOLY engine: línea ignorada en stdout"),
                 }
             }
         });
@@ -245,8 +245,16 @@ struct StreamLog {
 
 impl StreamLog {
     fn line(&mut self, event: &EngineEvent, unix_ms: u128) -> Option<String> {
-        let _ = (event, unix_ms, &self.started);
-        unimplemented!()
+        match event {
+            EngineEvent::SuggestionDelta(d) => self.started.insert(d.id.clone()).then(|| {
+                format!("SOTTOLY_SUGGESTION_FIRST at_ms={} id={} role={} persona={}", unix_ms, d.id, d.role, d.persona)
+            }),
+            EngineEvent::Suggestion(s) => Some(format!(
+                "SOTTOLY_SUGGESTION at_ms={} id={} role={} persona={} text={:?}",
+                unix_ms, s.id, s.role, s.persona, s.text
+            )),
+            EngineEvent::SuggestionCancel { id } => Some(format!("SOTTOLY_SUGGESTION_CANCEL at_ms={} id={}", unix_ms, id)),
+        }
     }
 }
 

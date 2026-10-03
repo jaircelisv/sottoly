@@ -35,8 +35,13 @@ export type InboundMessage = z.infer<typeof InboundMessage>;
 
 // engine → app
 
+/** Id de una Sugerencia: lo comparten sus deltas, el final y la cancelación. */
+const SuggestionId = z.string().min(1);
+
 export const SuggestionMessage = z.object({
   type: z.literal("suggestion"),
+  // El Motor siempre lo manda; opcional mientras el overlay y su modo demo no manejen deltas.
+  id: SuggestionId.optional(),
   role: RoleId,
   /** Nombre visible del Rol (campo `role` del frontmatter), para la tarjeta del overlay. */
   role_label: z.string().min(1),
@@ -65,7 +70,25 @@ export const SummaryMessage = z.object({
   decisions: z.array(Decision),
 });
 
-export const OutboundMessage = z.union([SuggestionMessage, SummaryMessage]);
+/** Redacción en curso: `text` es el texto acumulado (no un trozo); el final lo reemplaza. */
+export const SuggestionDelta = z.object({
+  type: z.literal("suggestion_delta"),
+  id: SuggestionId,
+  role: RoleId,
+  role_label: z.string().min(1),
+  persona: z.string().min(1),
+  text: z.string().min(1),
+});
+export type SuggestionDelta = z.infer<typeof SuggestionDelta>;
+
+/** La Redacción que ya emitió deltas no termina en Sugerencia: la tarjeta parcial se quita. */
+export const SuggestionCancel = z.object({
+  type: z.literal("suggestion_cancel"),
+  id: SuggestionId,
+});
+export type SuggestionCancel = z.infer<typeof SuggestionCancel>;
+
+export const OutboundMessage = z.union([SuggestionMessage, SuggestionDelta, SuggestionCancel, SummaryMessage]);
 export type OutboundMessage = z.infer<typeof OutboundMessage>;
 
 export type ParseResult =

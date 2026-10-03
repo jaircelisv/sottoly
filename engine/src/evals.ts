@@ -90,17 +90,18 @@ export function draftRecordingKey(model: string, prompt: DraftPrompt): string {
 
 /** Reproduce Redacciones grabadas. Un prompt nuevo falla: hay que volver a grabar. */
 export function replayDrafter(model: string, recordings: Recordings<Draft>): Drafter {
-  return async (prompt) => {
+  return async (prompt, onText) => {
     const draft = recordings.get(draftRecordingKey(model, prompt));
     if (!draft) throw new Error("missing draft recording: corre el sidecar con SOTTOLY_PROVIDERS=record");
+    onText?.(draft.text); // el stream grabado llega de una vez
     return draft;
   };
 }
 
 /** Llama al modelo real y guarda cada Redacción. */
 export function recordingDrafter(model: string, live: Drafter, recordings: Recordings<Draft>): Drafter {
-  return async (prompt) => {
-    const draft = await live(prompt);
+  return async (prompt, onText) => {
+    const draft = await live(prompt, onText);
     recordings.set(draftRecordingKey(model, prompt), draft);
     return draft;
   };

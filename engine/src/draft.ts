@@ -28,8 +28,8 @@ export interface DraftPrompt {
   prompt: string;
 }
 
-/** Proveedor intercambiable (Sonnet por defecto; Haiku si la latencia lo exige). */
-export type Drafter = (prompt: DraftPrompt) => Promise<Draft>;
+/** Proveedor intercambiable. `onText` recibe el texto acumulado mientras llega (streaming). */
+export type Drafter = (prompt: DraftPrompt, onText?: (text: string) => void) => Promise<Draft>;
 
 export function buildDraftPrompt(role: Pick<Role, "role" | "persona" | "objective" | "limits" | "instructions">, window: WindowSegment[]): DraftPrompt {
   const system = [
@@ -46,6 +46,11 @@ export function buildDraftPrompt(role: Pick<Role, "role" | "persona" | "objectiv
 
 export function countWords(text: string): number {
   return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+/** Primeras HARD_MAX_WORDS palabras: lo que puede mostrar un delta mientras llega el texto. */
+export function headWords(text: string): string {
+  return text.trim().split(/\s+/).filter(Boolean).slice(0, HARD_MAX_WORDS).join(" ");
 }
 
 /** Recorta a HARD_MAX_WORDS palabras, hasta el último signo de puntuación dentro del tope. */

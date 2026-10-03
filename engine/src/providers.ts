@@ -1,6 +1,6 @@
 // Proveedores reales (ModelProvider): Jev para la Compuerta y Anthropic para la Redacción.
 // Los IDs de modelo vienen de config.json; las keys, del entorno (TYPESAFE_AI_API_KEY, ANTHROPIC_API_KEY).
-import { experimental_evaluate, generateText, Output } from "ai";
+import { experimental_evaluate, Output, streamText } from "ai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createTypeSafeAi } from "@ai-sdk/typesafe-ai";
 import { Draft, type Drafter } from "./draft";
@@ -16,17 +16,26 @@ export function jevEvaluator(modelId: string): ChoiceEvaluator {
   };
 }
 
-/** `fetch` solo para pruebas (API simulada con respuestas grabadas). */
+/** Redacción en streaming: `onText` recibe el texto acumulado del objeto parcial. `fetch` solo para pruebas. */
 export function anthropicDrafter(modelId: string, maxTokens: number, fetch?: typeof globalThis.fetch): Drafter {
   const model = createAnthropic({ fetch, apiKey: fetch ? "recorded" : undefined })(modelId);
-  return async ({ system, prompt }) => {
-    const { output } = await generateText({
+  return async ({ system, prompt }, onText) => {
+    const result = streamText({
       model,
       system,
       prompt,
       maxOutputTokens: maxTokens,
       output: Output.object({ schema: Draft }),
+      onError: () => {}, // el error llega al esperar `output`
     });
-    return Draft.parse(output);
+    let last = "";
+    for await (const partial of result.partialOutputStream) {
+      const text = partial?.text;
+      if (typeof text === "string" && text && text !== last) {
+        last = text;
+        onText?.(text);
+      }
+    }
+    return Draft.parse(await result.output);
   };
 }
