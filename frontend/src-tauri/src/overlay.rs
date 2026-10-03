@@ -105,10 +105,13 @@ mod tests {
     }
 
     #[test]
-    fn la_capability_solo_da_eventos_a_la_ventana_overlay() {
+    fn la_capability_solo_da_eventos_y_paso_de_raton_a_la_ventana_overlay() {
         let cap: serde_json::Value = serde_json::from_str(CAPABILITY).unwrap();
         assert_eq!(cap["windows"], serde_json::json!([LABEL]));
-        assert_eq!(cap["permissions"], serde_json::json!(["core:event:default"]));
+        assert_eq!(
+            cap["permissions"],
+            serde_json::json!(["core:event:default", "core:window:allow-set-ignore-cursor-events"])
+        );
     }
 
     #[test]

@@ -106,3 +106,23 @@ test("el atajo de silenciar oculta la tarjeta y bloquea Sugerencias hasta reacti
   await emit(page, "suggestion", suggestion);
   await expect(card(page)).toBeVisible();
 });
+
+// Sin tarjeta, la ventana transparente no debe bloquear los clics de la app de abajo.
+function ignoreCursorCalls(page: Page) {
+  return page.evaluate(() =>
+    (window as any).__sottoly.ipc
+      .filter((c: any) => c.cmd === "plugin:window|set_ignore_cursor_events")
+      .map((c: any) => c.args.value),
+  );
+}
+
+test("sin tarjeta la ventana deja pasar el ratón; con tarjeta lo recibe", async ({ page }) => {
+  await openOverlay(page);
+  await expect.poll(() => ignoreCursorCalls(page)).toEqual([true]);
+
+  await emit(page, "suggestion", suggestion);
+  await expect.poll(() => ignoreCursorCalls(page)).toEqual([true, false]);
+
+  await card(page).getByRole("button", { name: "Útil", exact: true }).click();
+  await expect.poll(() => ignoreCursorCalls(page)).toEqual([true, false, true]);
+});
