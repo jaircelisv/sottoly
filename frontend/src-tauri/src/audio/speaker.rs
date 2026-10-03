@@ -448,11 +448,13 @@ mod tests {
     /// anterior (entraría en pánico). Peor caso: la voz vuelve justo al cumplirse la redención.
     #[test]
     fn pre_roll_never_reaches_into_the_previous_segment() {
+        // Arranque abrupto (a mitad de palabra): Silero confirma la voz casi sin demora.
         let voice = fixture_voice();
-        let mut audio = with_silence_around(&voice, 1.0, 0.0);
-        for gap_ms in [520, 560, 600, 700] {
+        let abrupt = &voice[8_000..];
+        let mut audio = with_silence_around(abrupt, 1.0, 0.0);
+        for gap_ms in [520, 530, 540, 560, 600] {
             audio.extend(vec![0.0f32; gap_ms * 16]);
-            audio.extend_from_slice(&voice);
+            audio.extend_from_slice(abrupt);
         }
         audio.extend(vec![0.0f32; 16000]);
 
