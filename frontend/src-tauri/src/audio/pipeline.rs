@@ -779,6 +779,7 @@ impl AudioPipeline {
         };
         set_separation_enabled(separate);
         super::speaker::mark_pipeline_start();
+        crate::engine_bridge::reset_clock(); // SOTTOLY: el latido vuelve a cero con cada grabación
         info!("SOTTOLY: separación Usuario / Contraparte {}", if separate { "activa" } else { "apagada (mixed)" });
 
         // Initialize professional audio mixing components
@@ -880,6 +881,9 @@ impl AudioPipeline {
                             if let Some(splitter) = self.speaker_splitter.as_mut() {
                                 match splitter.process(&mic_window, &sys_window) {
                                     Ok(chunks) => {
+                                        // SOTTOLY: latido `clock` (Q31): avance del VAD y Segmentos en vuelo
+                                        let starts: Vec<f64> = chunks.iter().map(|c| c.timestamp).collect();
+                                        crate::engine_bridge::on_vad_progress(splitter.vad_safe_time_s(), &starts);
                                         for chunk in chunks {
                                             if let Err(e) = self.transcription_sender.send(chunk) {
                                                 warn!("Failed to send VAD segment: {}", e);

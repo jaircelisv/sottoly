@@ -73,6 +73,9 @@ pub const MIN_SEGMENT_SAMPLES: usize = 800;
 /// Duración máxima de un Segmento en vivo (issue #756 de Meetily).
 pub const MAX_SEGMENT_SECONDS: f64 = 10.0;
 
+/// Audio mínimo que un Segmento conserva antes del inicio de la voz.
+pub const PRE_ROLL_MIN_MS: f64 = 250.0;
+
 fn clamp_to_vad_range(samples: &[f32]) -> Vec<f32> {
     samples.iter().map(|s| s.clamp(-1.0, 1.0)).collect()
 }
@@ -83,6 +86,10 @@ pub trait SpeechSegmenter {
     /// Habla aún sin cerrar: inicio en ms y muestras a 16 kHz desde ese inicio.
     fn active_speech(&self) -> Option<(f64, &[f32])> {
         None
+    }
+    /// Audio que el VAD ya procesó, en ms desde el inicio.
+    fn processed_ms(&self) -> f64 {
+        0.0
     }
 }
 
@@ -97,6 +104,10 @@ impl SpeechSegmenter for ContinuousVadProcessor {
 
     fn active_speech(&self) -> Option<(f64, &[f32])> {
         ContinuousVadProcessor::active_speech(self)
+    }
+
+    fn processed_ms(&self) -> f64 {
+        ContinuousVadProcessor::processed_ms(self)
     }
 }
 
@@ -135,6 +146,14 @@ impl<S: SpeechSegmenter> BoundedSegmenter<S> {
             first.start_timestamp_ms += skip as f64 / SAMPLES_PER_MS;
         }
         closed
+    }
+
+    /// Hasta dónde ya salió todo: el inicio de lo que falta de la habla abierta, o lo procesado.
+    fn safe_ms(&self) -> f64 {
+        match self.inner.active_speech() {
+            Some((start_ms, _)) => start_ms + self.emitted as f64 / SAMPLES_PER_MS,
+            None => self.inner.processed_ms(),
+        }
     }
 
     fn cut_active(&mut self) -> Vec<SpeechSegment> {
@@ -204,6 +223,11 @@ impl<S: SpeechSegmenter> SpeakerSplitter<S> {
         chunks
     }
 
+    /// Hasta qué segundo de audio no queda habla abierta en ningún flujo (latido `clock`).
+    pub fn vad_safe_time_s(&self) -> f64 {
+        self.mic.safe_ms().min(self.system.safe_ms()) / 1000.0
+    }
+
     pub fn next_chunk_id(&self) -> u64 {
         self.next_chunk_id
     }
@@ -220,6 +244,8 @@ mod tests {
         queued: VecDeque<Vec<SpeechSegment>>,
         on_flush: Vec<SpeechSegment>,
         seen: Vec<Vec<f32>>,
+        processed_ms: f64,
+        active: Option<(f64, Vec<f32>)>,
     }
 
     impl SpeechSegmenter for FakeSegmenter {
@@ -230,6 +256,44 @@ mod tests {
         fn flush(&mut self) -> Result<Vec<SpeechSegment>> {
             Ok(std::mem::take(&mut self.on_flush))
         }
+        fn active_speech(&self) -> Option<(f64, &[f32])> {
+            self.active.as_ref().map(|(start, samples)| (*start, samples.as_slice()))
+        }
+        fn processed_ms(&self) -> f64 {
+            self.processed_ms
+        }
+    }
+
+    /// Sin habla abierta, el tiempo seguro es lo que ambos VAD ya procesaron (el menor).
+    #[test]
+    fn vad_safe_time_is_the_least_processed_stream() {
+        let mic = FakeSegmenter { processed_ms: 4_000.0, ..Default::default() };
+        let system = FakeSegmenter { processed_ms: 3_500.0, ..Default::default() };
+        assert_eq!(SpeakerSplitter::new(mic, system, 0).vad_safe_time_s(), 3.5);
+    }
+
+    /// Con habla abierta en un flujo, el tiempo seguro se queda en su inicio.
+    #[test]
+    fn vad_safe_time_stops_at_the_start_of_open_speech() {
+        let mic = FakeSegmenter { processed_ms: 9_000.0, active: Some((6_200.0, vec![0.1; 16])), ..Default::default() };
+        let system = FakeSegmenter { processed_ms: 9_000.0, ..Default::default() };
+        assert_eq!(SpeakerSplitter::new(mic, system, 0).vad_safe_time_s(), 6.2);
+    }
+
+    /// Lo que ya salió en tramos de 10 s cuenta como entregado: el tiempo seguro avanza con los cortes.
+    #[test]
+    fn vad_safe_time_moves_past_already_cut_speech() {
+        let continuous = continuous_voice();
+        let new_vad = || ContinuousVadProcessor::new(16000, 500).unwrap();
+        let mut splitter = SpeakerSplitter::new(new_vad(), new_vad(), 0);
+        let mut first_cut = None;
+        for (mic, sys) in continuous.chunks(800).zip(vec![0.0f32; continuous.len()].chunks(800)) {
+            if !splitter.process(mic, sys).unwrap().is_empty() && first_cut.is_none() {
+                first_cut = Some(splitter.vad_safe_time_s());
+            }
+        }
+        let safe = first_cut.expect("no hubo corte");
+        assert!((safe - MAX_SEGMENT_SECONDS).abs() < 0.05, "safe = {safe}");
     }
 
     fn segment(samples: usize, start_ms: f64) -> SpeechSegment {
@@ -358,6 +422,44 @@ mod tests {
 
     fn duration_s(chunk: &AudioChunk) -> f64 {
         chunk.data.len() as f64 / chunk.sample_rate as f64
+    }
+
+    fn with_silence_around(voice: &[f32], before_s: f64, after_s: f64) -> Vec<f32> {
+        let mut audio = vec![0.0f32; (before_s * 16000.0) as usize];
+        audio.extend_from_slice(voice);
+        audio.extend(vec![0.0f32; (after_s * 16000.0) as usize]);
+        audio
+    }
+
+    /// Inicios de frase cortados en la App real ("~~Facturamos~~ anual…"): Silero confirma la voz
+    /// ~225 ms después de que empieza, y con 300 ms de pad al Segmento le quedaban ~75 ms.
+    #[test]
+    fn segment_keeps_a_pre_roll_before_the_voice_onset() {
+        let audio = with_silence_around(&fixture_voice(), 1.0, 1.0);
+        let onset_s = audio.iter().position(|s| s.abs() > 0.02).unwrap() as f64 / 16000.0;
+
+        let chunks = split_with_real_vad(&audio, &vec![0.0; audio.len()]);
+
+        let pre_roll_ms = (onset_s - chunks[0].timestamp) * 1000.0;
+        assert!(pre_roll_ms >= PRE_ROLL_MIN_MS, "pre-roll de {pre_roll_ms:.0} ms antes de la voz");
+    }
+
+    /// El pre-roll no puede ir más atrás del audio que Silero ya borró al cerrar el Segmento
+    /// anterior (entraría en pánico). Peor caso: la voz vuelve justo al cumplirse la redención.
+    #[test]
+    fn pre_roll_never_reaches_into_the_previous_segment() {
+        // Arranque abrupto (a mitad de palabra): Silero confirma la voz casi sin demora.
+        let voice = fixture_voice();
+        let abrupt = &voice[8_000..];
+        let mut audio = with_silence_around(abrupt, 1.0, 0.0);
+        for gap_ms in [520, 530, 540, 560, 600] {
+            audio.extend(vec![0.0f32; gap_ms * 16]);
+            audio.extend_from_slice(abrupt);
+        }
+        audio.extend(vec![0.0f32; 16000]);
+
+        let chunks = split_with_real_vad(&audio, &vec![0.0; audio.len()]);
+        assert!(chunks.len() >= 2, "{} Segmentos", chunks.len());
     }
 
     #[test]

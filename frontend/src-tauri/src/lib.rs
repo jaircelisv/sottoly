@@ -41,6 +41,8 @@ pub mod audio;
 pub mod config;
 pub mod console_utils;
 pub mod database;
+// SOTTOLY: puente App ↔ Motor (sidecar)
+pub mod engine_bridge;
 pub mod notifications;
 pub mod ollama;
 pub mod onboarding;
@@ -476,6 +478,7 @@ pub fn run() {
         .manage(audio::init_system_audio_state())
         .manage(summary::summary_engine::ModelManagerState(Arc::new(tokio::sync::Mutex::new(None))))
         .setup(|_app| {
+            crate::engine_bridge::install(_app.handle()); // SOTTOLY: puente App ↔ Motor
             // SOTTOLY: ventana overlay de Sugerencias y atajo para silenciarla.
             if let Err(e) = overlay::init(_app.handle()) {
                 log::error!("overlay: {e}");

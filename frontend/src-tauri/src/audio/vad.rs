@@ -52,7 +52,10 @@ impl ContinuousVadProcessor {
         // latency. A qualifying silence is still required; bounded uninterrupted-
         // speech delivery is tracked in #756.
         config.redemption_time = Duration::from_millis(redemption_time_ms as u64);
-        config.pre_speech_pad = Duration::from_millis(300);   // Pre-speech padding for context
+        // SOTTOLY: Silero confirma la voz ~225 ms tarde y con 300 ms de pad se cortaban los inicios
+        // de frase. El pad no puede pasar de la redención: cruzaría el audio que Silero ya borró al
+        // cerrar el Segmento anterior y entraría en pánico.
+        config.pre_speech_pad = Duration::from_millis(redemption_time_ms.saturating_sub(20).min(480) as u64);
         config.post_speech_pad = Duration::from_millis(400);  // Increased: more context at end
 
         // CRITICAL FIX: Increased min_speech_time to prevent tiny 40ms fragments
@@ -171,6 +174,11 @@ impl ContinuousVadProcessor {
         }
         let start_ms = (self.speech_start_sample as f64 / VAD_SAMPLE_RATE as f64) * 1000.0;
         Some((start_ms, self.session.get_current_speech()))
+    }
+
+    // SOTTOLY: audio ya procesado por el VAD, en ms, para el latido `clock`.
+    pub fn processed_ms(&self) -> f64 {
+        (self.processed_samples as f64 / VAD_SAMPLE_RATE as f64) * 1000.0
     }
 
     /// Flush any remaining audio and return final speech segments
