@@ -102,6 +102,10 @@ impl SpeechSegmenter for ContinuousVadProcessor {
     fn active_speech(&self) -> Option<(f64, &[f32])> {
         ContinuousVadProcessor::active_speech(self)
     }
+
+    fn processed_ms(&self) -> f64 {
+        ContinuousVadProcessor::processed_ms(self)
+    }
 }
 
 const SAMPLES_PER_MS: f64 = 16.0;
@@ -139,6 +143,14 @@ impl<S: SpeechSegmenter> BoundedSegmenter<S> {
             first.start_timestamp_ms += skip as f64 / SAMPLES_PER_MS;
         }
         closed
+    }
+
+    /// Hasta dónde ya salió todo: el inicio de lo que falta de la habla abierta, o lo procesado.
+    fn safe_ms(&self) -> f64 {
+        match self.inner.active_speech() {
+            Some((start_ms, _)) => start_ms + self.emitted as f64 / SAMPLES_PER_MS,
+            None => self.inner.processed_ms(),
+        }
     }
 
     fn cut_active(&mut self) -> Vec<SpeechSegment> {
@@ -210,7 +222,7 @@ impl<S: SpeechSegmenter> SpeakerSplitter<S> {
 
     /// Hasta qué segundo de audio no queda habla abierta en ningún flujo (latido `clock`).
     pub fn vad_safe_time_s(&self) -> f64 {
-        unimplemented!()
+        self.mic.safe_ms().min(self.system.safe_ms()) / 1000.0
     }
 
     pub fn next_chunk_id(&self) -> u64 {

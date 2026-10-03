@@ -15,7 +15,9 @@ pub enum EngineMessage {
 impl EngineMessage {
     /// Una línea JSONL lista para el stdin del Motor.
     pub fn to_line(&self) -> String {
-        unimplemented!()
+        let mut line = serde_json::to_string(self).expect("EngineMessage siempre serializa");
+        line.push('\n');
+        line
     }
 }
 
@@ -28,37 +30,81 @@ impl EngineMessage {
 pub struct EngineClock {
     interval_s: f64,
     pending_timeout: Duration,
+    vad_safe_s: f64,
+    /// Inicio (s) de cada Segmento en transcripción y cuándo salió del VAD.
+    pending: Vec<(f64, Instant)>,
+    last_sent: Option<f64>,
 }
 
 impl EngineClock {
     pub fn new(interval_s: f64, pending_timeout: Duration) -> Self {
-        Self { interval_s, pending_timeout }
+        Self { interval_s, pending_timeout, vad_safe_s: 0.0, pending: Vec::new(), last_sent: None }
     }
 
     /// El VAD avanzó: `vad_safe_s` es hasta dónde no hay habla abierta; `sent` son los
     /// inicios (s) de los Segmentos que acaban de salir hacia la transcripción.
     pub fn on_vad_progress(&mut self, vad_safe_s: f64, sent: &[f64], now: Instant) {
-        let _ = (vad_safe_s, sent, now);
-        unimplemented!()
+        self.vad_safe_s = vad_safe_s;
+        self.pending.extend(sent.iter().map(|t0| (*t0, now)));
     }
 
     /// Llegó transcrito el Segmento que empieza en `t0`.
     pub fn on_segment_delivered(&mut self, t0: f64) {
-        let _ = t0;
-        unimplemented!()
+        if let Some(i) = self.pending.iter().position(|(start, _)| (start - t0).abs() < 1e-6) {
+            self.pending.remove(i);
+        }
     }
 
     /// Hasta qué segundo de audio no queda habla por entregar.
     pub fn safe_time(&self, now: Instant) -> f64 {
-        let _ = now;
-        unimplemented!()
+        self.pending
+            .iter()
+            .filter(|(_, sent_at)| now.duration_since(*sent_at) < self.pending_timeout)
+            .map(|(start, _)| *start)
+            .fold(self.vad_safe_s, f64::min)
     }
 
     /// Latido para mandar ahora, si el reloj avanzó al menos `interval_s` desde el último.
     pub fn tick(&mut self, now: Instant) -> Option<EngineMessage> {
-        let _ = (now, self.interval_s, self.pending_timeout);
-        unimplemented!()
+        let t = self.safe_time(now);
+        if self.last_sent.is_some_and(|last| t - last < self.interval_s) {
+            return None;
+        }
+        self.last_sent = Some(t);
+        Some(EngineMessage::Clock { t })
     }
+}
+
+/// Cada cuánto, como mínimo, avanza el latido (s de audio).
+pub const CLOCK_INTERVAL_S: f64 = 0.1;
+/// Cuánto frena el reloj un Segmento que no llega transcrito (Parakeet descarta los vacíos).
+pub const PENDING_TIMEOUT: Duration = Duration::from_secs(2);
+
+static CLOCK: std::sync::Mutex<Option<EngineClock>> = std::sync::Mutex::new(None);
+
+fn with_clock<T>(f: impl FnOnce(&mut EngineClock) -> T) -> T {
+    let mut guard = CLOCK.lock().unwrap_or_else(|e| e.into_inner());
+    f(guard.get_or_insert_with(|| EngineClock::new(CLOCK_INTERVAL_S, PENDING_TIMEOUT)))
+}
+
+/// El pipeline avisa cada ventana: hasta dónde llegó el VAD y qué Segmentos mandó a transcribir.
+pub fn on_vad_progress(vad_safe_s: f64, sent: &[f64]) {
+    with_clock(|c| c.on_vad_progress(vad_safe_s, sent, Instant::now()));
+}
+
+/// El puente avisa cuando un Segmento llegó transcrito.
+pub fn on_segment_delivered(t0: f64) {
+    with_clock(|c| c.on_segment_delivered(t0));
+}
+
+/// Latido para mandar al Motor ahora, si toca.
+pub fn next_clock() -> Option<EngineMessage> {
+    with_clock(|c| c.tick(Instant::now()))
+}
+
+/// Nueva grabación: el tiempo de audio vuelve a cero.
+pub fn reset_clock() {
+    *CLOCK.lock().unwrap_or_else(|e| e.into_inner()) = None;
 }
 
 #[cfg(test)]
