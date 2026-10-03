@@ -206,6 +206,11 @@ pub fn reset_clock() {
 /// Evento de Tauri con cada Sugerencia (lo escucha el overlay).
 pub const SUGGESTION_EVENT: &str = "suggestion";
 
+/// Línea de log por Sugerencia emitida (medición fin del habla → tarjeta, como SOTTOLY_LATENCY).
+fn suggestion_log_line(s: &SuggestionMessage, unix_ms: u128) -> String {
+    format!("SOTTOLY_SUGGESTION at_ms={} role={} persona={} text={:?}", unix_ms, s.role, s.persona, s.text)
+}
+
 /// Keys que el Motor lee del entorno; en la App salen del Keychain (servicio = nombre).
 const KEYCHAIN_KEYS: [&str; 2] = ["TYPESAFE_AI_API_KEY", "ANTHROPIC_API_KEY"];
 
@@ -276,6 +281,8 @@ fn start_session<R: tauri::Runtime>(app: tauri::AppHandle<R>) {
     stop_session();
     let emitter = app.clone();
     let bridge = match EngineBridge::spawn(engine_command(), move |s| {
+        let now_ms = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_millis()).unwrap_or(0);
+        info!("{}", suggestion_log_line(&s, now_ms));
         if let Err(e) = emitter.emit(SUGGESTION_EVENT, &s) {
             warn!("SOTTOLY: no se pudo emitir la Sugerencia: {}", e);
         }
@@ -363,6 +370,21 @@ mod tests {
         assert_eq!(start.to_line(), "{\"type\":\"session\",\"event\":\"start\",\"roles\":[\"cfo\"]}\n");
         let end = EngineMessage::Session { event: SessionEvent::End, roles: None };
         assert_eq!(end.to_line(), "{\"type\":\"session\",\"event\":\"end\"}\n");
+    }
+
+    #[test]
+    fn suggestion_log_line_has_the_emission_time_in_ms() {
+        let s = SuggestionMessage {
+            role: "cfo".into(),
+            persona: "Betty".into(),
+            text: "Pregunta si incluye IVA.".into(),
+            reason: "Precio sin impuestos.".into(),
+            confidence: 0.9,
+        };
+        assert_eq!(
+            suggestion_log_line(&s, 1_759_465_000_123),
+            "SOTTOLY_SUGGESTION at_ms=1759465000123 role=cfo persona=Betty text=\"Pregunta si incluye IVA.\""
+        );
     }
 
     #[test]
