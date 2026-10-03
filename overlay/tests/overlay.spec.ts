@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 const suggestion = {
   type: "suggestion",
   role: "cfo",
+  role_label: "CFO",
   persona: "Betty",
   text: "Pregunta si ese valor incluye IVA.",
   reason: "Mencionó un precio sin aclarar impuestos.",
@@ -39,9 +40,17 @@ test("llega una Sugerencia y aparece la tarjeta con Persona · Rol, texto y moti
   await expect(card(page).getByTestId("suggestion-reason")).toHaveText(suggestion.reason);
 });
 
+test("el Rol de la tarjeta es el role_label del protocolo, no el id", async ({ page }) => {
+  await openOverlay(page);
+  await emit(page, "suggestion", { ...suggestion, role: "ceo", role_label: "CEO adversarial", persona: "Sheldon" });
+  await expect(card(page).getByTestId("suggestion-who")).toHaveText("Sheldon · CEO adversarial");
+});
+
 test("un mensaje que no cumple el protocolo no muestra tarjeta", async ({ page }) => {
   await openOverlay(page);
   await emit(page, "suggestion", { ...suggestion, text: "" });
+  const { role_label: _, ...withoutLabel } = suggestion;
+  await emit(page, "suggestion", withoutLabel);
   await emit(page, "suggestion", { type: "summary", decisions: [] });
   await expect(card(page)).toBeHidden();
 });
@@ -53,7 +62,7 @@ test("útil y no útil emiten suggestion-feedback sin contenido y cierran la tar
   await card(page).getByRole("button", { name: "Útil", exact: true }).click();
   await expect(card(page)).toBeHidden();
 
-  await emit(page, "suggestion", { ...suggestion, role: "ceo", persona: "Sheldon" });
+  await emit(page, "suggestion", { ...suggestion, role: "ceo", role_label: "CEO adversarial", persona: "Sheldon" });
   await card(page).getByRole("button", { name: "No útil" }).click();
   await expect(card(page)).toBeHidden();
 
