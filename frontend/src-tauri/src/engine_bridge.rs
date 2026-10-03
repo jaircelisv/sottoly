@@ -372,6 +372,16 @@ mod tests {
         assert_eq!(end.to_line(), "{\"type\":\"session\",\"event\":\"end\"}\n");
     }
 
+    /// El overlay valida la Sugerencia con el zod del protocolo, que exige `role_label` (#20):
+    /// el puente no puede descartarlo al pasar por serde.
+    #[test]
+    fn bridge_forwards_role_label_to_the_overlay() {
+        let line = r#"{"type":"suggestion","role":"cfo","role_label":"CFO","persona":"Betty","text":"Pregunta si incluye IVA.","reason":"Precio sin impuestos.","confidence":0.9}"#;
+        let s: SuggestionMessage = serde_json::from_str(line).unwrap();
+        let out = serde_json::to_value(&s).unwrap();
+        assert_eq!(out["role_label"], "CFO");
+    }
+
     #[test]
     fn suggestion_log_line_has_the_emission_time_in_ms() {
         let s = SuggestionMessage {
