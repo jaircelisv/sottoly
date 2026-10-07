@@ -1,0 +1,30 @@
+{
+  "tarea": "2 · make worktree crea un worktree con el contexto privado",
+  "origen": "agente",
+  "modulo": "scripts/sottoly/harness/worktree.mjs",
+  "funcion": "probar_worktree",
+  "casos": [
+    {
+      "nombre": "con el archivo privado crea el worktree en sottoly/<nombre> desde origin/main, con CLAUDE.local.md de una línea, ignorado por git y con los binarios",
+      "entrada": [{ "nombre": "prueba", "con_archivo_privado": true, "con_binarios": true }],
+      "esperado": {
+        "ok": true,
+        "rama": "sottoly/prueba",
+        "desde_origin_main": true,
+        "claude_local": true,
+        "claude_local_ignorado": true,
+        "binarios_copiados": true
+      }
+    },
+    {
+      "nombre": "sin el archivo privado no crea nada y el mensaje nombra ~/.sottoly/CLAUDE.private.md",
+      "entrada": [{ "nombre": "prueba", "con_archivo_privado": false, "con_binarios": true }],
+      "esperado": { "ok": false, "menciona_archivo_privado": true, "menciona_name": false }
+    },
+    {
+      "nombre": "sin NAME no crea nada y el mensaje pide NAME",
+      "entrada": [{ "nombre": "", "con_archivo_privado": true, "con_binarios": true }],
+      "esperado": { "ok": false, "menciona_archivo_privado": false, "menciona_name": true }
+    }
+  ]
+}
