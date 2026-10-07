@@ -9,6 +9,19 @@ Las tareas del bucle, **en orden**. Salen de la conversación de planificación 
 5. **Overlay con streaming**: el overlay dibuja `suggestion_delta` (texto parcial, sin motivo ni botones), reemplaza con el `suggestion` final del mismo `id`, oculta con `suggestion_cancel` y se oculta solo si no llega el final en 8 s. Casos en `overlay/tests/streaming.spec.ts` (Playwright, IPC simulado) antes del código; el gate los mide por `make verify`, que no puede bajar de su número de tests (decisión de Jair, 2026-10-07: sin `package.json` ni `node_modules` en la raíz). ✅ hecha
 6. **Limpieza de privacidad**: `make limpiar` borra las Reuniones de prueba y los `transcripts.json` que Meetily escribe en disco después de una medición, sin tocar nada más. ✅ hecha
 
+### Segunda etapa (2026-10-07, después de la primera prueba de punta a punta)
+
+Salen de la prueba con audio real del 2026-10-07 (20 Sugerencias, todas del CFO) y de lo que pidió Jair. Las de pantalla empiezan por un diseño (skill `hallmark`) que Jair aprueba antes de escribir sus casos.
+
+7. **Una negativa no llega al overlay**: cuando la Redacción no tiene una Sugerencia que dar (en la prueba salió «Betty no opina sobre…» como tarjeta), el Motor manda `suggestion_cancel` en lugar de `suggestion`. Casos en el gate con un modelo simulado que devuelve una negativa.
+8. **Antiruido como dice el SPEC**: no repetir una Sugerencia ya mostrada sobre el mismo punto (en la prueba, «pide por escrito…» salió 8 veces y el régimen tributario 4 seguidas) y un tope de Sugerencias por Reunión. Casos con una secuencia de Turnos y un modelo simulado.
+9. **Las Decisiones candidatas al cerrar la Reunión**: al detener la grabación el Motor manda `summary` (en la prueba no salió ninguno). Casos con una Reunión simulada que se cierra.
+10. **`make measure` mide fin del habla → tarjeta**: además de la latencia de los Segmentos, calcula p50/p90 de fin del habla → primer texto en el overlay a partir del log. Casos con un log de ejemplo.
+11. **Evals de la Redacción**: la Sugerencia respeta los límites del Rol (en la prueba comentó lo personal), tiene una sola forma (indicación al Usuario) y no queda cortada por el tope de palabras. Fixtures con fragmentos de la prueba, sin datos reales en el repo público.
+12. **Panel Sottoly**: en la ventana principal, Reuniones (con su transcripción) y Roles, como pantallas nuevas sin borrar las de Meetily. Diseño aprobado primero; specs de Playwright contra `localhost:3118` con IPC simulado.
+13. **Chat con el Rol**: en la ventana principal, junto a la transcripción en vivo, el Usuario le responde a una Sugerencia o le pregunta al Rol por lo que se está diciendo, y la respuesta llega en streaming. Mensajes nuevos en `engine/src/protocol.ts` primero (la regla de integridad los cubre), después Rust y la pantalla. Diseño aprobado primero.
+14. **Creador de Roles**: entrevista guiada (función, Persona, cuándo interviene, límites, nombre) que escribe el archivo del Rol en `roles/`. El Rol nace sin calibrar (`calibrated_with: none`) con un umbral conservador y ejemplos para calibrarlo. Diseño aprobado primero.
+
 ## Lo que hace Jair (fuera del bucle)
 
 - **Integrar los PRs**, solo con checks en verde. Pendientes hoy: #25 → #28 (documentación) y #26 (`check_local_model`).
