@@ -1,0 +1,23 @@
+{
+  "tarea": "7 · Una negativa de la Redacción no llega al overlay",
+  "origen": "agente",
+  "modulo": "scripts/sottoly/engine/redaccion.mjs",
+  "funcion": "redactar",
+  "casos": [
+    {
+      "nombre": "si el modelo declina antes de escribir, no sale tarjeta ni parcial y no cuenta como fallo del proveedor",
+      "entrada": [{ "modelo": "{\"skip\":true,\"text\":\"\",\"reason\":\"Habla de un tema personal, fuera del Rol.\"}" }],
+      "esperado": { "sugerencias": 0, "tarjeta_quitada": true, "fallo_del_proveedor": false }
+    },
+    {
+      "nombre": "si el modelo declina después de empezar a escribir, la tarjeta parcial se quita",
+      "entrada": [{ "modelo": "{\"text\":\"Esto no es un tema de negocio, mejor no opinar aquí\",\"reason\":\"Fuera del Rol.\",\"skip\":true}" }],
+      "esperado": { "sugerencias": 0, "tarjeta_quitada": true, "fallo_del_proveedor": false }
+    },
+    {
+      "nombre": "una Sugerencia sin declinar sigue llegando al overlay",
+      "entrada": [{ "modelo": "{\"skip\":false,\"text\":\"Pregunta si los dos millones incluyen IVA y retenciones.\",\"reason\":\"Precio sin impuestos.\"}" }],
+      "esperado": { "sugerencias": 1, "tarjeta_quitada": false, "fallo_del_proveedor": false }
+    }
+  ]
+}
