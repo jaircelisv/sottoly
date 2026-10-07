@@ -86,4 +86,4 @@ CLAUDE.local.md
 .harness/ultima-medicion
 .harness/playwright.config.mjs
 .harness/playwright-artefactos/
-.harness/*.resultado.json
+.harness/playwright-resultado.json

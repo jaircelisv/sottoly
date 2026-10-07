@@ -1,6 +1,6 @@
 # Empieza por aquí
 
-Esta carpeta no hay que instalarla ni configurarla. Se abre y se trabaja.
+El harness vive en la raíz del repo `sottoly`. No hay que instalarlo: se abre Claude Code en la raíz (o en un worktree creado con `make worktree`) y se trabaja.
 
 ## 1 · Abre esta carpeta con Claude Code
 
@@ -10,7 +10,7 @@ En una terminal, dentro de esta carpeta:
 claude
 ```
 
-⚠ **Dentro de esta carpeta**, no en tu escritorio ni en tu carpeta de usuario.
+⚠ **En la raíz del repo** (o de un worktree), no en una subcarpeta ni en tu carpeta de usuario.
 Es lo que hace que el agente encuentre `CLAUDE.md`, tus reglas y el servidor de
 Linear. Si lo abres en otro sitio, funcionará — pero sin nada de esto, y no te
 va a avisar.
@@ -26,8 +26,9 @@ que va a permitir seguir tus tareas en un tablero.
 /linear-setup
 ```
 
-Te pregunta en qué espacio de trabajo y en qué equipo crear el proyecto, y
-después crea una tarea en Linear por cada tarea de tu `PLAN.md`. No se inventa
+Te pregunta en qué espacio de trabajo y en qué equipo está el proyecto. En
+Linear ya existe el proyecto **Sottoly**: el skill pregunta antes de escribir
+dentro, y después crea una tarea por cada tarea de tu `PLAN.md`. No se inventa
 nada: solo lo que acordaste.
 
 ## 4 · Arranca el bucle
@@ -38,14 +39,16 @@ nada: solo lo que acordaste.
 
 A partir de ahí el agente recorre tu plan, tarea a tarea: primero escribe las
 comprobaciones de la tarea y las ve fallar, después construye, y mide con
-`node gate/verificar.mjs` hasta que todo pasa. Cada tarea tiene un tope de
-ilimitado intentos.
+`node gate/verificar.mjs` hasta que todo pasa. Las tareas no tienen tope de
+intentos: el bucle sigue hasta que el gate pasa.
 
 Qué esperar:
 
-- **La primera tarea es el andamiaje**: el agente crea el proyecto y consigue
-  que se abra. Cuando termine, podrás verlo tú: `make demo` (se abre en http://localhost:3118), y abre esa
-  dirección en tu navegador. Todavía no hará casi nada, y es lo normal.
+- **La primera tarea es el arranque**: el proyecto ya existe (fork de Meetily);
+  el agente escribe el `Makefile` para que `make demo` abra la App con el
+  overlay en modo demo (Next en http://localhost:3118). Las primeras veces,
+  Jair la mira trabajar: la tarjeta "Betty · CFO", el desvanecido y ⌘⇧. para
+  silenciar.
 - **Después, una tarea cada vez**, en el orden de tu `PLAN.md`. Al terminar
   cada una la marca como hecha ahí.
 - A veces Claude Code te preguntará si le dejas **cambiar una comprobación que

@@ -1,0 +1,39 @@
+{
+  "tarea": "4 · Zod y Rust aceptan los mismos mensajes",
+  "origen": "plataforma",
+  "modulo": "scripts/sottoly/contract/contrato.mjs",
+  "funcion": "aceptan",
+  "casos": [
+    {
+      "nombre": "una Sugerencia sin id la rechazan Zod y Rust",
+      "entrada": [
+        {
+          "type": "suggestion",
+          "role": "cfo",
+          "role_label": "CFO",
+          "persona": "Betty",
+          "text": "Pregunta si ese valor incluye IVA.",
+          "reason": "Mencionó un precio sin aclarar impuestos.",
+          "confidence": 0.82
+        }
+      ],
+      "esperado": { "zod": false, "rust": false }
+    },
+    {
+      "nombre": "una Sugerencia completa la aceptan Zod y Rust",
+      "entrada": [
+        {
+          "type": "suggestion",
+          "id": "s1",
+          "role": "cfo",
+          "role_label": "CFO",
+          "persona": "Betty",
+          "text": "Pregunta si ese valor incluye IVA.",
+          "reason": "Mencionó un precio sin aclarar impuestos.",
+          "confidence": 0.82
+        }
+      ],
+      "esperado": { "zod": true, "rust": true }
+    }
+  ]
+}
