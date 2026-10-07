@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { buildDraftPrompt, countWords, finalizeDraft, HARD_MAX_WORDS } from "./draft";
+import { buildDraftPrompt, countWords, finalizeDraft, HARD_MAX_WORDS, sameIdea } from "./draft";
 
 const betty = {
   role: "CFO",
@@ -17,6 +17,28 @@ describe("buildDraftPrompt", () => {
     expect(p.system).toContain("entre 10 y 14 palabras");
     expect(p.system).toContain("Ejemplos");
     expect(p.prompt).toContain("[Contraparte] Son dos millones.");
+  });
+
+  test("lo ya sugerido va en el mensaje (no en el system, que queda en caché)", () => {
+    const window = [{ speaker: "counterpart" as const, text: "Son dos millones.", t0: 0, t1: 2 }];
+    const sin = buildDraftPrompt(betty, window);
+    const con = buildDraftPrompt(betty, window, ["Pregunta si incluye IVA."]);
+    expect(con.system).toBe(sin.system);
+    expect(con.prompt).toContain("- Pregunta si incluye IVA.");
+    expect(sin.prompt).not.toContain("Ya sugeriste");
+  });
+});
+
+// Pares de la prueba de punta a punta del 2026-10-07 (parafraseados, sin datos de la Reunión).
+describe("sameIdea", () => {
+  test("la misma idea reformulada es la misma", () => {
+    expect(sameIdea("Pregunta qué servicios incluye el asesor y cuál es su costo fijo mensual.", "Pregunta cuál es el costo mensual del asesor y qué servicios incluye.")).toBe(true);
+    expect(sameIdea("Pide por escrito tu régimen tributario actual.", "Confirma por escrito cuál régimen tributario aplica actualmente.")).toBe(true);
+  });
+
+  test("dos puntos distintos que comparten palabras no son la misma idea", () => {
+    expect(sameIdea("Pregunta si el precio incluye IVA.", "Pregunta si el precio incluye retenciones.")).toBe(false);
+    expect(sameIdea("Pide por escrito tu régimen tributario actual.", "Antes de invertir, pide la simulación de flujos netos.")).toBe(false);
   });
 });
 

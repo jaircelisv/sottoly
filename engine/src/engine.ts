@@ -1,7 +1,7 @@
 // Orquestador del Motor: Segmentos → Turnos → Compuerta → Redacción → Sugerencia (SPEC §4).
 // Sin E/S: los proveedores se inyectan, así el pipeline completo se prueba con respuestas grabadas.
 import { evaluateGate, slideWindow, type ChoiceEvaluator, type GateDecision, type WindowSegment } from "./gate";
-import { buildDraftPrompt, finalizeDraft, headWords, type Drafter } from "./draft";
+import { buildDraftPrompt, finalizeDraft, headWords, sameIdea, type Drafter } from "./draft";
 import type { InboundMessage, SuggestionCancel, SuggestionDelta, SuggestionMessage } from "./protocol";
 import { selectBoard, type Role } from "./roles";
 import { TurnAssembler, type TurnEvent, type TurnOptions } from "./turns";
@@ -42,7 +42,7 @@ export class Engine {
   private segments: WindowSegment[] = [];
   private turns: TurnAssembler;
   private lastByRole = new Map<string, number>();
-  private shown = new Set<string>();
+  private shown: string[] = [];
   private suggestionCount = 0;
   private draftCount = 0;
 
@@ -73,7 +73,7 @@ export class Engine {
     this.segments = [];
     this.turns = new TurnAssembler(this.deps.config.turns);
     this.lastByRole.clear();
-    this.shown.clear();
+    this.shown = [];
     this.suggestionCount = 0;
     this.draftCount = 0;
   }
@@ -137,7 +137,7 @@ export class Engine {
 
     let raw;
     try {
-      raw = await this.deps.draft(buildDraftPrompt(role, window), onText);
+      raw = await this.deps.draft(buildDraftPrompt(role, window, this.shown), onText);
     } catch (error) {
       this.deps.log?.({ event: "provider_failed", stage: "draft", error: String(error) });
       cancel();
@@ -153,13 +153,12 @@ export class Engine {
       return this.suppress(role.id, "invalid_draft");
     }
 
-    const key = draft.text.toLowerCase();
-    if (this.shown.has(key)) {
+    if (this.shown.some((s) => sameIdea(s, draft.text))) {
       cancel();
       return this.suppress(role.id, "repeated");
     }
 
-    this.shown.add(key);
+    this.shown.push(draft.text);
     this.lastByRole.set(role.id, event.turn.t1);
     this.suggestionCount++;
     return {
