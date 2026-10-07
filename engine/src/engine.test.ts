@@ -161,6 +161,34 @@ describe("Engine", () => {
     expect(logs).toContainEqual({ event: "suggestion_suppressed", role: "cfo", reason: "invalid_draft" });
   });
 
+  // Prueba de punta a punta del 2026-10-07: «Betty no opina sobre…» salió como tarjeta.
+  test("si la Redacción declina, no hay Sugerencia, se quita la parcial y no es un fallo", async () => {
+    const { engine, logs, stream } = build({
+      draft: async (_p, onText) => {
+        onText?.("Esto no es un tema de negocio");
+        return { skip: true, text: "", reason: "" };
+      },
+    });
+    await engine.handle(seg("counterpart", 0, 3, "Son dos millones."));
+    expect(await engine.handle(seg("user", 3.1, 4, "Ok."))).toEqual([]);
+    expect(stream.at(-1)).toEqual({ type: "suggestion_cancel", id: "s1" });
+    expect(logs).toContainEqual({ event: "suggestion_suppressed", role: "cfo", reason: "declined" });
+    expect(logs.some((l) => l.event === "provider_failed")).toBe(false);
+  });
+
+  test("declinar no gasta el tiempo mínimo del Rol: la siguiente Sugerencia sale", async () => {
+    let n = 0;
+    const { engine } = build({
+      draft: async () => (++n === 1 ? { skip: true, text: "", reason: "" } : { text: "Pregunta si incluye IVA.", reason: "Precio sin impuestos." }),
+    });
+    const out = [];
+    for (const s of [seg("counterpart", 0, 3, "Son dos millones."), seg("user", 3.1, 4, "Ok."), seg("counterpart", 5, 8, "Más IVA.")]) {
+      out.push(...(await engine.handle(s)));
+    }
+    expect(out).toHaveLength(1);
+    expect(out[0].text).toBe("Pregunta si incluye IVA.");
+  });
+
   test("si falla el proveedor de la Compuerta, no se cae y registra el error", async () => {
     const { engine, logs } = build({ evaluate: async () => { throw new Error("timeout"); } });
     await engine.handle(seg("counterpart", 0, 3, "Son dos millones."));

@@ -18,8 +18,10 @@ export interface EngineConfig {
 
 export type EngineLog =
   | { event: "gate_decision"; trigger: TurnEvent["kind"]; turn: number; decision: GateDecision; latency_ms: number }
-  | { event: "suggestion_suppressed"; role: string; reason: "cooldown" | "repeated" | "meeting_cap" | "invalid_draft" }
+  | { event: "suggestion_suppressed"; role: string; reason: SuppressReason }
   | { event: "provider_failed"; stage: "gate" | "draft"; error: string };
+
+export type SuppressReason = "cooldown" | "repeated" | "meeting_cap" | "invalid_draft" | "declined";
 
 /** Lo que sale mientras se redacta, antes del final que devuelve `handle`. */
 export type StreamMessage = SuggestionDelta | SuggestionCancel;
@@ -133,14 +135,19 @@ export class Engine {
       if (shown) this.deps.onStream?.({ type: "suggestion_cancel", id });
     };
 
-    let draft;
+    let raw;
     try {
-      draft = finalizeDraft(await this.deps.draft(buildDraftPrompt(role, window), onText));
+      raw = await this.deps.draft(buildDraftPrompt(role, window), onText);
     } catch (error) {
       this.deps.log?.({ event: "provider_failed", stage: "draft", error: String(error) });
       cancel();
       return null;
     }
+    if (raw.skip) {
+      cancel();
+      return this.suppress(role.id, "declined");
+    }
+    const draft = finalizeDraft(raw);
     if (!draft) {
       cancel();
       return this.suppress(role.id, "invalid_draft");
@@ -164,7 +171,7 @@ export class Engine {
     };
   }
 
-  private suppress(role: string, reason: "cooldown" | "repeated" | "meeting_cap" | "invalid_draft"): null {
+  private suppress(role: string, reason: SuppressReason): null {
     this.deps.log?.({ event: "suggestion_suppressed", role, reason });
     return null;
   }

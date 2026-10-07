@@ -3,7 +3,7 @@
 import { experimental_evaluate, Output, streamText } from "ai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createTypeSafeAi } from "@ai-sdk/typesafe-ai";
-import { Draft, type Drafter } from "./draft";
+import { Draft, DraftOutput, type Drafter } from "./draft";
 import type { ChoiceEvaluator } from "./gate";
 
 export function jevEvaluator(modelId: string): ChoiceEvaluator {
@@ -25,17 +25,18 @@ export function anthropicDrafter(modelId: string, maxTokens: number, fetch?: typ
       system,
       prompt,
       maxOutputTokens: maxTokens,
-      output: Output.object({ schema: Draft }),
+      output: Output.object({ schema: DraftOutput }),
       onError: () => {}, // el error llega al esperar `output`
     });
     let last = "";
     for await (const partial of result.partialOutputStream) {
+      if (partial?.skip) continue; // declina: nada que mostrar
       const text = partial?.text;
       if (typeof text === "string" && text && text !== last) {
         last = text;
         onText?.(text);
       }
     }
-    return Draft.parse(await result.output);
+    return Draft.parse(await result.output); // sin `skip` (grabaciones previas) = no declina
   };
 }
