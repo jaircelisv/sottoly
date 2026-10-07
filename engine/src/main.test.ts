@@ -13,7 +13,7 @@ test("una Reunión por stdin produce la Sugerencia de Betty por stdout", async (
     stdin: "pipe",
     stdout: "pipe",
     stderr: "pipe",
-    env: { PATH: process.env.PATH ?? "", SOTTOLY_PROVIDERS: "recorded" },
+    env: { PATH: process.env.PATH ?? "", SOTTOLY_PROVIDERS: "recorded", SOTTOLY_TODAY: "2026-10-07" },
   });
   const lines = [
     { type: "session", event: "start", roles: fixture.roles },
@@ -32,4 +32,10 @@ test("una Reunión por stdin produce la Sugerencia de Betty por stdout", async (
   expect(finals[0]).toMatchObject({ type: "suggestion", role: "cfo", persona: "Betty" });
   // La tarjeta aparece con el delta, antes del final y con el mismo id.
   expect(out[0]).toMatchObject({ type: "suggestion_delta", id: (finals[0] as { id: string }).id });
+  // Al cerrar (EOF), las Decisiones candidatas: lo último que sale, ninguna aprobada (SPEC §6).
+  const last = out.at(-1)!;
+  expect(last.type).toBe("summary");
+  const decisions = (last as { decisions: { approved: boolean; source: string }[] }).decisions;
+  expect(decisions.length).toBeGreaterThan(0);
+  expect(decisions.every((d) => !d.approved && d.source === "engine")).toBe(true);
 }, 20_000);

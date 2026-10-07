@@ -69,6 +69,7 @@ export const SummaryMessage = z.object({
   type: z.literal("summary"),
   decisions: z.array(Decision),
 });
+export type SummaryMessage = z.infer<typeof SummaryMessage>;
 
 /** Redacción en curso: `text` es el texto acumulado (no un trozo); el final lo reemplaza. */
 export const SuggestionDelta = z.object({
