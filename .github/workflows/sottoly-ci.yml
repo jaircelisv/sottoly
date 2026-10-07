@@ -43,6 +43,8 @@ jobs:
       - run: bun test
       - name: hooks del harness
         run: bun test ../scripts/sottoly/harness
+      - name: contrato al día (JSON Schema generado desde Zod)
+        run: bun src/contract.ts --check
 
   rust:
     name: cargo test
