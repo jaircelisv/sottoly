@@ -403,6 +403,15 @@ pub fn install<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
 mod tests {
     use super::*;
 
+    /// SOTTOLY: el `summary` del protocolo (Decisiones al cerrar la Reunión) no se puede perder en el puente.
+    #[test]
+    fn bridge_accepts_the_protocol_summary() {
+        let line = r#"{"type":"summary","decisions":[{"id":"d1","kind":"commitment","text":"El contador envía la declaración el viernes.","owner":"counterpart","due":"2026-10-09","source":"engine","meeting_id":"m1","created_at":"2026-10-04T15:00:00Z","approved":false}]}"#;
+        let event = serde_json::from_str::<EngineEvent>(line);
+        assert!(event.is_ok(), "el puente descarta el summary: {:?}", event.err());
+        assert_eq!(event.unwrap().tauri_event(), "summary");
+    }
+
     fn clock() -> EngineClock {
         EngineClock::new(0.25, Duration::from_secs(2))
     }

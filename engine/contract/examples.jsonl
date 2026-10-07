@@ -1,0 +1,13 @@
+{"direction":"inbound","valid":true,"message":{"type":"segment","speaker":"counterpart","text":"El plan anual cuesta dos millones más IVA.","t0":10.2,"t1":13.8}}
+{"direction":"inbound","valid":true,"message":{"type":"segment","speaker":"user","text":"¿Eso incluye el soporte?","t0":14.1,"t1":15.6}}
+{"direction":"inbound","valid":true,"message":{"type":"segment","speaker":"mixed","text":"Perfecto, entonces cerramos.","t0":16,"t1":17.5}}
+{"direction":"inbound","valid":true,"message":{"type":"session","event":"start","roles":["cfo","ceo"]}}
+{"direction":"inbound","valid":true,"message":{"type":"session","event":"end"}}
+{"direction":"inbound","valid":true,"message":{"type":"clock","t":18.3}}
+{"direction":"inbound","valid":false,"message":{"type":"segment","speaker":"ellos","text":"x","t0":0,"t1":1}}
+{"direction":"outbound","valid":true,"message":{"type":"suggestion_delta","id":"s1","role":"cfo","role_label":"CFO","persona":"Betty","text":"Pregunta si"}}
+{"direction":"outbound","valid":true,"message":{"type":"suggestion","id":"s1","role":"cfo","role_label":"CFO","persona":"Betty","text":"Pregunta si ese valor incluye IVA.","reason":"Mencionó un precio sin aclarar impuestos.","confidence":0.82}}
+{"direction":"outbound","valid":true,"message":{"type":"suggestion_cancel","id":"s1"}}
+{"direction":"outbound","valid":true,"message":{"type":"summary","decisions":[{"id":"d1","kind":"commitment","text":"El contador envía la declaración el viernes.","owner":"counterpart","due":"2026-10-09","source":"engine","meeting_id":"m1","created_at":"2026-10-04T15:00:00Z","approved":false}]}}
+{"direction":"outbound","valid":false,"message":{"type":"suggestion","id":"s2","role":"cfo","persona":"Betty","text":"Sin role_label.","reason":"x","confidence":0.5}}
+{"direction":"outbound","valid":false,"message":{"type":"suggestion_cancel"}}
