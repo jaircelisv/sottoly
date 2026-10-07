@@ -3,6 +3,7 @@
 #   make sidecars   llama-helper y sottoly-engine en frontend/src-tauri/binaries/
 #   make demo       Next en http://localhost:3118 precalentado, luego Tauri con Sugerencias de demo
 #   make measure    latencia de Segmentos con la App corriendo (LOG=app.log por defecto)
+#   make worktree   NAME=<nombre>: worktree desde origin/main con el contexto privado y los binarios
 
 SHELL := /bin/bash
 .SHELLFLAGS := -eu -o pipefail -c
@@ -13,10 +14,13 @@ BINARIES := $(ROOT)/frontend/src-tauri/binaries
 PORT     := 3118
 LOG      ?= $(ROOT)/app.log
 
+WORKTREES_DIR ?= $(HOME)/orca/workspaces/Sottoly
+PRIVATE       := $(HOME)/.sottoly/CLAUDE.private.md
+
 LLAMA_HELPER   := $(BINARIES)/llama-helper-$(TRIPLE)
 SOTTOLY_ENGINE := $(BINARIES)/sottoly-engine-$(TRIPLE)
 
-.PHONY: verify verify-engine verify-overlay verify-rust sidecars demo measure deps
+.PHONY: verify verify-engine verify-overlay verify-rust sidecars demo measure deps worktree
 
 # ── Dependencias ─────────────────────────────────────────────────────────────
 
@@ -81,3 +85,18 @@ demo: frontend/node_modules
 
 measure:
 	scripts/sottoly/latency/measure.sh $(LOG)
+
+# ── worktree ─────────────────────────────────────────────────────────────────
+# Cada sesión trabaja en su worktree. El contexto privado no se versiona: vive en
+# ~/.sottoly/CLAUDE.private.md y el CLAUDE.local.md del worktree (ignorado) lo importa.
+
+worktree:
+	@test -n "$(NAME)" || { echo "Falta NAME: make worktree NAME=<nombre>" >&2; exit 2; }
+	@test -f "$(PRIVATE)" || { echo "Falta $(PRIVATE) (el contexto privado). Créalo antes; no se crea el worktree." >&2; exit 2; }
+	git fetch -q origin
+	git worktree add -b sottoly/$(NAME) "$(WORKTREES_DIR)/$(NAME)" origin/main
+	echo "@~/.sottoly/CLAUDE.private.md" > "$(WORKTREES_DIR)/$(NAME)/CLAUDE.local.md"
+	mkdir -p "$(WORKTREES_DIR)/$(NAME)/frontend/src-tauri/binaries"
+	if compgen -G "$(BINARIES)/*" >/dev/null; then cp -p $(BINARIES)/* "$(WORKTREES_DIR)/$(NAME)/frontend/src-tauri/binaries/"; fi
+	@echo "Worktree listo en $(WORKTREES_DIR)/$(NAME) (rama sottoly/$(NAME))."
+
