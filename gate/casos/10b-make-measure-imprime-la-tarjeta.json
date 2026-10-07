@@ -1,0 +1,30 @@
+{
+  "tarea": "10 · make measure mide fin del habla → tarjeta",
+  "origen": "agente",
+  "modulo": "scripts/sottoly/harness/medir.mjs",
+  "funcion": "measure_imprime",
+  "casos": [
+    {
+      "nombre": "make measure imprime fin del habla → tarjeta de lo que pasó durante la medición",
+      "entrada": [
+        [
+          "[2026-10-07T21:57:01Z INFO  app_lib] SOTTOLY_SUGGESTION_FIRST at_ms=1791410005000 id=s0 role=cfo persona=Betty",
+          "[2026-10-07T21:57:10Z INFO  app_lib] SOTTOLY_LATENCY speaker=Counterpart audio_end_s=3.0 latency_ms=1000 at_ms=1791410010000",
+          "[2026-10-07T21:57:10Z INFO  app_lib] SOTTOLY_SUGGESTION_FIRST at_ms=1791410010500 id=s1 role=cfo persona=Betty",
+          "[2026-10-07T21:57:11Z INFO  app_lib] SOTTOLY_SUGGESTION at_ms=1791410011200 id=s1 role=cfo persona=Betty text=\"Pregunta si incluye IVA.\"",
+          "[2026-10-07T21:57:20Z INFO  app_lib] SOTTOLY_LATENCY speaker=User audio_end_s=12.0 latency_ms=2000 at_ms=1791410020000",
+          "[2026-10-07T21:57:21Z INFO  app_lib] SOTTOLY_SUGGESTION_FIRST at_ms=1791410021000 id=s2 role=cfo persona=Betty",
+          "[2026-10-07T21:57:30Z INFO  app_lib] SOTTOLY_LATENCY speaker=Counterpart audio_end_s=22.0 latency_ms=1500 at_ms=1791410030000",
+          "[2026-10-07T21:57:31Z INFO  app_lib] SOTTOLY_SUGGESTION_FIRST at_ms=1791410031000 id=s3 role=cfo persona=Betty",
+          "[2026-10-07T21:57:31Z INFO  app_lib] SOTTOLY_SUGGESTION at_ms=1791410031600 id=s3 role=cfo persona=Betty text=\"Pregunta si incluye IVA.\""
+        ]
+      ],
+      "esperado": {
+        "imprime": true,
+        "tarjetas": 3,
+        "p50_ms": 2500,
+        "p90_ms": 3000
+      }
+    }
+  ]
+}
