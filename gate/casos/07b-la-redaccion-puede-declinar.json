@@ -1,0 +1,13 @@
+{
+  "tarea": "7 · Una negativa de la Redacción no llega al overlay",
+  "origen": "agente",
+  "modulo": "scripts/sottoly/engine/redaccion.mjs",
+  "funcion": "esquema_de_la_redaccion",
+  "casos": [
+    {
+      "nombre": "el esquema que se le pide al modelo le deja declinar en lugar de escribir una negativa como Sugerencia",
+      "entrada": [],
+      "esperado": { "permite_declinar": true }
+    }
+  ]
+}

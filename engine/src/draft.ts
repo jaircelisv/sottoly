@@ -17,9 +17,18 @@ const EXAMPLES = [
   "Pide que la renovación automática tenga un aviso previo de sesenta días.",
 ];
 
+/** Lo que se le pide al modelo. `skip` va primero: si declina, se sabe antes de que llegue texto. */
+export const DraftOutput = z.object({
+  skip: z.boolean().describe("true si no hay nada útil que sugerir dentro de tu Rol; entonces text y reason van vacíos"),
+  text: z.string(),
+  reason: z.string(),
+});
+
+/** Una Redacción. `skip: true` = el Rol declina: no hay Sugerencia y no es un fallo. */
 export const Draft = z.object({
-  text: z.string().min(1),
-  reason: z.string().min(1),
+  skip: z.boolean().optional(),
+  text: z.string(),
+  reason: z.string(),
 });
 export type Draft = z.infer<typeof Draft>;
 
@@ -38,6 +47,7 @@ export function buildDraftPrompt(role: Pick<Role, "role" | "persona" | "objectiv
     role.instructions,
     `No opines sobre: ${role.limits.join(", ")}.`,
     `Responde con una sugerencia para el Usuario de entre ${TARGET_WORDS.min} y ${TARGET_WORDS.max} palabras, en el idioma de la reunión, y el motivo en una línea. Una sola idea: lo más urgente.`,
+    `Si lo que se está diciendo no te da nada útil que sugerir dentro de tu Rol, o cae en lo que no opinas, responde con skip en true y text y reason vacíos. Nunca escribas como sugerencia que no vas a opinar.`,
     `Ejemplos de sugerencia (la forma, no el contenido):\n${EXAMPLES.map((e) => `- ${e}`).join("\n")}`,
   ].join("\n\n");
   const prompt = `Transcripción reciente de la reunión:\n${renderWindow(window)}\n\n¿Qué debería hacer o preguntar el Usuario ahora?`;
@@ -64,8 +74,9 @@ function clampWords(text: string): string {
   return /[.?!]/.test(head[cut]) ? head.slice(0, cut + 1) : head.slice(0, cut).trimEnd();
 }
 
-/** Sugerencia lista para mostrar, o null si el texto o el motivo vienen vacíos. */
+/** Sugerencia lista para mostrar, o null si el texto o el motivo vienen vacíos. Una que declina no se finaliza. */
 export function finalizeDraft(draft: Draft): Draft | null {
+  if (draft.skip) return null;
   const text = clampWords(draft.text.trim());
   const reason = draft.reason.trim().replace(/\s*\n\s*/g, " ");
   if (!text || !reason) return null;

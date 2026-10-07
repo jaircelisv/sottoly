@@ -13,7 +13,7 @@ Las tareas del bucle, **en orden**. Salen de la conversación de planificación 
 
 Salen de la prueba con audio real del 2026-10-07 (20 Sugerencias, todas del CFO) y de lo que pidió Jair. Las de pantalla empiezan por un diseño (skill `hallmark`) que Jair aprueba antes de escribir sus casos.
 
-7. **Una negativa no llega al overlay**: cuando la Redacción no tiene una Sugerencia que dar (en la prueba salió «Betty no opina sobre…» como tarjeta), el Motor manda `suggestion_cancel` en lugar de `suggestion`. Casos en el gate con un modelo simulado que devuelve una negativa.
+7. **Una negativa no llega al overlay**: cuando la Redacción no tiene una Sugerencia que dar (en la prueba salió «Betty no opina sobre…» como tarjeta), el Motor manda `suggestion_cancel` en lugar de `suggestion`. Casos en el gate con un modelo simulado que devuelve una negativa. ✅ hecha
 8. **Antiruido como dice el SPEC**: no repetir una Sugerencia ya mostrada sobre el mismo punto (en la prueba, «pide por escrito…» salió 8 veces y el régimen tributario 4 seguidas) y un tope de Sugerencias por Reunión. Casos con una secuencia de Turnos y un modelo simulado.
 9. **Las Decisiones candidatas al cerrar la Reunión**: al detener la grabación el Motor manda `summary` (en la prueba no salió ninguno). Casos con una Reunión simulada que se cierra.
 10. **`make measure` mide fin del habla → tarjeta**: además de la latencia de los Segmentos, calcula p50/p90 de fin del habla → primer texto en el overlay a partir del log. Casos con un log de ejemplo.

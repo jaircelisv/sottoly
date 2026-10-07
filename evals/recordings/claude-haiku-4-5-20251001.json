@@ -7,6 +7,11 @@
     "text": "Pregunta si los 2 millones incluyen IVA, en qué moneda y qué sucede si cancelas antes de enero.",
     "reason": "Evitar sorpresas de impuestos, tipo de cambio, y aclarar si el aumento del 8% aplica aunque canceles la renovación automática."
   },
+  "21aa31ebd268271adcb60056d3c258d164778c5e6925c3794c266330258ab2b4": {
+    "skip": false,
+    "text": "Pregunta si los dieciocho millones incluyen IVA y especifica la moneda de facturación.",
+    "reason": "IVA puede añadir 19% más al costo; moneda define obligaciones tributarias y exposición cambiaria."
+  },
   "d1cedbd708efef0047d068b4ccb457f8d86de80b573245f26e1d28c8c3865876": {
     "text": "Pregunta si los 2 millones incluyen IVA y en qué moneda se facturan exactamente.",
     "reason": "El precio base sin impuestos puede duplicar el costo real; moneda diferente genera riesgo de cambio no mencionado."
