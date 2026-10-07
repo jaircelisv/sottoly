@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 // Mensaje `suggestion` tal como lo define engine/src/protocol.ts (SuggestionMessage).
 const suggestion = {
   type: "suggestion",
+  id: "s1",
   role: "cfo",
   role_label: "CFO",
   persona: "Betty",
@@ -51,6 +52,9 @@ test("un mensaje que no cumple el protocolo no muestra tarjeta", async ({ page }
   await emit(page, "suggestion", { ...suggestion, text: "" });
   const { role_label: _, ...withoutLabel } = suggestion;
   await emit(page, "suggestion", withoutLabel);
+  // El id es obligatorio (tarea 4): sin él, el puente de Rust también la descartaría.
+  const { id: __, ...withoutId } = suggestion;
+  await emit(page, "suggestion", withoutId);
   await emit(page, "suggestion", { type: "summary", decisions: [] });
   await expect(card(page)).toBeHidden();
 });

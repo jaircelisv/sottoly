@@ -64,11 +64,11 @@ describe("encodeOutbound", () => {
     ).toThrow();
   });
 
-  // El Motor siempre manda id (engine.test.ts); el overlay y su modo demo todavía no lo usan.
-  test("el id de la Sugerencia es opcional en el protocolo, pero no vacío", () => {
+  // El id une los deltas, el final y la cancelación; Rust (engine_bridge) lo exige (PLAN.md, tarea 4).
+  test("el id de la Sugerencia es obligatorio y no vacío", () => {
     expect(() =>
-      encodeOutbound({ type: "suggestion", role: "cfo", role_label: "CFO", persona: "Betty", text: "x", reason: "y", confidence: 0.5 }),
-    ).not.toThrow();
+      encodeOutbound({ type: "suggestion", role: "cfo", role_label: "CFO", persona: "Betty", text: "x", reason: "y", confidence: 0.5 } as never),
+    ).toThrow();
     expect(() =>
       encodeOutbound({ type: "suggestion", id: "", role: "cfo", role_label: "CFO", persona: "Betty", text: "x", reason: "y", confidence: 0.5 }),
     ).toThrow();

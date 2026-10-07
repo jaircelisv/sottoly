@@ -156,6 +156,9 @@ mod tests {
             let s = suggestion(n);
             let json = serde_json::to_value(&s).unwrap();
             assert_eq!(json["type"], "suggestion");
+            // El protocolo exige id (tarea 4); sin él, el overlay descarta la tarjeta de demo.
+            assert!(json["id"].as_str().map_or(false, |id| !id.is_empty()), "sin id: {json}");
+            assert_ne!(json["id"], serde_json::to_value(suggestion(n + 1)).unwrap()["id"]);
             assert!(s.role.chars().all(|c| c.is_ascii_lowercase() || c == '_'));
             assert!(!s.persona.is_empty() && !s.reason.is_empty());
             assert!(!s.role_label.is_empty());
