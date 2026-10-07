@@ -19,6 +19,8 @@ pub const FIRST_DELAY: Duration = Duration::from_secs(5);
 pub struct DemoSuggestion {
     #[serde(rename = "type")]
     pub kind: &'static str,
+    /// SOTTOLY: el protocolo exige id (tarea 4); uno distinto por Sugerencia.
+    pub id: String,
     pub role: &'static str,
     pub role_label: &'static str,
     pub persona: &'static str,
@@ -71,7 +73,7 @@ pub fn suggestion(n: usize) -> DemoSuggestion {
         ("ceo", "CEO adversarial", "Sheldon", &SHELDON, 0.88)
     };
     let (text, reason) = pool[(n / 2) % pool.len()];
-    DemoSuggestion { kind: "suggestion", role, role_label, persona, text, reason, confidence }
+    DemoSuggestion { kind: "suggestion", id: format!("demo-{n}"), role, role_label, persona, text, reason, confidence }
 }
 
 /// Arranca la demo si corresponde. Llamado desde overlay::init.

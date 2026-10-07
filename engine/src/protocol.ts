@@ -40,8 +40,8 @@ const SuggestionId = z.string().min(1);
 
 export const SuggestionMessage = z.object({
   type: z.literal("suggestion"),
-  // El Motor siempre lo manda; opcional mientras el overlay y su modo demo no manejen deltas.
-  id: SuggestionId.optional(),
+  // Une los deltas, el final y la cancelación; Rust (engine_bridge) lo exige.
+  id: SuggestionId,
   role: RoleId,
   /** Nombre visible del Rol (campo `role` del frontmatter), para la tarjeta del overlay. */
   role_label: z.string().min(1),
