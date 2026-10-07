@@ -2,7 +2,8 @@
 // Sin E/S: los proveedores se inyectan, así el pipeline completo se prueba con respuestas grabadas.
 import { evaluateGate, slideWindow, type ChoiceEvaluator, type GateDecision, type WindowSegment } from "./gate";
 import { buildDraftPrompt, finalizeDraft, headWords, sameIdea, type Drafter } from "./draft";
-import type { InboundMessage, SuggestionCancel, SuggestionDelta, SuggestionMessage } from "./protocol";
+import type { InboundMessage, SuggestionCancel, SuggestionDelta, SuggestionMessage, SummaryMessage } from "./protocol";
+import { buildSummaryPrompt, toDecisions, type Summarizer } from "./summary";
 import { selectBoard, type Role } from "./roles";
 import { TurnAssembler, type TurnEvent, type TurnOptions } from "./turns";
 
@@ -19,7 +20,7 @@ export interface EngineConfig {
 export type EngineLog =
   | { event: "gate_decision"; trigger: TurnEvent["kind"]; turn: number; decision: GateDecision; latency_ms: number }
   | { event: "suggestion_suppressed"; role: string; reason: SuppressReason }
-  | { event: "provider_failed"; stage: "gate" | "draft"; error: string };
+  | { event: "provider_failed"; stage: "gate" | "draft" | "summary"; error: string };
 
 export type SuppressReason = "cooldown" | "repeated" | "meeting_cap" | "invalid_draft" | "declined";
 
@@ -32,6 +33,10 @@ export interface EngineDeps {
   draft: Drafter;
   config: EngineConfig;
   log?: (entry: EngineLog) => void;
+  /** Decisiones candidatas al cerrar la Reunión (SPEC §6). Sin él, la Reunión se cierra sin `summary`. */
+  summarize?: Summarizer;
+  /** Fecha de hoy (AAAA-MM-DD) para las fechas de los compromisos; fija en grabaciones y pruebas. */
+  today?: () => string;
   /** Deltas y cancelaciones de la Redacción en streaming (la App los manda a la tarjeta al momento). */
   onStream?: (message: StreamMessage) => void;
   now?: () => number;
@@ -45,6 +50,7 @@ export class Engine {
   private shown: string[] = [];
   private suggestionCount = 0;
   private draftCount = 0;
+  private meetingId: string = crypto.randomUUID();
 
   constructor(private readonly deps: EngineDeps) {
     this.turns = new TurnAssembler(deps.config.turns);
@@ -76,6 +82,24 @@ export class Engine {
     this.shown = [];
     this.suggestionCount = 0;
     this.draftCount = 0;
+    this.meetingId = crypto.randomUUID();
+  }
+
+  /**
+   * Cierra la Reunión: las Decisiones candidatas en un `summary`, ninguna aprobada. Sin Segmentos no se
+   * llama al modelo; si el modelo falla, se registra y la Reunión se cierra sin `summary`.
+   */
+  async close(): Promise<SummaryMessage | null> {
+    if (!this.deps.summarize || this.segments.length === 0) return null;
+    const now = new Date();
+    const today = this.deps.today?.() ?? now.toISOString().slice(0, 10);
+    try {
+      const candidates = await this.deps.summarize(buildSummaryPrompt(this.segments, today));
+      return { type: "summary", decisions: toDecisions(candidates, this.meetingId, now.toISOString()) };
+    } catch (error) {
+      this.deps.log?.({ event: "provider_failed", stage: "summary", error: String(error) });
+      return null;
+    }
   }
 
   private async process(events: TurnEvent[]): Promise<SuggestionMessage[]> {

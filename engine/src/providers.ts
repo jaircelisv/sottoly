@@ -1,10 +1,11 @@
 // Proveedores reales (ModelProvider): Jev para la Compuerta y Anthropic para la Redacción.
 // Los IDs de modelo vienen de config.json; las keys, del entorno (TYPESAFE_AI_API_KEY, ANTHROPIC_API_KEY).
-import { experimental_evaluate, Output, streamText } from "ai";
+import { experimental_evaluate, generateText, Output, streamText } from "ai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createTypeSafeAi } from "@ai-sdk/typesafe-ai";
 import { Draft, DraftOutput, type Drafter } from "./draft";
 import type { ChoiceEvaluator } from "./gate";
+import { SummaryOutput, type Summarizer } from "./summary";
 
 export function jevEvaluator(modelId: string): ChoiceEvaluator {
   const model = createTypeSafeAi().evaluationModel(modelId);
@@ -38,5 +39,14 @@ export function anthropicDrafter(modelId: string, maxTokens: number, fetch?: typ
       }
     }
     return Draft.parse(await result.output); // sin `skip` (grabaciones previas) = no declina
+  };
+}
+
+/** Decisiones candidatas al cerrar la Reunión. Sin streaming: no está en la ruta caliente. `fetch` solo para pruebas. */
+export function anthropicSummarizer(modelId: string, maxTokens: number, fetch?: typeof globalThis.fetch): Summarizer {
+  const model = createAnthropic({ fetch, apiKey: fetch ? "recorded" : undefined })(modelId);
+  return async ({ system, prompt }) => {
+    const { output } = await generateText({ model, system, prompt, maxOutputTokens: maxTokens, output: Output.object({ schema: SummaryOutput }) });
+    return SummaryOutput.parse(output).decisions;
   };
 }

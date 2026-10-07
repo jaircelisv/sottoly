@@ -1,0 +1,69 @@
+{
+  "tarea": "9 · Las Decisiones candidatas al cerrar la Reunión",
+  "origen": "agente",
+  "modulo": "scripts/sottoly/engine/redaccion.mjs",
+  "funcion": "cerrar_reunion",
+  "casos": [
+    {
+      "nombre": "al cerrar una Reunión el Motor manda summary con las Decisiones candidatas, sin aprobar y según el protocolo",
+      "entrada": [
+        {
+          "modelo": "{\"decisions\": [{\"kind\": \"decision\", \"text\": \"Se contrata el plan anual por dos millones más IVA.\", \"owner\": \"user\", \"due\": null}, {\"kind\": \"commitment\", \"text\": \"La Contraparte envía la factura el viernes.\", \"owner\": \"counterpart\", \"due\": \"2026-10-09\"}]}"
+        }
+      ],
+      "esperado": {
+        "summary": true,
+        "decisiones": 2,
+        "todas_sin_aprobar": true,
+        "cumple_el_protocolo": true,
+        "llamadas_al_modelo": 1
+      }
+    },
+    {
+      "nombre": "si en la Reunión no se decidió nada, el summary llega vacío",
+      "entrada": [
+        {
+          "modelo": "{\"decisions\":[]}"
+        }
+      ],
+      "esperado": {
+        "summary": true,
+        "decisiones": 0,
+        "todas_sin_aprobar": true,
+        "cumple_el_protocolo": true,
+        "llamadas_al_modelo": 1
+      }
+    },
+    {
+      "nombre": "una Reunión sin Segmentos se cierra sin llamar al modelo ni mandar summary",
+      "entrada": [
+        {
+          "modelo": "{\"decisions\": [{\"kind\": \"decision\", \"text\": \"Se contrata el plan anual por dos millones más IVA.\", \"owner\": \"user\", \"due\": null}, {\"kind\": \"commitment\", \"text\": \"La Contraparte envía la factura el viernes.\", \"owner\": \"counterpart\", \"due\": \"2026-10-09\"}]}",
+          "con_segmentos": false
+        }
+      ],
+      "esperado": {
+        "summary": false,
+        "decisiones": 0,
+        "todas_sin_aprobar": true,
+        "cumple_el_protocolo": true,
+        "llamadas_al_modelo": 0
+      }
+    },
+    {
+      "nombre": "si el modelo responde algo que no son Decisiones, la Reunión se cierra sin summary y sin caerse",
+      "entrada": [
+        {
+          "modelo": "No hubo acuerdos claros en esta reunión."
+        }
+      ],
+      "esperado": {
+        "summary": false,
+        "decisiones": 0,
+        "todas_sin_aprobar": true,
+        "cumple_el_protocolo": true,
+        "llamadas_al_modelo": 1
+      }
+    }
+  ]
+}

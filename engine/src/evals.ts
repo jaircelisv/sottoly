@@ -7,6 +7,7 @@ import type { Draft, Drafter, DraftPrompt } from "./draft";
 import type { ChoiceAnswer, ChoiceEvaluator, ChoiceQuestion, GateDecision } from "./gate";
 import { Speaker } from "./protocol";
 import type { Role } from "./roles";
+import type { CandidateDecision, Summarizer } from "./summary";
 
 export const Label = z.object({
   turn: z.number().int().nonnegative(),
@@ -86,6 +87,24 @@ export function recordingEvaluator(model: string, live: ChoiceEvaluator, recordi
 
 export function draftRecordingKey(model: string, prompt: DraftPrompt): string {
   return new Bun.CryptoHasher("sha256").update(JSON.stringify({ model, ...prompt })).digest("hex");
+}
+
+/** Reproduce Decisiones candidatas grabadas (misma clave que la Redacción: modelo + prompt). */
+export function replaySummarizer(model: string, recordings: Recordings<CandidateDecision[]>): Summarizer {
+  return async (prompt) => {
+    const decisions = recordings.get(draftRecordingKey(model, prompt));
+    if (!decisions) throw new Error("missing summary recording: corre el sidecar con SOTTOLY_PROVIDERS=record");
+    return decisions;
+  };
+}
+
+/** Llama al modelo real y guarda las Decisiones candidatas. */
+export function recordingSummarizer(model: string, live: Summarizer, recordings: Recordings<CandidateDecision[]>): Summarizer {
+  return async (prompt) => {
+    const decisions = await live(prompt);
+    recordings.set(draftRecordingKey(model, prompt), decisions);
+    return decisions;
+  };
 }
 
 /** Reproduce Redacciones grabadas. Un prompt nuevo falla: hay que volver a grabar. */
