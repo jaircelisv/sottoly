@@ -3,6 +3,7 @@
 
 Lee antes de trabajar:
 
+0. **El harness** (más abajo en este archivo): [PRD.md](PRD.md) dice qué se construye en esta etapa, [PLAN.md](PLAN.md) en qué orden, y `node gate/verificar.mjs` si funciona.
 1. [GLOSSARY.md](GLOSSARY.md): usa siempre estos términos en código, UI y docs. Si encuentras un término de "No usar", corrígelo.
 2. [SPEC.md](SPEC.md): decisiones, alcance y plan. Si algo no está ahí, no lo construyas. No implementes nada de "Preguntas abiertas" ni de "Fuera de alcance del MVP".
 3. [docs/adr/](docs/adr/): antes de cambiar algo cubierto por un ADR, léelo. Si la decisión cambia, escribe un ADR nuevo que reemplace al anterior; no edites el viejo.
@@ -10,23 +11,98 @@ Lee antes de trabajar:
 ## Reglas
 
 - **Fork fiel de Meetily (ADR-0001):** no muevas ni borres carpetas ni proveedores de Meetily. El código de Sottoly va en `engine/`, `roles/`, `evals/`, `docs/` o en archivos nuevos (`engine_bridge.rs`, `overlay/`). Las ediciones inevitables a archivos de Meetily van marcadas con `// SOTTOLY:`. No hagas merge de `upstream` antes del Build Day.
-- **Repo público (ADR-0002):** nunca escribas en archivos versionados rutas personales, nombres de personas reales, datos de clientes, referencias a otras empresas del autor, precios o estrategia comercial, keys, tokens ni `.env`. El contexto privado vive en `CLAUDE.local.md` (ignorado por git).
+- **Repo público (ADR-0002):** nunca escribas en archivos versionados rutas personales, nombres de personas reales, datos de clientes, referencias a otras empresas del autor, precios o estrategia comercial, keys, tokens ni `.env`. El contexto privado vive en `~/.sottoly/CLAUDE.private.md`, fuera del repo; cada worktree lo importa desde un `CLAUDE.local.md` de una línea (ignorado por git).
 - **Identificadores en inglés:** claves, enums, tipos, archivos y eventos en inglés. El contenido humano (transcripción, Sugerencia, motivo, instrucciones de Rol) va en el idioma de la Reunión. La UI del MVP va en español.
 - **Compuerta:** elige Roles (`gate_option`), nunca Personas. La Persona no entra al prompt de la Compuerta. Cambiar `gate_option` o `gate_definition` exige recalibrar y actualizar `calibrated_with`.
 - **Modelos:** los IDs viven en `engine/config.json`, nunca en el código ni en los Roles. IDs exactos, sin alias. Cambiar un ID es una decisión explícita.
 - **Pruebas:** ninguna tarea está terminada sin prueba. Escribe o actualiza la prueba, implementa, corre, itera hasta verde y abre el PR. No desactives, borres ni marques como skip una prueba para que pase; si una prueba está mal, explícalo en el PR.
-- **PRs:** `main` está protegida. Todo cambio entra por PR con los checks en verde.
+- **PRs:** `main` está protegida. Todo cambio entra por PR con los checks en verde: uno pequeño por tarea, siempre con `gh pr create --repo jaircelisv/sottoly --base main` (sin `--repo` se abre en el upstream de Meetily) y **nunca apilado** (al integrar uno apilado, el código queda en la rama de abajo). Commits `test:` (en rojo por la razón correcta) → `feat:` / `fix:` → `refactor:`. Jair hace el merge.
 - **Privacidad:** no guardes audio. No guardes transcripciones por defecto. Las keys van en el Keychain. Sin telemetría.
 
 ## Comandos
 
+El `Makefile` de la raíz es el punto de entrada (tarea 1 del plan): `make verify`, `make sidecars`, `make demo` (App en `http://localhost:3118`), `make measure`, `make worktree NAME=…`. Mientras no exista:
+
 ```bash
-# App (Meetily/Tauri)
-cd frontend && pnpm install && pnpm run tauri:dev
+# App sin ChunkLoadError: Next primero (puerto 3118), precalentado, luego Tauri sin beforeDevCommand
+cd frontend && pnpm dev
+curl -s localhost:3118/ >/dev/null; curl -s localhost:3118/_next/static/chunks/app/layout.js >/dev/null
+RUST_LOG=info pnpm tauri dev --config '{"build":{"beforeDevCommand":""}}' -- --features coreml
 
 # Motor
 cd engine && bun install && bun test
 ```
+
+`tauri dev` recompila y reinicia la App cuando cambia el código de `src-tauri/`: no cambies de rama en el checkout donde corre la App; trabaja en otro worktree.
+
+---
+
+# Harness: el gate, el plan y el bucle
+
+## Dónde está la verdad
+
+- **Qué** se construye en esta etapa está en **`PRD.md`**. Léelo antes de escribir una línea de código.
+- **En qué orden** está en **`PLAN.md`**: las tareas, una detrás de otra.
+- **Si funciona** lo dice **`node gate/verificar.mjs`**, y nada más. Ni tu impresión, ni la mía.
+
+## Qué mide el gate
+
+`node gate/verificar.mjs` prueba el producto entero y da un solo veredicto:
+
+- **El arranque.** `make demo` y comprueba que `http://localhost:3118` responde (`gate/gate.json`).
+- **Las reglas que no se negocian**, un archivo por regla en `gate/reglas/`.
+- **Los casos de cada tarea**, en `gate/casos/`: un archivo por tarea, con la entrada con la que se llama a una función de un módulo JavaScript y lo que tiene que devolver. Si lo que se mide es Rust, el módulo `.mjs` llama a un binario de Rust (no importa el `.rs`).
+- **Los tests del proyecto**: `make verify` tiene que salir bien y no con menos tests que la última vez.
+- **La pantalla**: las pruebas de `gate/e2e/` abren un navegador de verdad.
+
+La salida dice qué pasó, qué no y qué esperaba. **Esa salida es la única fuente de verdad.** Al principio **todo sale en rojo**, y es lo correcto: todavía no hay `Makefile` ni contrato.
+
+## El gate crece, pero no encoge
+
+- **Añadir una comprobación es libre**: un archivo **nuevo** en `gate/casos/`, `gate/e2e/` o `gate/reglas/`. Se hace con `/caso`.
+- **Cambiar una que ya existe lo decide Jair**, igual que `gate/gate.json`. Claude Code se lo preguntará; explícale antes por qué. Sin nadie delante que conteste, el cambio se bloquea.
+- **Quitar una no sirve: el trinquete.** Cada vez que el gate pasa entero, apunta en `.harness/` lo que pasó. Si la próxima vez falta algo, no pasa.
+- **Bajar esa marca es solo de Jair**, en su terminal: `node gate/verificar.mjs --aceptar-menos`. Tú no puedes correrlo.
+
+## Reglas del juego
+
+- El código del producto vive donde ya vive (ADR-0001): `engine/`, `frontend/`, `overlay/`, `roles/`, `evals/`, `scripts/sottoly/`. **No hay `src/` en la raíz.**
+- **Intocables, siempre**: `PRD.md`, `CLAUDE.md`, `.claude/`, `.mcp.json`, `.harness/` y `gate/verificar.mjs`. Hacer pasar el gate cambiando el gate es hacer trampa.
+- **`PLAN.md` lo actualizas tú** al terminar cada tarea. Cambiar el orden, quitar una tarea o añadir una nueva lo decide Jair.
+- **Prohibido el overfitting**: nada de condiciones atadas a los textos literales de los casos.
+- **Nunca declares que algo funciona sin haber corrido `node gate/verificar.mjs` y mostrado el resultado.**
+- **Intentos: sin límite.** El bucle sigue hasta que el gate pasa, sin cambiar las pruebas para hacerlas pasar, sin `skip`/`only` y sin integrar.
+
+Los hooks de `.claude/hooks/` hacen cumplir parte de esto: impiden escribir en lo intocable, preguntan antes de cambiar una comprobación existente, bloquean comandos sin vuelta atrás (`rm -rf`, `push --force`; `--force-with-lease` sí se permite), bloquean keys en el contenido que se escribe y avisan si terminas habiendo cambiado código después de la última medición. Sus pruebas: `bun test scripts/sottoly/harness`.
+
+## Un criterio se escribe como caso antes que como código
+
+Cada tarea empieza igual: **primero sus casos, y se ven fallar; después el código que los cumple**. Si aparece un criterio que el gate todavía no mide, se convierte en caso con `/caso`, se ve en rojo y entonces se escribe el código. **Un caso que jamás se ha visto en rojo puede no estar comprobando nada.**
+
+## La regla que no se negocia
+
+- **Ningún mensaje cruza App ↔ Motor sin coincidir con el contrato definido en `engine/src/protocol.ts` (Zod).** — Si no, la App y el Motor pierden mensajes o los procesan distinto (pasó con `role_label` y con el `id` de la Sugerencia). La mide el gate: `gate/reglas/integridad-del-protocolo.json`.
+
+Si el gate pasa y la regla se incumple, lo que está mal es la comprobación, no el producto: dilo.
+
+## Cómo no engañarte a ti mismo
+
+1. **Un guardián que nunca has visto fallar puede no estar comprobando nada.** Rómpelo a propósito, mira que se pone rojo y vuelve a dejarlo como estaba.
+2. **Comprueba el efecto, no la apariencia.**
+3. **Lee la salida entera del gate, no su última línea.**
+4. **Leer el código no es mirar la pantalla.** Si la afirmación es sobre lo que ve una persona, hay que mirarlo.
+5. **Nada está terminado hasta que una persona puede llegar.**
+6. **Antes de guardar tu trabajo, mira qué hay en la carpeta.**
+
+## Cuando no sepas algo, míralo
+
+Antes de inventarte cómo funciona una librería, una API o un formato, consulta su documentación oficial y di de dónde lo sacaste. Pero la documentación no sustituye al gate.
+
+## El bucle y Linear
+
+- `/goal` (`.claude/skills/goal/`) recorre `PLAN.md` tarea a tarea; `/caso` agrega una comprobación nueva.
+- `/linear-setup` copia `PLAN.md` al proyecto **Sottoly** de Linear, que ya existe: https://linear.app/jaircelisv/project/sottoly-ec6a4a57aa53/overview (workspace `jaircelisv`). No crees otro proyecto. `.mcp.json` trae el servidor de Linear: la primera vez, `/mcp` → `linear-server` → autorizar **eligiendo el workspace `jaircelisv`**, con Claude Code abierto en la raíz del repo.
+- En Linear: **ningún número que no venga del gate** y **nada de issues especulativos**, solo las tareas de `PLAN.md`.
 <!-- SOTTOLY: fin -->
 
 # CLAUDE.md

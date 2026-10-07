@@ -1,0 +1,13 @@
+{
+  "regla": "Ningún mensaje cruza App ↔ Motor sin coincidir con el contrato de engine/src/protocol.ts",
+  "origen": "plataforma",
+  "modulo": "scripts/sottoly/contract/contrato.mjs",
+  "funcion": "contrato_integro",
+  "casos": [
+    {
+      "nombre": "el JSON Schema versionado es el que genera Zod y cada mensaje de ejemplo lo aceptan (o rechazan) igual Zod y Rust",
+      "entrada": [],
+      "esperado": true
+    }
+  ]
+}

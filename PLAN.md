@@ -1,0 +1,26 @@
+# El plan de Sottoly
+
+Las tareas del bucle, **en orden**. Salen de la conversación de planificación del harness (2026-10-06) y del estado real del repo: Sottoly no parte de cero (ver `SPEC.md` y `docs/HANDOFF.md`). La prioridad es la demo: en una Reunión real, Betty muestra al menos una Sugerencia útil en menos de 2 s, en el overlay.
+
+1. **El arranque: `Makefile` en la raíz** con `verify` (las tres suites: `bun test`, Playwright del overlay, `cargo test`), `sidecars` (`llama-helper` y `sottoly-engine`) y `demo` (Next en `localhost:3118` precalentado, después Tauri con `SOTTOLY_DEMO_SUGGESTIONS=1` y `beforeDevCommand` vacío), además de `measure` (envuelve `scripts/sottoly/latency/measure.sh`). Hecha cuando el ARRANQUE del gate sale en verde.
+2. **`make worktree NAME=<nombre>`**: crea el worktree desde `origin/main` con la rama `sottoly/<nombre>`, escribe un `CLAUDE.local.md` de una línea (`@~/.sottoly/CLAUDE.private.md`), falla con un mensaje claro si ese archivo privado no existe, y deja los binarios que Tauri necesita en `frontend/src-tauri/binaries/` (copiados o con `make sidecars`).
+3. **El contrato, generado desde Zod**: JSON Schema versionado generado desde `engine/src/protocol.ts` (`z.toJSONSchema`), un juego de mensajes de ejemplo (JSONL) que cubra `segment`, `session`, `clock`, `suggestion`, `suggestion_delta`, `suggestion_cancel` y `summary`, y un check de CI que falle si el schema quedó desactualizado. Esta tarea pone en verde la regla `gate/reglas/integridad-del-protocolo.json` (función `contrato_integro` en `scripts/sottoly/contract/contrato.mjs`).
+4. **Zod y Rust aceptan los mismos mensajes**: `aceptan(mensaje)` en `scripts/sottoly/contract/contrato.mjs` devuelve `{ zod, rust }`. El lado de Rust deserializa con los structs de `engine_bridge.rs` (por ejemplo, con un `cargo run --example` que lee el mensaje por stdin). Corrige el desfase del `id` (opcional en Zod, obligatorio en Rust): lo coherente con el streaming es volverlo obligatorio en Zod y que el modo demo lo mande. Sus casos ya están en `gate/casos/04-zod-y-rust-aceptan-lo-mismo.json`.
+5. **Overlay con streaming**: el overlay dibuja `suggestion_delta` (texto parcial, sin motivo ni botones), reemplaza con el `suggestion` final del mismo `id`, oculta con `suggestion_cancel` y se oculta solo si no llega el final en 8 s. Casos en `gate/e2e/` (Playwright, IPC simulado) antes del código. El gate corre esas specs con `@playwright/test` desde la raíz: esta tarea decide con Jair cómo proveerlo sin un `package.json` de npm en la raíz (hoy el Playwright del overlay vive en `overlay/` y corre dentro de `make verify`).
+6. **Limpieza de privacidad**: `make limpiar` borra las Reuniones de prueba y los `transcripts.json` que Meetily escribe en disco después de una medición, sin tocar nada más.
+
+## Lo que hace Jair (fuera del bucle)
+
+- **Integrar los PRs**, solo con checks en verde. Pendientes hoy: #25 → #28 (documentación) y #26 (`check_local_model`).
+- **La prueba de punta a punta con audio real**: Jair inicia la grabación (no se concede Accesibilidad), `make measure` reproduce las frases y se mide por primera vez **fin del habla → tarjeta** (p50/p90). No es una tarea del bucle porque el gate no puede iniciar la grabación.
+
+## Cómo se recorre
+
+- **Una tarea cada vez, en este orden.** `/goal` empieza por la primera que no esté marcada como hecha.
+- **La primera es el arranque**: el proyecto ya existe (fork de Meetily, ADR-0001); lo que falta es que `make demo` abra la App en `http://localhost:3118`. Está hecha cuando el ARRANQUE sale en verde en el gate; lo demás sigue en rojo, y es lo correcto.
+- **Antes del código de una tarea van sus casos.** Se escriben con `/caso`, se ven fallar, y después se escribe el código que los cumple. Los de la tarea 4 y la regla de integridad ya vienen en `gate/`.
+- **Una tarea está hecha cuando el gate entero pasa**, no solo sus casos: lo que ya funcionaba tiene que seguir funcionando. (La excepción es el arranque, que termina con el ARRANQUE en verde.)
+- **Cada tarea es un PR pequeño contra `main`** (`gh pr create --repo jaircelisv/sottoly --base main`), con commits `test:` → `feat:` → `refactor:`. Nunca apilado. Jair hace el merge.
+- Al terminar una, se marca aquí como hecha —`[x]` en su casilla, o «✅ hecha» al final de su línea— y se sigue con la siguiente.
+
+⚠ Cambiar el orden, quitar una tarea o añadir una nueva lo decide la persona, no el agente: se le pregunta antes. Una tarea nueva va al final.
