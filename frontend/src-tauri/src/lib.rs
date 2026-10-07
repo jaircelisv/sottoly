@@ -57,6 +57,7 @@ pub mod tray;
 pub mod utils;
 pub mod whisper_engine;
 pub mod overlay; // SOTTOLY: ventana overlay de Sugerencias
+pub mod local_model; // SOTTOLY: ¿está descargado y válido el modelo local?
 
 use audio::{list_audio_devices, AudioDevice, trigger_audio_permission};
 use log::{error as log_error, info as log_info};
