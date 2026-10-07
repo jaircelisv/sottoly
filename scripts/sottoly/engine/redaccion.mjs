@@ -31,3 +31,10 @@ export function antiruido({ redacciones }) {
   const { sugerencias, la_redaccion_ve_las_anteriores } = JSON.parse(r.stdout.trim().split("\n").at(-1));
   return { sugerencias, la_redaccion_ve_las_anteriores };
 }
+
+/** Cierra una Reunión corta y cuenta lo que manda el Motor: el `summary` con las Decisiones candidatas (tarea 9). */
+export function cerrar_reunion({ modelo, con_segmentos = true }) {
+  const r = spawnSync("bun", ["probes/cierre.ts"], { cwd: ENGINE, input: JSON.stringify({ modelo, con_segmentos }), encoding: "utf8" });
+  if (r.status !== 0) throw new Error(`la sonda falló: ${r.stderr.slice(-2000)}`);
+  return JSON.parse(r.stdout.trim().split("\n").at(-1));
+}
