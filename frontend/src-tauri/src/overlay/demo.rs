@@ -19,6 +19,8 @@ pub const FIRST_DELAY: Duration = Duration::from_secs(5);
 pub struct DemoSuggestion {
     #[serde(rename = "type")]
     pub kind: &'static str,
+    /// SOTTOLY: el protocolo exige id (tarea 4); uno distinto por Sugerencia.
+    pub id: String,
     pub role: &'static str,
     pub role_label: &'static str,
     pub persona: &'static str,
@@ -71,7 +73,7 @@ pub fn suggestion(n: usize) -> DemoSuggestion {
         ("ceo", "CEO adversarial", "Sheldon", &SHELDON, 0.88)
     };
     let (text, reason) = pool[(n / 2) % pool.len()];
-    DemoSuggestion { kind: "suggestion", role, role_label, persona, text, reason, confidence }
+    DemoSuggestion { kind: "suggestion", id: format!("demo-{n}"), role, role_label, persona, text, reason, confidence }
 }
 
 /// Arranca la demo si corresponde. Llamado desde overlay::init.
@@ -156,6 +158,9 @@ mod tests {
             let s = suggestion(n);
             let json = serde_json::to_value(&s).unwrap();
             assert_eq!(json["type"], "suggestion");
+            // El protocolo exige id (tarea 4); sin él, el overlay descarta la tarjeta de demo.
+            assert!(json["id"].as_str().map_or(false, |id| !id.is_empty()), "sin id: {json}");
+            assert_ne!(json["id"], serde_json::to_value(suggestion(n + 1)).unwrap()["id"]);
             assert!(s.role.chars().all(|c| c.is_ascii_lowercase() || c == '_'));
             assert!(!s.persona.is_empty() && !s.reason.is_empty());
             assert!(!s.role_label.is_empty());

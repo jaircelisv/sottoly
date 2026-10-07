@@ -129,6 +129,7 @@
         },
         "required": [
           "type",
+          "id",
           "role",
           "role_label",
           "persona",
