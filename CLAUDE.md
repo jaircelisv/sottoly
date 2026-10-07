@@ -101,7 +101,7 @@ Antes de inventarte cómo funciona una librería, una API o un formato, consulta
 ## El bucle y Linear
 
 - `/goal` (`.claude/skills/goal/`) recorre `PLAN.md` tarea a tarea; `/caso` agrega una comprobación nueva.
-- `/linear-setup` copia `PLAN.md` a Linear (proyecto **Sottoly**). `.mcp.json` trae el servidor de Linear: la primera vez, `/mcp` → `linear-server` → autorizar, con Claude Code abierto en la raíz del repo.
+- `/linear-setup` copia `PLAN.md` al proyecto **Sottoly** de Linear, que ya existe: https://linear.app/jaircelisv/project/sottoly-ec6a4a57aa53/overview (workspace `jaircelisv`). No crees otro proyecto. `.mcp.json` trae el servidor de Linear: la primera vez, `/mcp` → `linear-server` → autorizar **eligiendo el workspace `jaircelisv`**, con Claude Code abierto en la raíz del repo.
 - En Linear: **ningún número que no venga del gate** y **nada de issues especulativos**, solo las tareas de `PLAN.md`.
 <!-- SOTTOLY: fin -->
 

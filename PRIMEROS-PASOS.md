@@ -27,7 +27,8 @@ que va a permitir seguir tus tareas en un tablero.
 ```
 
 Te pregunta en qué espacio de trabajo y en qué equipo está el proyecto. En
-Linear ya existe el proyecto **Sottoly**: el skill pregunta antes de escribir
+Linear ya existe el proyecto **Sottoly**, en el workspace `jaircelisv`:
+https://linear.app/jaircelisv/project/sottoly-ec6a4a57aa53/overview. Al autorizar en `/mcp`, elige ese workspace. El skill pregunta antes de escribir
 dentro, y después crea una tarea por cada tarea de tu `PLAN.md`. No se inventa
 nada: solo lo que acordaste.
 
