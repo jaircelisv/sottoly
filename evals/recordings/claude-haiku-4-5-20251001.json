@@ -12,6 +12,11 @@
     "text": "Pregunta si los dieciocho millones incluyen IVA y especifica la moneda de facturación.",
     "reason": "IVA puede añadir 19% más al costo; moneda define obligaciones tributarias y exposición cambiaria."
   },
+  "766776329b2984f2a5a342bbf306e0516496c01cd4430b9750fc9e1fec5308ab": {
+    "skip": false,
+    "text": "Pregunta si los dieciocho millones incluyen IVA y qué moneda.",
+    "reason": "Evitar sorpresas de impuestos y asegurar que se entiende la moneda de la facturación antes de comprometerse."
+  },
   "d1cedbd708efef0047d068b4ccb457f8d86de80b573245f26e1d28c8c3865876": {
     "text": "Pregunta si los 2 millones incluyen IVA y en qué moneda se facturan exactamente.",
     "reason": "El precio base sin impuestos puede duplicar el costo real; moneda diferente genera riesgo de cambio no mencionado."

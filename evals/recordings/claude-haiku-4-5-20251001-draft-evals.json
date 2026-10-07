@@ -1,0 +1,52 @@
+{
+  "121d5fcf78700c0f5f30e28eb871c866a282bd24b96b406a75b96a3927dac8be": {
+    "skip": false,
+    "text": "Pregunta si tres millones incluyen IVA y qué términos de pago tiene el contrato.",
+    "reason": "Evitar sorpresas con impuestos, moneda, plazos de pago y condiciones que no se mencionaron."
+  },
+  "14171da822ffc409518a2ac1d8c0709511b8d89a61e4d49ef9423306d12f7ed9": {
+    "skip": false,
+    "text": "Pide por escrito cuáles son los costos totales, plazos de pago y qué incluye el servicio anual.",
+    "reason": "No mencionó honorarios, si hay costos ocultos (registros, renovaciones), ni las condiciones de cancelación o cambio de régimen."
+  },
+  "2407b2e5ef26cd4fe75043ae52c9e73854f73a1340868aca4a6343a5e99b87ba": {
+    "skip": true,
+    "text": "",
+    "reason": ""
+  },
+  "2b201f8d598afc45334b106fd9f22b37027c8577ec7b2e1c129a447e18ea3180": {
+    "skip": true,
+    "text": "",
+    "reason": ""
+  },
+  "2cb151c7db2303ef46c3a411cbf7f47cf51c0005c808a9bb0e820cf322d0607c": {
+    "skip": true,
+    "text": "",
+    "reason": ""
+  },
+  "3ae237889df475a806e093e554e2759bc0ade6c0fdfd4a61f5e81212db7f2616": {
+    "skip": true,
+    "text": "",
+    "reason": ""
+  },
+  "505d9f748e93072c644f192b1dc05e84b6e2f781609be3bb96b4719ea29cbafd": {
+    "skip": true,
+    "text": "",
+    "reason": ""
+  },
+  "6329d018e66c1a36b068adeb1c8db851120ee128f7fb0b2bd0322977fa3a8574": {
+    "skip": true,
+    "text": "",
+    "reason": ""
+  },
+  "71bf3479012583c602bb2cd7f27a5564befae6c929b40bc8091ebce4cb34daf8": {
+    "skip": false,
+    "text": "Pregunta si los tres millones incluyen IVA y en qué moneda se facturan mensualmente.",
+    "reason": "El precio está sin detalles clave: impuesto, moneda y estructura de pago que afectan el costo real."
+  },
+  "726fb40f8bce9e9d1855df33351187a15fd3962a726c4a4be5c965f7bbe2b49e": {
+    "skip": true,
+    "text": "",
+    "reason": ""
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "tarea": "11 · Evals de la Redacción: límites del Rol, una forma, sin cortes",
+  "origen": "agente",
+  "modulo": "scripts/sottoly/evals/redaccion.mjs",
+  "funcion": "evals_de_redaccion",
+  "casos": [
+    {
+      "nombre": "las Redacciones del modelo real para los fixtures sintéticos están grabadas con el prompt actual y cumplen todos los criterios",
+      "entrada": [],
+      "esperado": { "fixtures": 5, "cumplen": 5, "sin_grabar": 0, "fallan": [] }
+    }
+  ]
+}
