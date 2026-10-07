@@ -42,6 +42,7 @@ describe("encodeOutbound", () => {
   test("serializa una Sugerencia como una línea JSONL", () => {
     const line = encodeOutbound({
       type: "suggestion",
+      id: "s1",
       role: "cfo",
       role_label: "CFO",
       persona: "Betty",
@@ -59,13 +60,29 @@ describe("encodeOutbound", () => {
       encodeOutbound({ type: "suggestion", role: "cfo", persona: "Betty", text: "x", reason: "y", confidence: 0.5 } as never),
     ).toThrow();
     expect(() =>
-      encodeOutbound({ type: "suggestion", role: "cfo", role_label: "", persona: "Betty", text: "x", reason: "y", confidence: 0.5 }),
+      encodeOutbound({ type: "suggestion", id: "s1", role: "cfo", role_label: "", persona: "Betty", text: "x", reason: "y", confidence: 0.5 }),
     ).toThrow();
+  });
+
+  // El Motor siempre manda id (engine.test.ts); el overlay y su modo demo todavía no lo usan.
+  test("el id de la Sugerencia es opcional en el protocolo, pero no vacío", () => {
+    expect(() =>
+      encodeOutbound({ type: "suggestion", role: "cfo", role_label: "CFO", persona: "Betty", text: "x", reason: "y", confidence: 0.5 }),
+    ).not.toThrow();
+    expect(() =>
+      encodeOutbound({ type: "suggestion", id: "", role: "cfo", role_label: "CFO", persona: "Betty", text: "x", reason: "y", confidence: 0.5 }),
+    ).toThrow();
+  });
+
+  test("serializa un delta de Redacción (texto acumulado, sin motivo) y una cancelación", () => {
+    const delta = encodeOutbound({ type: "suggestion_delta", id: "s1", role: "cfo", role_label: "CFO", persona: "Betty", text: "Pregunta si" });
+    expect(JSON.parse(delta)).toEqual({ type: "suggestion_delta", id: "s1", role: "cfo", role_label: "CFO", persona: "Betty", text: "Pregunta si" });
+    expect(JSON.parse(encodeOutbound({ type: "suggestion_cancel", id: "s1" }))).toEqual({ type: "suggestion_cancel", id: "s1" });
   });
 
   test("rechaza una confianza fuera de [0, 1]", () => {
     expect(() =>
-      encodeOutbound({ type: "suggestion", role: "cfo", role_label: "CFO", persona: "Betty", text: "x", reason: "y", confidence: 1.5 }),
+      encodeOutbound({ type: "suggestion", id: "s1", role: "cfo", role_label: "CFO", persona: "Betty", text: "x", reason: "y", confidence: 1.5 }),
     ).toThrow();
   });
 

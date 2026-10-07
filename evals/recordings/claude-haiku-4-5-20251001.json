@@ -1,0 +1,18 @@
+{
+  "11e20c2febd2f27f86656a9555a1586870b385574e49558cce5d4331416ac02e": {
+    "text": "Confirma si los 2 millones incluyen IVA, impuestos y en qué moneda facturan.",
+    "reason": "El precio base oculta retenciones, IVA y posibles diferencias de cambio que impactan directamente la caja real."
+  },
+  "13ebc17cb6071dd52a90bac1d616a95f430b82ccbc79201cbe5bbfdeb633d027": {
+    "text": "Pregunta si los 2 millones incluyen IVA, en qué moneda y qué sucede si cancelas antes de enero.",
+    "reason": "Evitar sorpresas de impuestos, tipo de cambio, y aclarar si el aumento del 8% aplica aunque canceles la renovación automática."
+  },
+  "d1cedbd708efef0047d068b4ccb457f8d86de80b573245f26e1d28c8c3865876": {
+    "text": "Pregunta si los 2 millones incluyen IVA y en qué moneda se facturan exactamente.",
+    "reason": "El precio base sin impuestos puede duplicar el costo real; moneda diferente genera riesgo de cambio no mencionado."
+  },
+  "f29bae6f7386125aef956d01e66ad5e389f9fbbfa2b5a45e8314b1412c8f82bc": {
+    "text": "Pregunta si los dieciocho millones incluyen IVA y otros impuestos retenibles.",
+    "reason": "Necesita saber el costo real de caja antes de comprometerse; la cifra podría aumentar significativamente con cargas fiscales."
+  }
+}
