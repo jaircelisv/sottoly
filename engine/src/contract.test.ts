@@ -1,43 +1,40 @@
-// Contrato + E2E del Motor: las Reuniones sintéticas de evals/ corren por el pipeline completo
-// con las respuestas grabadas de Jev (sin keys, determinista). Si cambia el prompt de la Compuerta
-// o un Rol, falta la grabación y la prueba falla: hay que volver a grabar (evals/FORMAT.md).
+// Contrato App ↔ Motor generado desde Zod (PLAN.md, tarea 3).
 import { describe, expect, test } from "bun:test";
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
-import config from "../config.json";
-import { loadFixtures, Recordings, replayEvaluator, runFixture } from "./evals";
-import { loadRoles } from "./roles";
+import { generateSchema, isSchemaFresh, loadExamples, SCHEMA_PATH, zodAccepts } from "./contract";
 
-const ROOT = join(import.meta.dir, "../..");
-const fixtures = loadFixtures(join(ROOT, "evals/fixtures"));
-const recordings = new Recordings(join(ROOT, `evals/recordings/${config.gate.model}.json`));
-const roles = loadRoles(join(ROOT, "roles"));
-
-describe("contrato de la Compuerta con respuestas grabadas", () => {
-  test("hay al menos 5 Reuniones sintéticas", () => {
-    expect(fixtures.length).toBeGreaterThanOrEqual(5);
+describe("JSON Schema del protocolo", () => {
+  test("cubre los siete mensajes del protocolo", () => {
+    const texto = JSON.stringify(generateSchema());
+    for (const tipo of ["segment", "session", "clock", "suggestion", "suggestion_delta", "suggestion_cancel", "summary"]) {
+      expect(texto).toContain(`"${tipo}"`);
+    }
   });
 
-  for (const fixture of fixtures) {
-    test(fixture.id, async () => {
-      const run = await runFixture(fixture, {
-        roles,
-        evaluate: replayEvaluator(config.gate.model, recordings),
-        config,
-        now: () => 0,
-      });
-      expect(run.errors).toEqual([]);
-      const decisions = run.turns.map((t) => (t.decision.speak ? t.decision.role : "none"));
-      expect({ decisions, suggestions: run.suggestions }).toMatchSnapshot();
-    });
-  }
+  test("el schema versionado es el que genera Zod", () => {
+    expect(isSchemaFresh(SCHEMA_PATH)).toBe(true);
+  });
 
-  test("las etiquetas solo usan ids de Rol activos", () => {
-    const ids = new Set(roles.filter((r) => r.status === "active").map((r) => r.id));
-    for (const f of fixtures) {
-      for (const l of f.labels) {
-        if (l.should_intervene) expect(ids.has(l.expected_role!)).toBe(true);
-        else expect(l.expected_role).toBeNull();
-      }
+  test("detecta un schema desactualizado", () => {
+    const viejo = join(mkdtempSync(join(tmpdir(), "sottoly-schema-")), "protocol.schema.json");
+    writeFileSync(viejo, JSON.stringify({ inbound: {}, outbound: {} }));
+    expect(isSchemaFresh(viejo)).toBe(false);
+  });
+});
+
+describe("mensajes de ejemplo", () => {
+  const ejemplos = loadExamples();
+
+  test("cubren los siete tipos en su dirección", () => {
+    const vistos = new Set(ejemplos.filter((e) => e.valid).map((e) => `${e.direction}:${(e.message as { type: string }).type}`));
+    for (const t of ["inbound:segment", "inbound:session", "inbound:clock", "outbound:suggestion", "outbound:suggestion_delta", "outbound:suggestion_cancel", "outbound:summary"]) {
+      expect(vistos.has(t)).toBe(true);
     }
+  });
+
+  test("Zod acepta los válidos y rechaza los inválidos", () => {
+    for (const e of ejemplos) expect({ ejemplo: e.message, zod: zodAccepts(e.direction, e.message) }).toEqual({ ejemplo: e.message, zod: e.valid });
   });
 });

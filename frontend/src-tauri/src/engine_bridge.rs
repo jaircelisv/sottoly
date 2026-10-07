@@ -56,6 +56,41 @@ pub struct SuggestionDelta {
     pub text: String,
 }
 
+/// Decisión que el Motor propone al cerrar la Reunión (`Decision` en `protocol.ts`).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Decision {
+    pub id: String,
+    pub kind: DecisionKind,
+    pub text: String,
+    pub owner: DecisionOwner,
+    pub due: Option<String>,
+    pub source: DecisionSource,
+    pub meeting_id: String,
+    pub created_at: String,
+    pub approved: bool,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DecisionKind {
+    Decision,
+    Commitment,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DecisionOwner {
+    User,
+    Counterpart,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DecisionSource {
+    Engine,
+    LiveMark,
+}
+
 /// Lo que el Motor imprime por stdout para la tarjeta. Se serializa con su `type`, tal como
 /// lo valida el overlay con el zod de `protocol.ts`.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -64,6 +99,8 @@ pub enum EngineEvent {
     SuggestionDelta(SuggestionDelta),
     Suggestion(SuggestionMessage),
     SuggestionCancel { id: String },
+    // SOTTOLY: antes el puente descartaba el summary (Decisiones al cerrar), que el contrato sí define.
+    Summary { decisions: Vec<Decision> },
 }
 
 impl EngineEvent {
@@ -73,6 +110,7 @@ impl EngineEvent {
             EngineEvent::SuggestionDelta(_) => "suggestion_delta",
             EngineEvent::Suggestion(_) => "suggestion",
             EngineEvent::SuggestionCancel { .. } => "suggestion_cancel",
+            EngineEvent::Summary { .. } => "summary",
         }
     }
 }
@@ -254,6 +292,8 @@ impl StreamLog {
                 unix_ms, s.id, s.role, s.persona, s.text
             )),
             EngineEvent::SuggestionCancel { id } => Some(format!("SOTTOLY_SUGGESTION_CANCEL at_ms={} id={}", unix_ms, id)),
+            // Sin el texto de las Decisiones: el log no guarda contenido de la Reunión.
+            EngineEvent::Summary { decisions } => Some(format!("SOTTOLY_SUMMARY at_ms={} decisions={}", unix_ms, decisions.len())),
         }
     }
 }
@@ -403,6 +443,15 @@ pub fn install<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
 mod tests {
     use super::*;
 
+    /// SOTTOLY: el `summary` del protocolo (Decisiones al cerrar la Reunión) no se puede perder en el puente.
+    #[test]
+    fn bridge_accepts_the_protocol_summary() {
+        let line = r#"{"type":"summary","decisions":[{"id":"d1","kind":"commitment","text":"El contador envía la declaración el viernes.","owner":"counterpart","due":"2026-10-09","source":"engine","meeting_id":"m1","created_at":"2026-10-04T15:00:00Z","approved":false}]}"#;
+        let event = serde_json::from_str::<EngineEvent>(line);
+        assert!(event.is_ok(), "el puente descarta el summary: {:?}", event.err());
+        assert_eq!(event.unwrap().tauri_event(), "summary");
+    }
+
     fn clock() -> EngineClock {
         EngineClock::new(0.25, Duration::from_secs(2))
     }
@@ -504,7 +553,8 @@ mod tests {
         fake.arg("-c").arg(concat!(
             "read line; ",
             "echo 'no es json'; ",
-            "echo '{\"type\":\"summary\",\"decisions\":[]}'; ",
+            // SOTTOLY: antes esta línea era un `summary`; ahora el puente lo acepta (contrato, tarea 3).
+            "echo '{\"type\":\"desconocido\",\"id\":\"x\"}'; ",
             "echo '{\"type\":\"suggestion_delta\",\"id\":\"s1\",\"role\":\"cfo\",\"role_label\":\"CFO\",\"persona\":\"Betty\",\"text\":\"Pregunta si\"}'; ",
             "echo '{\"type\":\"suggestion\",\"id\":\"s1\",\"role\":\"cfo\",\"role_label\":\"CFO\",\"persona\":\"Betty\",",
             "\"text\":\"Pregunta si incluye IVA.\",\"reason\":\"Precio sin impuestos.\",\"confidence\":0.9}'; ",

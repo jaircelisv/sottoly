@@ -1,0 +1,279 @@
+{
+  "$comment": "Generado desde engine/src/protocol.ts con `bun src/contract.ts --write`. No editar a mano.",
+  "inbound": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "anyOf": [
+      {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "segment"
+          },
+          "speaker": {
+            "type": "string",
+            "enum": [
+              "user",
+              "counterpart",
+              "mixed"
+            ]
+          },
+          "text": {
+            "type": "string"
+          },
+          "t0": {
+            "type": "number",
+            "minimum": 0
+          },
+          "t1": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "type",
+          "speaker",
+          "text",
+          "t0",
+          "t1"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "session"
+          },
+          "event": {
+            "type": "string",
+            "enum": [
+              "start",
+              "end"
+            ]
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]*$"
+            }
+          }
+        },
+        "required": [
+          "type",
+          "event"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "clock"
+          },
+          "t": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "type",
+          "t"
+        ],
+        "additionalProperties": false
+      }
+    ]
+  },
+  "outbound": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "anyOf": [
+      {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "suggestion"
+          },
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "role": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "role_label": {
+            "type": "string",
+            "minLength": 1
+          },
+          "persona": {
+            "type": "string",
+            "minLength": 1
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        },
+        "required": [
+          "type",
+          "role",
+          "role_label",
+          "persona",
+          "text",
+          "reason",
+          "confidence"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "suggestion_delta"
+          },
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "role": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "role_label": {
+            "type": "string",
+            "minLength": 1
+          },
+          "persona": {
+            "type": "string",
+            "minLength": 1
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "type",
+          "id",
+          "role",
+          "role_label",
+          "persona",
+          "text"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "suggestion_cancel"
+          },
+          "id": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "type",
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "summary"
+          },
+          "decisions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "decision",
+                    "commitment"
+                  ]
+                },
+                "text": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "owner": {
+                  "type": "string",
+                  "enum": [
+                    "user",
+                    "counterpart"
+                  ]
+                },
+                "due": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "source": {
+                  "type": "string",
+                  "enum": [
+                    "engine",
+                    "live_mark"
+                  ]
+                },
+                "meeting_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "created_at": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "approved": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "kind",
+                "text",
+                "owner",
+                "due",
+                "source",
+                "meeting_id",
+                "created_at",
+                "approved"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "type",
+          "decisions"
+        ],
+        "additionalProperties": false
+      }
+    ]
+  }
+}

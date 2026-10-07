@@ -45,6 +45,7 @@ verify: verify-engine verify-overlay verify-rust
 verify-engine: engine/node_modules
 	cd engine && bunx tsc --noEmit && bun test
 	cd engine && bun test ../scripts/sottoly/harness
+	cd engine && bun src/contract.ts --check
 
 verify-overlay: engine/node_modules overlay/node_modules
 	cd overlay && bunx tsc --noEmit && bun test scripts
