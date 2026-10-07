@@ -49,7 +49,14 @@ function log(entry: Record<string, unknown>) {
 
 async function main() {
   const { evaluate, draft, save } = providers();
-  const engine = new Engine({ roles: loadRoles(ROLES_DIR), evaluate, draft, config, log });
+  const engine = new Engine({
+    roles: loadRoles(ROLES_DIR),
+    evaluate,
+    draft,
+    config,
+    log,
+    onStream: (message) => process.stdout.write(encodeOutbound(message)),
+  });
 
   for await (const line of console) {
     if (!line.trim()) continue;

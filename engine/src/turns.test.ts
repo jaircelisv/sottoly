@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import config from "../config.json";
 import { TurnAssembler } from "./turns";
 import type { WindowSegment } from "./gate";
 
@@ -61,5 +62,32 @@ describe("TurnAssembler", () => {
 
   test("flush sin Turno abierto no emite nada", () => {
     expect(new TurnAssembler().flush()).toEqual([]);
+  });
+});
+
+// Con la configuración de la App (engine/config.json). Los Segmentos traen el padding del VAD:
+// 480 ms antes de la voz y 400 ms después, así que el hueco entre dos Segmentos de un mismo
+// hablante es su silencio real menos 0,88 s.
+describe("Turnos con config.json (gapSeconds 0,4)", () => {
+  const PAD_S = 0.88;
+  const fromConfig = () => new TurnAssembler(config.turns);
+
+  test("una pausa de 1,1 s dentro de una frase no la parte", () => {
+    const a = fromConfig();
+    a.push(seg("counterpart", 0, 3, "Como acordamos,"));
+    expect(a.push(seg("counterpart", 3 + 1.1 - PAD_S, 6, "el contrato sería por 24 meses."))).toEqual([]);
+  });
+
+  test("un silencio de 1,3 s entre Segmentos cierra el Turno", () => {
+    const a = fromConfig();
+    a.push(seg("counterpart", 0, 3, "El plan anual cuesta dos millones."));
+    expect(a.push(seg("counterpart", 3 + 1.3 - PAD_S, 6, "Les pediría un anticipo."))).toMatchObject([{ kind: "turn_closed" }]);
+  });
+
+  test("el latido cierra el Turno 0,4 s de audio después de su último Segmento", () => {
+    const a = fromConfig();
+    a.push(seg("counterpart", 0, 3, "El plan anual cuesta dos millones."));
+    expect(a.tick(3.35)).toEqual([]);
+    expect(a.tick(3.4)).toMatchObject([{ kind: "turn_closed" }]);
   });
 });

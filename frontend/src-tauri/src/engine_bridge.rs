@@ -33,18 +33,51 @@ pub enum SessionEvent {
     End,
 }
 
-/// Sugerencia del Motor (engine → app). Es también el payload del evento `suggestion` del overlay.
+/// Sugerencia final del Motor (engine → app); `id` es el de sus deltas.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(tag = "type", rename = "suggestion")]
 pub struct SuggestionMessage {
+    pub id: String,
     pub role: String,
+    /// Nombre visible del Rol ("CFO"); el overlay lo exige (protocolo, #20).
+    pub role_label: String,
     pub persona: String,
     pub text: String,
     pub reason: String,
     pub confidence: f64,
 }
 
-/// Proceso del Motor con su stdin abierto. Cada Sugerencia que imprime llega a `on_suggestion`.
+/// Redacción en curso: `text` es el texto acumulado hasta ahora (sin motivo).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct SuggestionDelta {
+    pub id: String,
+    pub role: String,
+    pub role_label: String,
+    pub persona: String,
+    pub text: String,
+}
+
+/// Lo que el Motor imprime por stdout para la tarjeta. Se serializa con su `type`, tal como
+/// lo valida el overlay con el zod de `protocol.ts`.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum EngineEvent {
+    SuggestionDelta(SuggestionDelta),
+    Suggestion(SuggestionMessage),
+    SuggestionCancel { id: String },
+}
+
+impl EngineEvent {
+    /// Nombre del evento de Tauri: el mismo `type` del protocolo.
+    pub fn tauri_event(&self) -> &'static str {
+        match self {
+            EngineEvent::SuggestionDelta(_) => "suggestion_delta",
+            EngineEvent::Suggestion(_) => "suggestion",
+            EngineEvent::SuggestionCancel { .. } => "suggestion_cancel",
+        }
+    }
+}
+
+/// Proceso del Motor con su stdin abierto. Cada evento de Sugerencia que imprime llega a `on_event`.
 pub struct EngineBridge {
     child: Child,
     stdin: Mutex<Option<ChildStdin>>,
@@ -52,15 +85,15 @@ pub struct EngineBridge {
 }
 
 impl EngineBridge {
-    pub fn spawn(mut command: Command, on_suggestion: impl Fn(SuggestionMessage) + Send + 'static) -> std::io::Result<Self> {
+    pub fn spawn(mut command: Command, on_event: impl Fn(EngineEvent) + Send + 'static) -> std::io::Result<Self> {
         let mut child = command.stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped()).spawn()?;
         let stdout = child.stdout.take().expect("stdout piped");
         let stderr = child.stderr.take().expect("stderr piped");
 
         let reader = std::thread::spawn(move || {
             for line in BufReader::new(stdout).lines().map_while(Result::ok) {
-                match serde_json::from_str::<SuggestionMessage>(&line) {
-                    Ok(suggestion) => on_suggestion(suggestion),
+                match serde_json::from_str::<EngineEvent>(&line) {
+                    Ok(event) => on_event(event),
                     Err(_) => debug!("SOTTOLY engine: línea ignorada en stdout"),
                 }
             }
@@ -203,8 +236,27 @@ pub fn reset_clock() {
 
 // --- App ---------------------------------------------------------------------------------------
 
-/// Evento de Tauri con cada Sugerencia (lo escucha el overlay).
-pub const SUGGESTION_EVENT: &str = "suggestion";
+/// Líneas de log para medir fin del habla → tarjeta: el primer delta de cada id (la tarjeta
+/// aparece) y el final (como SOTTOLY_LATENCY para los Segmentos).
+#[derive(Default)]
+struct StreamLog {
+    started: std::collections::HashSet<String>,
+}
+
+impl StreamLog {
+    fn line(&mut self, event: &EngineEvent, unix_ms: u128) -> Option<String> {
+        match event {
+            EngineEvent::SuggestionDelta(d) => self.started.insert(d.id.clone()).then(|| {
+                format!("SOTTOLY_SUGGESTION_FIRST at_ms={} id={} role={} persona={}", unix_ms, d.id, d.role, d.persona)
+            }),
+            EngineEvent::Suggestion(s) => Some(format!(
+                "SOTTOLY_SUGGESTION at_ms={} id={} role={} persona={} text={:?}",
+                unix_ms, s.id, s.role, s.persona, s.text
+            )),
+            EngineEvent::SuggestionCancel { id } => Some(format!("SOTTOLY_SUGGESTION_CANCEL at_ms={} id={}", unix_ms, id)),
+        }
+    }
+}
 
 /// Keys que el Motor lee del entorno; en la App salen del Keychain (servicio = nombre).
 const KEYCHAIN_KEYS: [&str; 2] = ["TYPESAFE_AI_API_KEY", "ANTHROPIC_API_KEY"];
@@ -275,9 +327,14 @@ fn start_session<R: tauri::Runtime>(app: tauri::AppHandle<R>) {
 
     stop_session();
     let emitter = app.clone();
-    let bridge = match EngineBridge::spawn(engine_command(), move |s| {
-        if let Err(e) = emitter.emit(SUGGESTION_EVENT, &s) {
-            warn!("SOTTOLY: no se pudo emitir la Sugerencia: {}", e);
+    let stream_log = Mutex::new(StreamLog::default());
+    let bridge = match EngineBridge::spawn(engine_command(), move |event| {
+        let now_ms = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_millis()).unwrap_or(0);
+        if let Some(line) = lock(&stream_log).line(&event, now_ms) {
+            info!("{}", line);
+        }
+        if let Err(e) = emitter.emit(event.tauri_event(), &event) {
+            warn!("SOTTOLY: no se pudo emitir {}: {}", event.tauri_event(), e);
         }
     }) {
         Ok(b) => Arc::new(b),
@@ -365,6 +422,65 @@ mod tests {
         assert_eq!(end.to_line(), "{\"type\":\"session\",\"event\":\"end\"}\n");
     }
 
+    /// El overlay valida la Sugerencia con el zod del protocolo, que exige `role_label` (#20):
+    /// el puente no puede descartarlo al pasar por serde.
+    #[test]
+    fn bridge_forwards_role_label_to_the_overlay() {
+        let line = r#"{"type":"suggestion","id":"s1","role":"cfo","role_label":"CFO","persona":"Betty","text":"Pregunta si incluye IVA.","reason":"Precio sin impuestos.","confidence":0.9}"#;
+        let event: EngineEvent = serde_json::from_str(line).unwrap();
+        let out = serde_json::to_value(&event).unwrap();
+        assert_eq!(out["role_label"], "CFO");
+        assert_eq!(out["type"], "suggestion");
+    }
+
+    fn delta(id: &str, text: &str) -> EngineEvent {
+        EngineEvent::SuggestionDelta(SuggestionDelta {
+            id: id.into(),
+            role: "cfo".into(),
+            role_label: "CFO".into(),
+            persona: "Betty".into(),
+            text: text.into(),
+        })
+    }
+
+    #[test]
+    fn events_go_to_the_overlay_with_their_protocol_type() {
+        let d = delta("s1", "Pregunta si");
+        assert_eq!(d.tauri_event(), "suggestion_delta");
+        assert_eq!(
+            serde_json::to_value(&d).unwrap(),
+            serde_json::json!({"type":"suggestion_delta","id":"s1","role":"cfo","role_label":"CFO","persona":"Betty","text":"Pregunta si"})
+        );
+        let c = EngineEvent::SuggestionCancel { id: "s1".into() };
+        assert_eq!(c.tauri_event(), "suggestion_cancel");
+        assert_eq!(serde_json::to_value(&c).unwrap(), serde_json::json!({"type":"suggestion_cancel","id":"s1"}));
+    }
+
+    /// La tarjeta aparece con el primer delta: esa es la hora que cuenta para fin del habla → tarjeta.
+    #[test]
+    fn stream_log_marks_the_first_delta_and_the_final_of_each_suggestion() {
+        let mut log = StreamLog::default();
+        assert_eq!(
+            log.line(&delta("s1", "Pregunta si"), 1_000).as_deref(),
+            Some("SOTTOLY_SUGGESTION_FIRST at_ms=1000 id=s1 role=cfo persona=Betty")
+        );
+        assert_eq!(log.line(&delta("s1", "Pregunta si incluye IVA."), 1_100), None);
+        let final_ = EngineEvent::Suggestion(SuggestionMessage {
+            id: "s1".into(),
+            role: "cfo".into(),
+            role_label: "CFO".into(),
+            persona: "Betty".into(),
+            text: "Pregunta si incluye IVA.".into(),
+            reason: "Precio sin impuestos.".into(),
+            confidence: 0.9,
+        });
+        assert_eq!(
+            log.line(&final_, 1_200).as_deref(),
+            Some("SOTTOLY_SUGGESTION at_ms=1200 id=s1 role=cfo persona=Betty text=\"Pregunta si incluye IVA.\"")
+        );
+        assert_eq!(log.line(&EngineEvent::SuggestionCancel { id: "s2".into() }, 1_300).as_deref(), Some("SOTTOLY_SUGGESTION_CANCEL at_ms=1300 id=s2"));
+    }
+
     #[test]
     fn final_transcript_updates_become_segments_and_partials_do_not() {
         let update = |partial: bool| {
@@ -381,26 +497,26 @@ mod tests {
         assert_eq!(segment_from_transcript(&update(true)), None);
     }
 
-    /// Sidecar falso: lo que no es una Sugerencia válida se ignora sin tumbar el puente.
+    /// Sidecar falso: deltas, final y cancelación llegan en orden; lo demás se ignora.
     #[test]
-    fn bridge_reads_suggestions_and_skips_other_lines() {
+    fn bridge_reads_suggestion_events_in_order_and_skips_other_lines() {
         let mut fake = Command::new("sh");
         fake.arg("-c").arg(concat!(
             "read line; ",
             "echo 'no es json'; ",
             "echo '{\"type\":\"summary\",\"decisions\":[]}'; ",
-            "echo '{\"type\":\"suggestion\",\"role\":\"cfo\",\"persona\":\"Betty\",",
-            "\"text\":\"Pregunta si incluye IVA.\",\"reason\":\"Precio sin impuestos.\",\"confidence\":0.9}'"
+            "echo '{\"type\":\"suggestion_delta\",\"id\":\"s1\",\"role\":\"cfo\",\"role_label\":\"CFO\",\"persona\":\"Betty\",\"text\":\"Pregunta si\"}'; ",
+            "echo '{\"type\":\"suggestion\",\"id\":\"s1\",\"role\":\"cfo\",\"role_label\":\"CFO\",\"persona\":\"Betty\",",
+            "\"text\":\"Pregunta si incluye IVA.\",\"reason\":\"Precio sin impuestos.\",\"confidence\":0.9}'; ",
+            "echo '{\"type\":\"suggestion_cancel\",\"id\":\"s2\"}'"
         ));
         let (tx, rx) = mpsc::channel();
-        let bridge = EngineBridge::spawn(fake, move |s| tx.send(s).unwrap()).unwrap();
+        let bridge = EngineBridge::spawn(fake, move |e| tx.send(e).unwrap()).unwrap();
         bridge.send(&EngineMessage::Clock { t: 1.0 }).unwrap();
         bridge.finish().unwrap();
 
-        let got: Vec<SuggestionMessage> = rx.try_iter().collect();
-        assert_eq!(got.len(), 1);
-        assert_eq!(got[0].persona, "Betty");
-        assert_eq!(got[0].text, "Pregunta si incluye IVA.");
+        let kinds: Vec<&str> = rx.try_iter().map(|e| e.tauri_event()).collect();
+        assert_eq!(kinds, vec!["suggestion_delta", "suggestion", "suggestion_cancel"]);
     }
 
     #[derive(Deserialize)]
@@ -417,7 +533,7 @@ mod tests {
         t1: f64,
     }
 
-    /// Integración: el Motor real (`bun engine/src/main.ts`) con Jev y Sonnet grabados.
+    /// Integración: el Motor real (`bun engine/src/main.ts`) con Jev y Haiku grabados.
     /// Una Reunión sintética entra por el puente y la Sugerencia de Betty sale por el callback.
     #[test]
     fn real_engine_with_recorded_providers_suggests_through_the_bridge() {
@@ -430,7 +546,7 @@ mod tests {
         let mut engine = Command::new("bun");
         engine.arg(repo.join("engine/src/main.ts")).env("SOTTOLY_PROVIDERS", "recorded");
         let (tx, rx) = mpsc::channel();
-        let bridge = EngineBridge::spawn(engine, move |s| tx.send(s).unwrap()).expect("¿bun en el PATH?");
+        let bridge = EngineBridge::spawn(engine, move |e| tx.send(e).unwrap()).expect("¿bun en el PATH?");
 
         bridge.send(&EngineMessage::Session { event: SessionEvent::Start, roles: Some(fixture.roles) }).unwrap();
         for s in fixture.segments {
@@ -438,10 +554,14 @@ mod tests {
         }
         bridge.finish().unwrap();
 
-        let got: Vec<SuggestionMessage> = rx.try_iter().collect();
-        assert_eq!(got.len(), 1, "{got:?}");
+        let events: Vec<EngineEvent> = rx.try_iter().collect();
+        let got: Vec<&SuggestionMessage> =
+            events.iter().filter_map(|e| if let EngineEvent::Suggestion(s) = e { Some(s) } else { None }).collect();
+        assert_eq!(got.len(), 1, "{events:?}");
         assert_eq!(got[0].role, "cfo");
         assert_eq!(got[0].persona, "Betty");
+        // Antes del final llegaron los deltas de la misma Sugerencia.
+        assert!(matches!(&events[0], EngineEvent::SuggestionDelta(d) if d.id == got[0].id), "{events:?}");
     }
 
     #[test]

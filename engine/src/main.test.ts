@@ -3,7 +3,7 @@
 import { expect, test } from "bun:test";
 import { join } from "node:path";
 import { loadFixtures } from "./evals";
-import { SuggestionMessage } from "./protocol";
+import { OutboundMessage } from "./protocol";
 
 const ROOT = join(import.meta.dir, "../..");
 const fixture = loadFixtures(join(ROOT, "evals/fixtures")).find((f) => f.id === "contador-iva")!;
@@ -26,7 +26,10 @@ test("una Reunión por stdin produce la Sugerencia de Betty por stdout", async (
   expect(await proc.exited).toBe(0);
   expect(stderr).not.toContain("provider_failed");
 
-  const out = stdout.trim().split("\n").filter(Boolean).map((l) => SuggestionMessage.parse(JSON.parse(l)));
-  expect(out).toHaveLength(1);
-  expect(out[0]).toMatchObject({ type: "suggestion", role: "cfo", persona: "Betty" });
+  const out = stdout.trim().split("\n").filter(Boolean).map((l) => OutboundMessage.parse(JSON.parse(l)));
+  const finals = out.filter((m) => m.type === "suggestion");
+  expect(finals).toHaveLength(1);
+  expect(finals[0]).toMatchObject({ type: "suggestion", role: "cfo", persona: "Betty" });
+  // La tarjeta aparece con el delta, antes del final y con el mismo id.
+  expect(out[0]).toMatchObject({ type: "suggestion_delta", id: (finals[0] as { id: string }).id });
 }, 20_000);
