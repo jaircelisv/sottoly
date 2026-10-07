@@ -87,3 +87,6 @@ CLAUDE.local.md
 .harness/playwright.config.mjs
 .harness/playwright-artefactos/
 .harness/playwright-resultado.json
+
+# SOTTOLY: log de la App para `make measure` (contiene texto transcrito)
+app.log
