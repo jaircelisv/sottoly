@@ -1,0 +1,28 @@
+{
+  "id": "charla-fuera-del-rol",
+  "role": "cfo",
+  "description": "Charla de cortesía sobre fútbol y el clima; nada de plata ni compromisos.",
+  "segments": [
+    {
+      "speaker": "counterpart",
+      "text": "¿Viste el partido de anoche? Qué golazo el del segundo tiempo.",
+      "t0": 0,
+      "t1": 4
+    },
+    {
+      "speaker": "user",
+      "text": "Sí, increíble, lo vi con mis amigos.",
+      "t0": 4.5,
+      "t1": 7
+    },
+    {
+      "speaker": "counterpart",
+      "text": "Y con este frío que está haciendo, provoca quedarse en la casa.",
+      "t0": 7.5,
+      "t1": 11
+    }
+  ],
+  "expect": {
+    "skip": true
+  }
+}

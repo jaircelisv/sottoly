@@ -1,0 +1,28 @@
+{
+  "id": "precio-sin-condiciones",
+  "role": "cfo",
+  "description": "Un proveedor da un precio mensual sin decir impuestos ni forma de pago.",
+  "segments": [
+    {
+      "speaker": "counterpart",
+      "text": "El plan empresarial les queda en tres millones al mes.",
+      "t0": 0,
+      "t1": 5
+    },
+    {
+      "speaker": "user",
+      "text": "Perfecto, suena bien.",
+      "t0": 5.5,
+      "t1": 7
+    },
+    {
+      "speaker": "counterpart",
+      "text": "Si confirman hoy, mañana mismo les activamos las cuentas.",
+      "t0": 7.5,
+      "t1": 12
+    }
+  ],
+  "expect": {
+    "skip": false
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "121d5fcf78700c0f5f30e28eb871c866a282bd24b96b406a75b96a3927dac8be": {
+    "skip": false,
+    "text": "Pregunta si tres millones incluyen IVA y qué términos de pago tiene el contrato.",
+    "reason": "Evitar sorpresas con impuestos, moneda, plazos de pago y condiciones que no se mencionaron."
+  },
+  "2407b2e5ef26cd4fe75043ae52c9e73854f73a1340868aca4a6343a5e99b87ba": {
+    "skip": true,
+    "text": "",
+    "reason": ""
+  },
+  "2cb151c7db2303ef46c3a411cbf7f47cf51c0005c808a9bb0e820cf322d0607c": {
+    "skip": true,
+    "text": "",
+    "reason": ""
+  },
+  "505d9f748e93072c644f192b1dc05e84b6e2f781609be3bb96b4719ea29cbafd": {
+    "skip": true,
+    "text": "",
+    "reason": ""
+  },
+  "6329d018e66c1a36b068adeb1c8db851120ee128f7fb0b2bd0322977fa3a8574": {
+    "skip": true,
+    "text": "",
+    "reason": ""
+  }
+}

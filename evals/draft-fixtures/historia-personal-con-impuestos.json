@@ -1,0 +1,42 @@
+{
+  "id": "historia-personal-con-impuestos",
+  "role": "cfo",
+  "description": "La Contraparte cuenta un viaje familiar y de paso que le toca pagar impuestos; no hay nada que negociar.",
+  "segments": [
+    {
+      "speaker": "counterpart",
+      "text": "Esta semana viajé a otra ciudad porque mi hijo menor tenía una cita médica y tuve que acompañarlo.",
+      "t0": 0,
+      "t1": 6
+    },
+    {
+      "speaker": "counterpart",
+      "text": "Y en medio de todo eso me escribe mi contadora y me dice que este mes me toca pagar impuestos.",
+      "t0": 6.5,
+      "t1": 12
+    },
+    {
+      "speaker": "user",
+      "text": "Uy, qué semana.",
+      "t0": 12.5,
+      "t1": 14
+    },
+    {
+      "speaker": "counterpart",
+      "text": "Sí, la verdad estaba agotada, con el niño enfermo y los papeles del colegio.",
+      "t0": 14.5,
+      "t1": 19
+    }
+  ],
+  "expect": {
+    "not_mention": [
+      "hijo",
+      "niño",
+      "médica",
+      "colegio",
+      "enfermo",
+      "personal",
+      "viaje"
+    ]
+  }
+}

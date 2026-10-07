@@ -1,0 +1,29 @@
+{
+  "id": "punto-ya-sugerido",
+  "role": "cfo",
+  "description": "La Contraparte sigue hablando del régimen tributario, que la Redacción ya sugirió revisar.",
+  "previous": [
+    "Pide por escrito cuál es tu régimen tributario actual y cuál te conviene."
+  ],
+  "segments": [
+    {
+      "speaker": "counterpart",
+      "text": "Como te decía, con el régimen que tienes ahora estás pagando de más.",
+      "t0": 0,
+      "t1": 6
+    },
+    {
+      "speaker": "counterpart",
+      "text": "Por eso insisto en lo del régimen, hay que revisarlo con calma.",
+      "t0": 6.5,
+      "t1": 11
+    },
+    {
+      "speaker": "user",
+      "text": "Ajá, entiendo.",
+      "t0": 11.5,
+      "t1": 13
+    }
+  ],
+  "expect": {}
+}
