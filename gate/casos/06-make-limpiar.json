@@ -1,0 +1,51 @@
+{
+  "tarea": "6 · make limpiar borra las Reuniones de prueba y sus transcripts.json, sin tocar nada más",
+  "origen": "agente",
+  "modulo": "scripts/sottoly/harness/limpiar.mjs",
+  "funcion": "probar_limpiar",
+  "casos": [
+    {
+      "nombre": "con una medición registrada borra las Reuniones creadas desde entonces, en la base y en disco con su transcripts.json, y deja las anteriores y todo lo demás",
+      "entrada": [{ "con_medicion": true }],
+      "esperado": {
+        "ok": true,
+        "borradas_las_de_prueba": true,
+        "quedan_las_anteriores": true,
+        "resto_intacto": true,
+        "medicion_olvidada": true
+      }
+    },
+    {
+      "nombre": "una carpeta de prueba que Meetily dejó sin fila en la base también se borra",
+      "entrada": [{ "con_medicion": true, "huerfana": true }],
+      "esperado": {
+        "ok": true,
+        "borradas_las_de_prueba": true,
+        "quedan_las_anteriores": true,
+        "resto_intacto": true,
+        "medicion_olvidada": true
+      }
+    },
+    {
+      "nombre": "una Reunión de prueba cuya carpeta está fuera de la carpeta de grabaciones sale de la base pero su carpeta no se toca",
+      "entrada": [{ "con_medicion": true, "carpeta_fuera": true }],
+      "esperado": {
+        "ok": true,
+        "borradas_las_de_prueba": true,
+        "quedan_las_anteriores": true,
+        "resto_intacto": true,
+        "medicion_olvidada": true
+      }
+    },
+    {
+      "nombre": "sin una medición registrada no borra nada y el mensaje lo dice",
+      "entrada": [{ "con_medicion": false }],
+      "esperado": { "ok": false, "nada_borrado": true, "menciona_medicion": true }
+    },
+    {
+      "nombre": "make measure registra la medición antes de reproducir las frases",
+      "entrada": [{ "registra_measure": true }],
+      "esperado": { "medicion_registrada": true }
+    }
+  ]
+}

@@ -4,6 +4,7 @@
 #   make demo       Next en http://localhost:3118 precalentado, luego Tauri con Sugerencias de demo
 #   make measure    latencia de Segmentos con la App corriendo (LOG=app.log por defecto)
 #   make worktree   NAME=<nombre>: worktree desde origin/main con el contexto privado y los binarios
+#   make limpiar    borra las Reuniones de prueba de la última medición (base y transcripts.json)
 
 SHELL := /bin/bash
 .SHELLFLAGS := -eu -o pipefail -c
@@ -16,11 +17,18 @@ LOG      ?= $(ROOT)/app.log
 
 WORKTREES_DIR ?= $(HOME)/orca/workspaces/Sottoly
 PRIVATE       := $(HOME)/.sottoly/CLAUDE.private.md
+MEDICION      := $(HOME)/.sottoly/medicion-desde
+
+MEETILY_DATA ?= $(HOME)/Library/Application Support/com.meetily.ai
+RECORDINGS   ?= $(shell sed -n 's/.*"save_folder"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$(MEETILY_DATA)/recording_preferences.json" 2>/dev/null || true)
+ifeq ($(strip $(RECORDINGS)),)
+RECORDINGS := $(HOME)/Movies/meetily-recordings
+endif
 
 LLAMA_HELPER   := $(BINARIES)/llama-helper-$(TRIPLE)
 SOTTOLY_ENGINE := $(BINARIES)/sottoly-engine-$(TRIPLE)
 
-.PHONY: verify verify-engine verify-overlay verify-rust sidecars demo measure deps worktree
+.PHONY: verify verify-engine verify-overlay verify-rust sidecars demo measure limpiar deps worktree
 
 # ── Dependencias ─────────────────────────────────────────────────────────────
 
@@ -84,8 +92,18 @@ demo: frontend/node_modules
 
 # ── measure ──────────────────────────────────────────────────────────────────
 
+# La medición se registra antes de reproducir nada: desde ahí, toda Reunión es de prueba
+# y make limpiar la borra. Varias mediciones seguidas conservan el primer registro.
+
 measure:
+	@mkdir -p "$(dir $(MEDICION))"
+	@test -f "$(MEDICION)" || date -u +%Y-%m-%dT%H:%M:%SZ > "$(MEDICION)"
 	scripts/sottoly/latency/measure.sh $(LOG)
+
+# ── limpiar ──────────────────────────────────────────────────────────────────
+
+limpiar:
+	@scripts/sottoly/limpiar.sh "$(MEETILY_DATA)" "$(RECORDINGS)" "$(MEDICION)"
 
 # ── worktree ─────────────────────────────────────────────────────────────────
 # Cada sesión trabaja en su worktree. El contexto privado no se versiona: vive en
