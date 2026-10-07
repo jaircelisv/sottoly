@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "proyecto": "Sottoly",
+  "arranque": {
+    "comando": "make demo",
+    "url": "http://localhost:3118",
+    "espera_ms": 60000
+  },
+  "comandos": [
+    {
+      "nombre": "los tests del proyecto",
+      "comando": "make verify",
+      "minimo_de_tests": 0
+    }
+  ],
+  "navegador": true
+}

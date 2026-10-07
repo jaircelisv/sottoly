@@ -81,3 +81,9 @@ frontend/src-tauri/binaries/
 CLAUDE.local.md
 .env*
 .sottoly/
+
+# SOTTOLY: archivos que genera el gate en cada corrida (el trinquete sí se versiona)
+.harness/ultima-medicion
+.harness/playwright.config.mjs
+.harness/playwright-artefactos/
+.harness/*.resultado.json
