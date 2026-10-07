@@ -30,8 +30,12 @@ if echo "$cmd" | grep -Eq 'rm[[:space:]]+-[a-zA-Z]*([rR][a-zA-Z]*[fF]|[fF][a-zA-
   rechazar "Bloqueado: borrado recursivo forzado. Si de verdad hay que borrar algo, pregúntaselo a la persona: no se deshace."
 fi
 
-if echo "$cmd" | grep -Eq 'git[[:space:]]+push.*(--force|-f[[:space:]])'; then
-  rechazar "Bloqueado: un push forzado reescribe historia publicada y se lleva el único punto de retorno que hay."
+# SOTTOLY: `--force-with-lease` sí se permite: es como se actualiza una rama de PR
+# después de rebasarla, y falla si alguien más empujó a esa rama. Se quita del
+# texto antes de buscar `--force` / `-f`, que siguen bloqueados.
+sin_lease=$(printf '%s' "$cmd" | sed -E 's/--force-with-lease(=[^[:space:]]*)?//g; s/--force-if-includes//g')
+if echo "$sin_lease" | grep -Eq 'git[[:space:]]+push.*(--force|[[:space:]]-f([[:space:]]|$))'; then
+  rechazar "Bloqueado: un push forzado reescribe historia publicada y se lleva el único punto de retorno que hay. Para actualizar una rama de PR rebasada usa --force-with-lease."
 fi
 
 if echo "$cmd" | grep -Eq 'git[[:space:]]+(reset[[:space:]]+--hard|clean[[:space:]]+-[a-zA-Z]*f)'; then

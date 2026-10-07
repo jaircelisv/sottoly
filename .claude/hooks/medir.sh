@@ -38,19 +38,25 @@ repetido=$(printf '%s' "$entrada" | node -e "
 
 raiz="${CLAUDE_PROJECT_DIR:-.}"
 
+# SOTTOLY: el código no vive en `src/` sino en las carpetas del fork de Meetily
+# (ADR-0001). La versión descargada solo miraba `src/` y aquí nunca avisaba.
+CARPETAS=(engine/src frontend/src-tauri/src frontend/src overlay/src roles scripts/sottoly src)
+existentes=()
+for c in "${CARPETAS[@]}"; do [ -d "$raiz/$c" ] && existentes+=("$raiz/$c"); done
+
 # Todavía no hay producto: no hay nada que medir y no hay nada que afirmar.
-[ -d "$raiz/src" ] || exit 0
+[ "${#existentes[@]}" -gt 0 ] || exit 0
 
 marca="$raiz/.harness/ultima-medicion"
 
 if [ ! -f "$marca" ]; then
-  echo "Hay código en src/ y el gate no se ha corrido ni una vez en esta sesión. Corre \`node gate/verificar.mjs\` y enseña la salida antes de dar nada por terminado: sin medir, ni tú ni la persona sabéis en qué estado está." >&2
+  echo "Hay código del producto y el gate no se ha corrido ni una vez en esta sesión. Corre \`node gate/verificar.mjs\` y enseña la salida antes de dar nada por terminado: sin medir, ni tú ni la persona sabéis en qué estado está." >&2
   exit 2
 fi
 
 # ⚠ `-newer` compara la fecha de modificación contra la del archivo de marca.
 # `-quit` para en el primero: basta con que UNO sea más nuevo.
-cambiado=$(find "$raiz/src" -type f -not -path '*/node_modules/*' -newer "$marca" -print -quit 2>/dev/null)
+cambiado=$(find "${existentes[@]}" -type f -not -path '*/node_modules/*' -not -path '*/target/*' -newer "$marca" -print -quit 2>/dev/null)
 
 if [ -n "$cambiado" ]; then
   echo "Cambiaste código después de la última medición (por ejemplo ${cambiado#"$raiz"/}). Corre \`node gate/verificar.mjs\` otra vez y enseña la salida: lo que sabías del estado anterior ya no vale para este." >&2
