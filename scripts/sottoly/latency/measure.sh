@@ -2,7 +2,7 @@
 # Mide la latencia de Segmentos (Q31) con la App corriendo y una grabación iniciada.
 #   scripts/sottoly/latency/measure.sh <app.log>
 # Reproduce phrases.txt con voz sintética por la salida por defecto (entra como Contraparte),
-# luego imprime cada Segmento transcrito, su latencia y p50/p90.
+# luego imprime cada Segmento transcrito, su latencia y p50/p90, y fin del habla → tarjeta.
 set -e
 LOG="${1:?uso: measure.sh <ruta al log de la App con RUST_LOG=info>}"
 DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -32,3 +32,6 @@ tail -n +"$((start+1))" "$LOG" | grep -o "latency_ms=[0-9]*" | cut -d= -f2 | sor
   | awk '{v[NR]=$1} END {if (NR==0) {print "sin Segmentos"; exit} \
          i50=int(0.5*(NR-1)+0.5)+1; i90=int(0.9*(NR-1)+0.5)+1; \
          printf "n=%d p50=%d p90=%d max=%d\n", NR, v[i50], v[i90], v[NR]}'
+
+# 4. Fin del habla → tarjeta (primer texto en el overlay).
+tail -n +"$((start+1))" "$LOG" | node "$DIR/tarjeta.mjs"
