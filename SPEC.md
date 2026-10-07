@@ -230,7 +230,7 @@ Instrucciones del rol en lenguaje natural.
 ## 6. Decisiones y Memoria
 
 - Al cerrar la Reunión, el Motor propone Decisiones candidatas (`summary`). El Usuario aprueba, edita o descarta cada una, o elige "no guardar nada".
-- Solo lo aprobado entra a la Memoria. La transcripción se descarta.
+- Solo lo aprobado entra a la Memoria. La transcripción se guarda en local y el Usuario decide si la borra (ADR-0003).
 - Marca en vivo (atajo global "marcar decisión"): guarda la marca de tiempo; al cierre el Motor redacta la Decisión con los ~60 s alrededor y la preselecciona.
 - Las preguntas abiertas no se guardan en el MVP.
 
@@ -250,7 +250,7 @@ Instrucciones del rol en lenguaje natural.
 
 ## 7. Privacidad y consentimiento
 
-- No guardar audio. No guardar transcripción por defecto; el ajuste "guardar transcripción local" viene apagado.
+- No guardar audio. La transcripción se guarda en local por defecto; el Usuario decide si la borra (ADR-0003). El aviso de consentimiento dice que se guarda.
 - Métricas solo locales y sin contenido: fecha, duración, Roles activos, número de Sugerencias, útil / no útil. Sin telemetría.
 - Mostrar un aviso de consentimiento al iniciar la sesión: texto corto en español que el Usuario lee o pega en el chat de la Reunión.
 - El overlay **sí** aparece al compartir pantalla. No copiar el modo "invisible" de otros asistentes: es el diferencial ético de Sottoly.
@@ -355,10 +355,15 @@ No construir antes del Build Day:
 | v1.1 | Transcripción en la nube opcional (Deepgram) implementando `TranscriptionProvider` |
 | v2 | Bot en Meet y Teams, voz con toggle explícito, Roles compartibles |
 
-**Privacidad (primera tarea después del Build Day):**
+**Privacidad:** las transcripciones se guardan por defecto (ADR-0003). `make limpiar` borra las de una medición.
 
-- Apagar por defecto el guardado de transcripciones en SQLite que hereda Meetily; activarlo a mano solo para evals con consentimiento.
-- Un comando o botón para borrar las transcripciones de prueba guardadas durante el Build Day.
+**Siguiente etapa (decisión del 2026-10-07, después de la primera prueba de punta a punta):**
+
+- **Panel Sottoly** en la ventana principal: Reuniones (con su transcripción) y Roles. Pantallas nuevas; las de Meetily no se borran (ADR-0001).
+- **Chat con el Rol** en la ventana principal, junto a la transcripción en vivo: el Usuario le responde a una Sugerencia o le pregunta al Rol por lo que se está diciendo; la respuesta llega en streaming. No va en el overlay.
+- **Creador de Roles**: una entrevista guiada (función, Persona, cuándo interviene, límites, nombre) que escribe el archivo del Rol. Todo Rol creado nace sin calibrar (`calibrated_with: none`), con un umbral conservador y ejemplos de cuándo hablar y cuándo no para calibrarlo.
+- Las pantallas se diseñan antes de escribir casos y código, y Jair aprueba el diseño.
+- La voz y el bot en la Reunión siguen en v2: el chat es su base, sin código de voz antes.
 
 **Criterio para pasar de fase:** el Usuario usa una Sugerencia en al menos 1 de cada 3 Reuniones. Con pilotos: al menos 3 de 5 usan Sottoly en más de una Reunión real.
 
