@@ -160,3 +160,44 @@ Latencia medida, fin del habla → decisión de la Compuerta: p50 1.246 ms, p90 
 **Arranque de la App en desarrollo:** si la ventana principal se abre mientras Next todavía compila, queda colgada con `ChunkLoadError: Loading chunk app/layout failed (timeout)` y las recargas no llegan a Next. Solución: levantar `pnpm dev`, precalentar con `curl http://localhost:3118/` y lanzar `pnpm tauri dev --config '{"build":{"beforeDevCommand":""}}' -- --features coreml`.
 
 **PRs apilados:** al integrar un PR cuya base no es `main`, el código queda en la rama de abajo (pasó con #16–#18 y #22–#23). Abrir cada PR contra `main`.
+
+## 8. Cierre del 2026-10-03 y arranque a las 9:00
+
+**Estado al cerrar:** nada corriendo. `tauri dev`, la App y `next dev` (puerto 3118) detenidos; ninguna inferencia local (`llama-helper`) en curso.
+
+### PRs abiertos (todos con los checks en verde)
+
+| PR | Rama → base | Qué | Nota |
+|---|---|---|---|
+| #25 | `sottoly/handoff-e2e` → `main` | HANDOFF §7: prueba de punta a punta (0 Sugerencias, causas) | Solo documentación |
+| #28 (este) | `sottoly/handoff-cierre` → `sottoly/handoff-e2e` | HANDOFF §8: cierre y PRs abiertos | Apilado sobre #25; integrar después de #25 (GitHub lo retargetea a `main` al borrar la rama de #25) |
+| #26 | `sottoly/local-model-check` → `main` | `check_local_model`: ¿está descargado y válido el modelo local? | Independiente. Lee el GGUF y detecta descargas cortadas, que el chequeo de ±10 % de Meetily deja pasar |
+| #27 | `sottoly/redaccion-haiku-streaming` → `main` | Redacción con Haiku 4.5 en streaming, 10–14 palabras con tope de 20; `suggestion_delta` / `suggestion_cancel` en el protocolo; `gapSeconds` 0,4 | Fixture `evals/fixtures/e2e-2026-10-03.json`. Regenera `overlay.js` (incluye `protocol.ts`). `SuggestionMessage.id` todavía opcional. bun 81, cargo 292, playwright 8 |
+
+Checks requeridos en `main`: `gitleaks`, `engine (bun test)`, `overlay (playwright)`. **`cargo test` no es requerido**, aunque §1 dice que sí: falta decidir si se agrega.
+
+Integrado esta noche: #17 (pre-roll del VAD), #18 y #21 (`engine_bridge`, latido `clock`), #19 (modo demo del overlay, `SOTTOLY_DEMO_SUGGESTIONS=1`, solo desarrollo), #20 (Playwright del overlay en CI, check de `overlay.js`, `role_label`), #22 (`max_tokens` 200), #23 (log `SOTTOLY_SUGGESTION`), #24 (`role_label` en el puente).
+
+### Prueba de punta a punta con #27: no se hizo
+
+La App quedó lista, pero la grabación no se llegó a iniciar antes del cierre. Todavía no hay medición fin del habla → tarjeta. Medido aparte: Haiku 4.5 da el primer texto a ~1,3 s y termina a ~1,33 s. Casi todo es espera del primer token, así que el streaming ayuda poco.
+
+### Experimento: modelo local para el plan gratis
+
+Qwen 3.5 4B por `llama-helper` contra Haiku 4.5 y Sonnet 5.5, con los 9 Turnos de Betty de §7 y el prompt de `main` 4b4a517. La Compuerta se probó con `buildGateQuestion` como prompt de chat. Resultados, runner y tabla ciega: `sottoly-evals` (privado), `results/2026-10-03-local-models/`.
+
+- **Redacción:** Qwen 3.5 4B, 2,4 s p50 total, ~0,45 s a la primera palabra (estimada: `llama-helper` no transmite), 9/9 con ≤ 15 palabras; primera carga en frío ~21 s. Haiku 4.5, 1,4 s p50, 9/9. Sonnet 5.5 con `between_tools` + effort `low`, 1,9 s p50, 3/9.
+- **Sonnet 5.5 sin configurar:** 193 de 200 tokens de salida fueron de razonamiento, `finishReason: length`, texto vacío en 9/9. Confirma la causa 2 de §7.
+- **Compuerta:** Qwen, Haiku y Sonnet eligen `cfo` en los 10 casos con confianza fija de 0,92–0,95. Ninguno da `none` en "cerramos esta semana" (Jev sí) ni elige `ceo_adversarial`. Con estos casos, el plan gratis todavía no puede prescindir de Jev para la Compuerta.
+- En la tabla ciega se ve el efecto de la ventana de 90 s: en "valoración" y "asiento en la junta", casi todas las Sugerencias siguen hablando de IVA y anticipo (pregunta abierta de §12 del SPEC).
+- Modelos locales: solo está Qwen 3.5 4B (completo según `check_local_model`). Faltan Qwen 3.5 2B, Gemma 3 4B y Gemma 3 1B; se bajan desde la App.
+
+### Para las 9:00, en orden
+
+1. **Integrar:** #25 → #28; #26 y #27 por separado.
+2. **Repetir la prueba de punta a punta con #27** y el micrófono del MacBook: lanzar Next primero, precalentar con `curl http://localhost:3118/` y después `pnpm tauri dev --config '{"build":{"beforeDevCommand":""}}' -- --features coreml`. El reproductor con marcas en ms está fuera del repo (`/tmp/sottoly-e2e/play.sh`). Si la tarjeta pasa de 2 s: recortar el prompt para bajar el primer token, o volver a Sonnet 5.5 con `between_tools` + effort `low`.
+3. **Etiquetas:** confirmar las de `evals/fixtures/e2e-2026-10-03.json` (propuesta: `cfo` en 1–5 y 9, `ceo_adversarial` en 6–8, `none` en 10). Todas las métricas de la Compuerta dependen de ellas.
+4. **Tabla ciega:** calificar `blind.md` (útil / obvia / equivocada) antes de abrir `reveal.md` o `summary.md`.
+5. **Overlay con streaming (después de #27):** primero las specs de Playwright para `suggestion_delta` (texto parcial, sin motivo ni botones), `suggestion_cancel` y el tiempo de espera de 8 s; después `id` obligatorio y en el modo demo.
+6. **Prueba manual del overlay** en la App, punto por punto: foco, clic en útil, desvanecido, ⌘⇧., paso del ratón, compartir pantalla. La ventana midió 358×180 a 90 pt del borde (se esperaba 396×200 a 40 pt).
+7. **Repetir el experimento** con el prompt de #27 y los modelos que se bajen.
