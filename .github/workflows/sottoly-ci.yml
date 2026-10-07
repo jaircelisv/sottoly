@@ -41,6 +41,8 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bunx tsc --noEmit
       - run: bun test
+      - name: hooks del harness
+        run: bun test ../scripts/sottoly/harness
 
   rust:
     name: cargo test

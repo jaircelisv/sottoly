@@ -1,0 +1,152 @@
+{
+  "id": "e2e-2026-10-03",
+  "description": "Prueba de punta a punta del 2026-10-03: frases sintéticas de scripts/sottoly/latency/phrases.txt tal como las transcribió Parakeet (no es una Reunión real). Etiquetas propuestas por la sesión A, pendientes de revisión del autor.",
+  "roles": [
+    "cfo",
+    "ceo"
+  ],
+  "segments": [
+    {
+      "speaker": "counterpart",
+      "text": "El plan anual cuesta 2 millones más y va, a 30 días.",
+      "t0": 21.2,
+      "t1": 24.7
+    },
+    {
+      "speaker": "counterpart",
+      "text": "Les pediría un anticipo del 50%.",
+      "t0": 29.09,
+      "t1": 32.59
+    },
+    {
+      "speaker": "counterpart",
+      "text": "La licencia cuesta 3,000 dólares al mes por equipo.",
+      "t0": 37.19,
+      "t1": 40.69
+    },
+    {
+      "speaker": "counterpart",
+      "text": "Facturamos anual por adelantado y se renueva automáticamente.",
+      "t0": 46.1,
+      "t1": 49.6
+    },
+    {
+      "speaker": "counterpart",
+      "text": "La tarifa sube un 8% a partir de enero.",
+      "t0": 53.87,
+      "t1": 57.37
+    },
+    {
+      "speaker": "counterpart",
+      "text": "El contrato sería por 24 meses.",
+      "t0": 63.68,
+      "t1": 67.18
+    },
+    {
+      "speaker": "counterpart",
+      "text": "Estamos dispuestos a invertir con una valoración de 4 millones.",
+      "t0": 72.44,
+      "t1": 75.94
+    },
+    {
+      "speaker": "counterpart",
+      "text": "También pediríamos un asiento en la junta directiva.",
+      "t0": 80.24,
+      "t1": 83.74
+    },
+    {
+      "speaker": "counterpart",
+      "text": "El servicio contable incluye la declaración de renta.",
+      "t0": 88.55,
+      "t1": 92.05
+    },
+    {
+      "speaker": "counterpart",
+      "text": "Entonces cerramos esta semana.",
+      "t0": 96.44,
+      "t1": 99.94
+    }
+  ],
+  "labels": [
+    {
+      "turn": 0,
+      "speaker": "counterpart",
+      "text": "El plan anual cuesta 2 millones más y va, a 30 días.",
+      "should_intervene": true,
+      "expected_role": "cfo",
+      "reason": "precio sin aclarar IVA (transcrito 'más y va')"
+    },
+    {
+      "turn": 1,
+      "speaker": "counterpart",
+      "text": "Les pediría un anticipo del 50%.",
+      "should_intervene": true,
+      "expected_role": "cfo",
+      "reason": "anticipo alto sin condiciones"
+    },
+    {
+      "turn": 2,
+      "speaker": "counterpart",
+      "text": "La licencia cuesta 3,000 dólares al mes por equipo.",
+      "should_intervene": true,
+      "expected_role": "cfo",
+      "reason": "precio en otra moneda sin impuestos"
+    },
+    {
+      "turn": 3,
+      "speaker": "counterpart",
+      "text": "Facturamos anual por adelantado y se renueva automáticamente.",
+      "should_intervene": true,
+      "expected_role": "cfo",
+      "reason": "pago anticipado y renovación automática"
+    },
+    {
+      "turn": 4,
+      "speaker": "counterpart",
+      "text": "La tarifa sube un 8% a partir de enero.",
+      "should_intervene": true,
+      "expected_role": "cfo",
+      "reason": "alza de precio"
+    },
+    {
+      "turn": 5,
+      "speaker": "counterpart",
+      "text": "El contrato sería por 24 meses.",
+      "should_intervene": true,
+      "expected_role": "ceo",
+      "reason": "compromiso largo sin discutir salida"
+    },
+    {
+      "turn": 6,
+      "speaker": "counterpart",
+      "text": "Estamos dispuestos a invertir con una valoración de 4 millones.",
+      "should_intervene": true,
+      "expected_role": "ceo",
+      "reason": "valoración sin evidencia"
+    },
+    {
+      "turn": 7,
+      "speaker": "counterpart",
+      "text": "También pediríamos un asiento en la junta directiva.",
+      "should_intervene": true,
+      "expected_role": "ceo",
+      "reason": "pide control sin contraparte"
+    },
+    {
+      "turn": 8,
+      "speaker": "counterpart",
+      "text": "El servicio contable incluye la declaración de renta.",
+      "should_intervene": true,
+      "expected_role": "cfo",
+      "reason": "alcance del servicio sin precio ni impuestos"
+    },
+    {
+      "turn": 9,
+      "speaker": "counterpart",
+      "text": "Entonces cerramos esta semana.",
+      "should_intervene": false,
+      "expected_role": null,
+      "reason": "cierre; no hay dato nuevo"
+    }
+  ]
+}
