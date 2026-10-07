@@ -33,8 +33,15 @@ const moneyGate: ChoiceEvaluator = async (state): Promise<ChoiceAnswer> =>
     ? { choice: "cfo", probabilities: { cfo: 0.9 } }
     : { choice: "none", probabilities: { none: 0.95 } };
 
+// Ideas distintas en cada llamada: el antiruido descarta la misma idea aunque cambie el texto.
+const IDEAS = [
+  "Pregunta si incluye IVA.",
+  "Pide el calendario de pagos por escrito.",
+  "Pregunta en qué moneda se factura.",
+  "Pide que la renovación automática tenga aviso previo.",
+];
 let drafts = 0;
-const drafter: Drafter = async () => ({ text: `Pregunta si incluye IVA (${++drafts}).`, reason: "Precio sin impuestos." });
+const drafter: Drafter = async () => ({ text: IDEAS[drafts++ % IDEAS.length], reason: "Precio sin impuestos." });
 
 const seg = (speaker: "user" | "counterpart", t0: number, t1: number, text: string) =>
   ({ type: "segment", speaker, text, t0, t1 }) as const;

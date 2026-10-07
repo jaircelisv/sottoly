@@ -40,7 +40,14 @@ export interface DraftPrompt {
 /** Proveedor intercambiable. `onText` recibe el texto acumulado mientras llega (streaming). */
 export type Drafter = (prompt: DraftPrompt, onText?: (text: string) => void) => Promise<Draft>;
 
-export function buildDraftPrompt(role: Pick<Role, "role" | "persona" | "objective" | "limits" | "instructions">, window: WindowSegment[]): DraftPrompt {
+/** Cuántas Sugerencias ya mostradas recibe la Redacción para no repetirlas. */
+export const PREVIOUS_IN_PROMPT = 8;
+
+export function buildDraftPrompt(
+  role: Pick<Role, "role" | "persona" | "objective" | "limits" | "instructions">,
+  window: WindowSegment[],
+  previous: string[] = [],
+): DraftPrompt {
   const system = [
     `Eres ${role.persona}, ${role.role} de la junta asesora del Usuario.`,
     `Objetivo: ${role.objective}`,
@@ -50,8 +57,46 @@ export function buildDraftPrompt(role: Pick<Role, "role" | "persona" | "objectiv
     `Si lo que se está diciendo no te da nada útil que sugerir dentro de tu Rol, o cae en lo que no opinas, responde con skip en true y text y reason vacíos. Nunca escribas como sugerencia que no vas a opinar.`,
     `Ejemplos de sugerencia (la forma, no el contenido):\n${EXAMPLES.map((e) => `- ${e}`).join("\n")}`,
   ].join("\n\n");
-  const prompt = `Transcripción reciente de la reunión:\n${renderWindow(window)}\n\n¿Qué debería hacer o preguntar el Usuario ahora?`;
+  // Lo ya sugerido va en el mensaje, no en el system: así el system de cada Rol sigue en caché.
+  const said = previous.slice(-PREVIOUS_IN_PROMPT);
+  const already = said.length
+    ? `Ya sugeriste en esta reunión:\n${said.map((s) => `- ${s}`).join("\n")}\nNo repitas ni reformules esas ideas. Si no tienes un punto nuevo, responde con skip en true.\n\n`
+    : "";
+  const prompt = `Transcripción reciente de la reunión:\n${renderWindow(window)}\n\n${already}¿Qué debería hacer o preguntar el Usuario ahora?`;
   return { system, prompt };
+}
+
+// Palabras que no dicen de qué trata una Sugerencia: artículos, conectores y los verbos con que
+// empiezan todas («pide», «pregunta»…). Sin ellas queda el punto del que habla.
+const FILLER = new Set(
+  ("antes despues después para por con sin que qué cual cuál cuales cuáles como cómo cuando cuándo donde dónde " +
+    "del los las una uno unos unas sus tus este esta estos estas ese esa eso esto ahí aqui aquí hay muy mas más " +
+    "pide pidele pídele pregunta preguntale pregúntale solicita confirma revisa aclara exige asegura " +
+    "si tu tú su el la lo le les al de en es y o u a e ya no ni también tambien exactamente").split(" "),
+);
+
+function topicWords(text: string): Set<string> {
+  const words = text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .split(/[^a-z0-9ñ]+/)
+    .filter((w) => w.length >= 3 && !FILLER.has(w));
+  return new Set(words.map((w) => w.slice(0, 5)));
+}
+
+/** Umbral de palabras de contenido en común (sobre la Sugerencia más corta) para tratarlas como la misma idea. */
+export const SAME_IDEA_OVERLAP = 0.75;
+
+/** ¿Dos Sugerencias hablan del mismo punto? Respaldo del Motor por si la Redacción reformula. */
+export function sameIdea(a: string, b: string): boolean {
+  const x = topicWords(a);
+  const y = topicWords(b);
+  const smaller = Math.min(x.size, y.size);
+  if (smaller === 0) return a.trim().toLowerCase() === b.trim().toLowerCase();
+  let common = 0;
+  for (const w of x) if (y.has(w)) common++;
+  return common / smaller >= SAME_IDEA_OVERLAP;
 }
 
 export function countWords(text: string): number {

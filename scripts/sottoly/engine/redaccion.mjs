@@ -23,3 +23,11 @@ export function esquema_de_la_redaccion() {
   const props = esquema && typeof esquema === "object" ? Object.values(esquema.properties ?? {}) : [];
   return { permite_declinar: props.some((p) => p?.type === "boolean") };
 }
+
+/** Varios Turnos seguidos del mismo Rol, cada uno con la redacción que escribe el modelo (tarea 8). */
+export function antiruido({ redacciones }) {
+  const r = spawnSync("bun", ["probes/antiruido.ts"], { cwd: ENGINE, input: JSON.stringify({ redacciones }), encoding: "utf8" });
+  if (r.status !== 0) throw new Error(`la sonda falló: ${r.stderr.slice(-2000)}`);
+  const { sugerencias, la_redaccion_ve_las_anteriores } = JSON.parse(r.stdout.trim().split("\n").at(-1));
+  return { sugerencias, la_redaccion_ve_las_anteriores };
+}

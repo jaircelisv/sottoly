@@ -1,0 +1,54 @@
+{
+  "tarea": "8 · Antiruido: no repetir una Sugerencia sobre el mismo punto",
+  "origen": "agente",
+  "modulo": "scripts/sottoly/engine/redaccion.mjs",
+  "funcion": "antiruido",
+  "casos": [
+    {
+      "nombre": "una Sugerencia casi igual a una ya mostrada no sale",
+      "entrada": [
+        {
+          "redacciones": [
+            "{\"skip\": false, \"text\": \"Pide por escrito cuál es tu régimen tributario actual y proyectado para el próximo año.\", \"reason\": \"Costo sin aclarar.\"}",
+            "{\"skip\": false, \"text\": \"Pide por escrito cuál es tu régimen tributario actual y el proyectado.\", \"reason\": \"Costo sin aclarar.\"}"
+          ]
+        }
+      ],
+      "esperado": {
+        "sugerencias": 1,
+        "la_redaccion_ve_las_anteriores": true
+      }
+    },
+    {
+      "nombre": "la misma idea con otras palabras en otro orden tampoco sale",
+      "entrada": [
+        {
+          "redacciones": [
+            "{\"skip\": false, \"text\": \"Pregunta qué servicios incluye el asesor y cuál es su costo mensual.\", \"reason\": \"Costo sin aclarar.\"}",
+            "{\"skip\": false, \"text\": \"Pregunta cuál es el costo mensual del asesor y qué servicios incluye exactamente.\", \"reason\": \"Costo sin aclarar.\"}"
+          ]
+        }
+      ],
+      "esperado": {
+        "sugerencias": 1,
+        "la_redaccion_ve_las_anteriores": true
+      }
+    },
+    {
+      "nombre": "una Sugerencia sobre otro punto sí sale, y cada Redacción recibe las que ya se mostraron",
+      "entrada": [
+        {
+          "redacciones": [
+            "{\"skip\": false, \"text\": \"Pide por escrito cuál es tu régimen tributario actual.\", \"reason\": \"Costo sin aclarar.\"}",
+            "{\"skip\": false, \"text\": \"Antes de invertir, pide la simulación de flujos netos después de impuestos.\", \"reason\": \"Costo sin aclarar.\"}",
+            "{\"skip\": false, \"text\": \"Pregunta si el asesor cobra una tarifa fija o un porcentaje del ahorro.\", \"reason\": \"Costo sin aclarar.\"}"
+          ]
+        }
+      ],
+      "esperado": {
+        "sugerencias": 3,
+        "la_redaccion_ve_las_anteriores": true
+      }
+    }
+  ]
+}
