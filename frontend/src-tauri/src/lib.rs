@@ -622,6 +622,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             sottoly_roles::sottoly_list_roles, // SOTTOLY: panel, pantalla Roles
+            sottoly_roles::sottoly_create_role, // SOTTOLY: creador de Roles (tarea 14)
             engine_bridge::sottoly_chat_send, // SOTTOLY: chat con el Rol (tarea 13)
             start_recording,
             stop_recording,
