@@ -7,6 +7,8 @@ import { Draft, DraftOutput, type Drafter } from "./draft";
 import type { ChoiceEvaluator } from "./gate";
 import { SummaryOutput, type Summarizer } from "./summary";
 import type { Chatter } from "./chat";
+import type { DedupePrompt } from "./dedupe";
+import { z } from "zod";
 
 export function jevEvaluator(modelId: string): ChoiceEvaluator {
   const model = createTypeSafeAi().evaluationModel(modelId);
@@ -65,5 +67,15 @@ export function anthropicChatter(modelId: string, maxTokens: number, fetch?: typ
     }
     if (failure) throw failure;
     return text;
+  };
+}
+
+/** Juez del antiruido (tarea 19): ¿la Sugerencia nueva dice lo mismo que una ya mostrada? */
+export function anthropicDeduper(modelId: string, fetch?: typeof globalThis.fetch): (prompt: DedupePrompt) => Promise<boolean> {
+  const model = createAnthropic({ fetch, apiKey: fetch ? "recorded" : undefined })(modelId);
+  const Same = z.object({ same: z.boolean() });
+  return async ({ system, prompt }) => {
+    const { output } = await generateText({ model, system, prompt, maxOutputTokens: 30, output: Output.object({ schema: Same }) });
+    return Same.parse(output).same;
   };
 }

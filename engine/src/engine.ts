@@ -3,6 +3,7 @@
 import { evaluateGate, slideWindow, type ChoiceEvaluator, type GateDecision, type WindowSegment } from "./gate";
 import { buildDraftPrompt, finalizeDraft, headWords, sameIdea, type Drafter } from "./draft";
 import { buildChatPrompt, type Chatter, type ChatTurn } from "./chat";
+import type { Deduper } from "./dedupe";
 import type {
   ChatDelta,
   ChatError,
@@ -31,7 +32,7 @@ export interface EngineConfig {
 export type EngineLog =
   | { event: "gate_decision"; trigger: TurnEvent["kind"]; turn: number; decision: GateDecision; latency_ms: number }
   | { event: "suggestion_suppressed"; role: string; reason: SuppressReason }
-  | { event: "provider_failed"; stage: "gate" | "draft" | "summary" | "chat"; error: string };
+  | { event: "provider_failed"; stage: "gate" | "draft" | "summary" | "chat" | "dedupe"; error: string };
 
 export type SuppressReason = "cooldown" | "repeated" | "meeting_cap" | "invalid_draft" | "declined";
 
@@ -46,6 +47,8 @@ export interface EngineDeps {
   log?: (entry: EngineLog) => void;
   /** Decisiones candidatas al cerrar la Reunión (SPEC §6). Sin él, la Reunión se cierra sin `summary`. */
   summarize?: Summarizer;
+  /** Juez del antiruido para paráfrasis (tarea 19). Sin él, solo se compara por palabras. */
+  dedupe?: Deduper;
   /** Chat con el Rol (tarea 13). Sin él, cada pregunta recibe chat_error. Las respuestas salen por `onStream`. */
   chat?: Chatter;
   /** Fecha de hoy (AAAA-MM-DD) para las fechas de los compromisos; fija en grabaciones y pruebas. */
@@ -229,7 +232,7 @@ export class Engine {
       return this.suppress(role.id, "invalid_draft");
     }
 
-    if (this.shown.some((s) => sameIdea(s, draft.text))) {
+    if (this.shown.some((s) => sameIdea(s, draft.text)) || (await this.paraphrase(draft.text))) {
       cancel();
       return this.suppress(role.id, "repeated");
     }
@@ -245,6 +248,17 @@ export class Engine {
       reason: draft.reason,
       confidence: decision.probability,
     };
+  }
+
+  /** ¿Dice lo mismo que una ya mostrada, con otras palabras? Si el juez falla, se deja pasar. */
+  private async paraphrase(text: string): Promise<boolean> {
+    if (!this.deps.dedupe || this.shown.length === 0) return false;
+    try {
+      return await this.deps.dedupe(text, this.shown);
+    } catch (error) {
+      this.deps.log?.({ event: "provider_failed", stage: "dedupe", error: String(error) });
+      return false;
+    }
   }
 
   private suppress(role: string, reason: SuppressReason): null {

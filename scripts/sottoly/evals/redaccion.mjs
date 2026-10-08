@@ -19,3 +19,10 @@ export function evals_de_decisiones() {
   const { fixtures, cumplen, sin_grabar, fallan } = JSON.parse(r.stdout.trim().split("\n").at(-1));
   return { fixtures, cumplen, sin_grabar, fallan };
 }
+
+/** Antiruido para la misma idea con otras palabras (tarea 19): pares sintéticos, decisión del Motor. */
+export function evals_de_parafrasis() {
+  const r = spawnSync("bun", ["../evals/runner/paraphrase.ts", "--json"], { cwd: ENGINE, encoding: "utf8" });
+  if (r.status !== 0) throw new Error(`el runner falló: ${r.stderr.slice(-2000)}`);
+  return JSON.parse(r.stdout.trim().split("\n").at(-1));
+}

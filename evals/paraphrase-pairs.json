@@ -1,0 +1,83 @@
+[
+  {
+    "id": "par-1",
+    "previous": [
+      "Confirma por escrito cuál régimen tributario minimiza tus impuestos."
+    ],
+    "candidate": "Pide que te especifiquen qué régimen te aplica hoy y cuál te conviene más.",
+    "same": true
+  },
+  {
+    "id": "par-2",
+    "previous": [
+      "Pide que la factura venga con el desglose del IVA."
+    ],
+    "candidate": "Solicita que te manden la factura detallando cuánto es de impuesto.",
+    "same": true
+  },
+  {
+    "id": "par-3",
+    "previous": [
+      "Pregunta si los dieciocho millones incluyen IVA."
+    ],
+    "candidate": "Confirma si el precio que dio ya trae el IVA incluido.",
+    "same": true
+  },
+  {
+    "id": "par-4",
+    "previous": [
+      "Antes de aceptar el anticipo, pide el calendario de pagos por escrito."
+    ],
+    "candidate": "Pide por escrito cuándo se paga el resto después del anticipo.",
+    "same": true
+  },
+  {
+    "id": "par-5",
+    "previous": [
+      "Pregunta qué servicios incluye el asesor y cuál es su costo mensual."
+    ],
+    "candidate": "Pide el detalle de lo que cubre la asesoría y cuánto cobra al mes.",
+    "same": true
+  },
+  {
+    "id": "par-6",
+    "previous": [
+      "Pregunta si los dieciocho millones incluyen IVA."
+    ],
+    "candidate": "Pregunta en qué moneda se factura el servicio.",
+    "same": false
+  },
+  {
+    "id": "par-7",
+    "previous": [
+      "Pide por escrito cuál es tu régimen tributario actual."
+    ],
+    "candidate": "Antes de invertir, pide la simulación de flujos netos después de impuestos.",
+    "same": false
+  },
+  {
+    "id": "par-8",
+    "previous": [
+      "Pide que la renovación automática tenga un aviso previo de sesenta días."
+    ],
+    "candidate": "Pregunta cuál es la multa si cancelan el contrato antes de tiempo.",
+    "same": false
+  },
+  {
+    "id": "par-9",
+    "previous": [
+      "Pregunta si incluye IVA.",
+      "Pide el calendario de pagos por escrito."
+    ],
+    "candidate": "Pregunta quién asume el costo de la implementación.",
+    "same": false
+  },
+  {
+    "id": "par-10",
+    "previous": [
+      "Pregunta qué servicios incluye el asesor y cuál es su costo mensual."
+    ],
+    "candidate": "Pregunta si el asesor responde ante la DIAN por errores en la declaración.",
+    "same": false
+  }
+]

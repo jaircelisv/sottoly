@@ -168,6 +168,42 @@ describe("Engine", () => {
     expect(logs).toContainEqual({ event: "suggestion_suppressed", role: "cfo", reason: "invalid_draft" });
   });
 
+  // Tarea 19: la misma idea con otras palabras.
+  test("si el juez dice que es la misma idea con otras palabras, no sale y se quita la parcial", async () => {
+    const vistos: string[][] = [];
+    let llamadas = 0;
+    const { engine, logs, stream } = build({
+      config: { ...config, antinoise: { min_seconds_between_same_role: 0, max_suggestions_per_meeting: 20 } },
+      draft: async (_p, onText) => {
+        onText?.("Pide la factura");
+        return { text: llamadas++ ? "Solicita la factura con el impuesto detallado." : "Pide la factura con el IVA desglosado.", reason: "x" };
+      },
+    });
+    (engine as any).deps.dedupe = async (_c: string, prev: string[]) => (vistos.push(prev), true);
+    const out = [];
+    for (const s of [seg("counterpart", 0, 3, "Son dos millones."), seg("user", 3.1, 4, "Ok."), seg("counterpart", 5, 8, "Más IVA."), seg("user", 8.1, 9, "Ok.")]) {
+      out.push(...(await engine.handle(s)));
+    }
+    expect(out.map((o) => o.text)).toEqual(["Pide la factura con el IVA desglosado."]);
+    expect(vistos[0]).toEqual(["Pide la factura con el IVA desglosado."]);
+    expect(logs).toContainEqual({ event: "suggestion_suppressed", role: "cfo", reason: "repeated" });
+    expect(stream.at(-1)).toMatchObject({ type: "suggestion_cancel" });
+  });
+
+  test("si el juez falla, la Sugerencia sale igual (mejor una repetición que perder una buena)", async () => {
+    const { engine, logs } = build({ config: { ...config, antinoise: { min_seconds_between_same_role: 0, max_suggestions_per_meeting: 20 } } });
+    (engine as any).deps.dedupe = async () => {
+      throw new Error("caído");
+    };
+    const out = [];
+    for (const s of [seg("counterpart", 0, 3, "Son dos millones."), seg("user", 3.1, 4, "Ok."), seg("counterpart", 5, 8, "Más IVA."), seg("user", 8.1, 9, "Ok.")]) {
+      out.push(...(await engine.handle(s)));
+    }
+    // Cuatro Segmentos cierran tres Turnos: las tres Sugerencias salen aunque el juez no responda.
+    expect(out).toHaveLength(3);
+    expect(logs.some((l) => l.event === "provider_failed" && l.stage === "dedupe")).toBe(true);
+  });
+
   // Prueba de punta a punta del 2026-10-07: «Betty no opina sobre…» salió como tarjeta.
   test("si la Redacción declina, no hay Sugerencia, se quita la parcial y no es un fallo", async () => {
     const { engine, logs, stream } = build({
