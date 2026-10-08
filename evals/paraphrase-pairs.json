@@ -10,9 +10,9 @@
   {
     "id": "par-2",
     "previous": [
-      "Pide un análisis escrito de qué movimientos bancarios se reclasificaron como ingresos."
+      "Pide que la factura venga con el desglose del IVA."
     ],
-    "candidate": "Solicita un resumen de cómo clasificará los movimientos entre cuentas en la declaración.",
+    "candidate": "Solicita que te manden la factura detallando cuánto es de impuesto.",
     "same": true
   },
   {
