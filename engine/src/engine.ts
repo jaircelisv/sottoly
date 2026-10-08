@@ -14,7 +14,7 @@ import type {
   SuggestionMessage,
   SummaryMessage,
 } from "./protocol";
-import { buildSummaryPrompt, toDecisions, type Summarizer } from "./summary";
+import { buildSummaryPrompt, grounded, toDecisions, type Summarizer } from "./summary";
 import { selectBoard, type Role } from "./roles";
 import { TurnAssembler, type TurnEvent, type TurnOptions } from "./turns";
 
@@ -147,7 +147,7 @@ export class Engine {
     const today = this.deps.today?.() ?? now.toISOString().slice(0, 10);
     try {
       const candidates = await this.deps.summarize(buildSummaryPrompt(this.segments, today));
-      return { type: "summary", decisions: toDecisions(candidates, this.meetingId, now.toISOString()) };
+      return { type: "summary", decisions: toDecisions(grounded(candidates, this.segments), this.meetingId, now.toISOString()) };
     } catch (error) {
       this.deps.log?.({ event: "provider_failed", stage: "summary", error: String(error) });
       return null;

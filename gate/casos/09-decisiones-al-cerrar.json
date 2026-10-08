@@ -8,7 +8,7 @@
       "nombre": "al cerrar una Reunión el Motor manda summary con las Decisiones candidatas, sin aprobar y según el protocolo",
       "entrada": [
         {
-          "modelo": "{\"decisions\": [{\"kind\": \"decision\", \"text\": \"Se contrata el plan anual por dos millones más IVA.\", \"owner\": \"user\", \"due\": null}, {\"kind\": \"commitment\", \"text\": \"La Contraparte envía la factura el viernes.\", \"owner\": \"counterpart\", \"due\": \"2026-10-09\"}]}"
+          "modelo": "{\"decisions\": [{\"kind\": \"decision\", \"text\": \"Se contrata el plan anual por dos millones más IVA.\", \"owner\": \"user\", \"due\": null, \"quote\": \"Entonces cerramos el plan anual por dos millones más IVA.\"}, {\"kind\": \"commitment\", \"text\": \"La Contraparte envía la factura el viernes.\", \"owner\": \"counterpart\", \"due\": \"2026-10-09\", \"quote\": \"Sí, te mando la factura el viernes.\"}]}"
         }
       ],
       "esperado": {
@@ -23,7 +23,7 @@
       "nombre": "si en la Reunión no se decidió nada, el summary llega vacío",
       "entrada": [
         {
-          "modelo": "{\"decisions\":[]}"
+          "modelo": "{\"decisions\": []}"
         }
       ],
       "esperado": {
@@ -38,7 +38,7 @@
       "nombre": "una Reunión sin Segmentos se cierra sin llamar al modelo ni mandar summary",
       "entrada": [
         {
-          "modelo": "{\"decisions\": [{\"kind\": \"decision\", \"text\": \"Se contrata el plan anual por dos millones más IVA.\", \"owner\": \"user\", \"due\": null}, {\"kind\": \"commitment\", \"text\": \"La Contraparte envía la factura el viernes.\", \"owner\": \"counterpart\", \"due\": \"2026-10-09\"}]}",
+          "modelo": "{\"decisions\": [{\"kind\": \"decision\", \"text\": \"Se contrata el plan anual por dos millones más IVA.\", \"owner\": \"user\", \"due\": null, \"quote\": \"Entonces cerramos el plan anual por dos millones más IVA.\"}, {\"kind\": \"commitment\", \"text\": \"La Contraparte envía la factura el viernes.\", \"owner\": \"counterpart\", \"due\": \"2026-10-09\", \"quote\": \"Sí, te mando la factura el viernes.\"}]}",
           "con_segmentos": false
         }
       ],

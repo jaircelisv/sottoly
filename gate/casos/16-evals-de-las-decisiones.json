@@ -7,7 +7,12 @@
     {
       "nombre": "las Decisiones que propone el modelo real para las Reuniones sintéticas están grabadas con el prompt actual y no inventan ni se pierden nada",
       "entrada": [],
-      "esperado": { "fixtures": 5, "cumplen": 5, "sin_grabar": 0, "fallan": [] }
+      "esperado": {
+        "fixtures": 6,
+        "cumplen": 6,
+        "sin_grabar": 0,
+        "fallan": []
+      }
     }
   ]
 }

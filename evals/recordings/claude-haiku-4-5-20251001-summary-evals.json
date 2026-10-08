@@ -1,4 +1,14 @@
 {
+  "10b91d9c53b254904cd5d78f5d4db2677a6fa21b90f68896695e8298fe2420d8": [],
+  "11a5c381202d196d1cbe404e0760ec0408b2fc288f91e2354a86f74b68e3d04c": [
+    {
+      "kind": "decision",
+      "text": "El Usuario rechaza la exclusividad de dos años como condición para obtener el precio ofrecido",
+      "owner": "user",
+      "due": null,
+      "quote": "No, la exclusividad no la podemos aceptar."
+    }
+  ],
   "26037fe1e1635fb9b62cc7d9765e3c30edcf97d64d615a39d23b9cca49dfaa85": [
     {
       "kind": "decision",
@@ -27,7 +37,95 @@
       "due": null
     }
   ],
+  "2a64095f0b70ab24a52bb16e1c8cc46d17f656892b9fd777479870353517456d": [],
+  "2ab730bf7853c27b954050581fdc6cbc5bf3b4682cc492a6d68d01e9d12f38ff": [
+    {
+      "kind": "decision",
+      "text": "El Usuario rechaza aceptar exclusividad por dos años como condición para obtener el precio ofrecido",
+      "owner": "user",
+      "due": null
+    }
+  ],
+  "32a399d9b9c9f0f7b629ad3a1c9200b5713f5de7b27fca72856fc3b15dfcdada": [],
+  "3a9de928d651ba41c62d2caed8e3c82b5fdade2d01162ced84935550bd262d83": [
+    {
+      "kind": "decision",
+      "text": "Aceptar el plan anual en dieciocho millones con IVA incluido",
+      "owner": "user",
+      "due": null
+    },
+    {
+      "kind": "commitment",
+      "text": "Enviar el contrato para firmar",
+      "owner": "counterpart",
+      "due": "2026-10-10"
+    }
+  ],
+  "3ba46c2168c03b7d2e845e351f69ec64b37370b5f041c5f40d87cab5064e171f": [],
   "3f7a26930a9dfa8f6f7d83166dcf7d5695368a3a15adff4c93bcd923d3ead63e": [
+    {
+      "kind": "commitment",
+      "text": "Enviar los estados financieros del último año",
+      "owner": "user",
+      "due": "2026-10-12"
+    }
+  ],
+  "51d3cb3bbf6dee770ef5bc6611821ba1ded22b34b83c56d61e41c5e56653866c": [
+    {
+      "kind": "commitment",
+      "text": "El Usuario enviará los estados financieros del último año el lunes",
+      "owner": "user",
+      "due": "2026-10-12",
+      "quote": "Claro, yo te los mando el lunes sin falta."
+    }
+  ],
+  "6d8634c53b00863eab1b9d98b1a2b112b44d6b1700f5d3820380a96d9399a6fe": [
+    {
+      "kind": "decision",
+      "text": "El servicio contable anual tiene un costo de dieciocho millones, incluida la declaración de renta e información exógena",
+      "owner": "counterpart",
+      "due": null
+    },
+    {
+      "kind": "commitment",
+      "text": "Pagar un anticipo del cincuenta por ciento del servicio contable para empezar",
+      "owner": "user",
+      "due": null
+    }
+  ],
+  "87afae65088cc089ea1880bcd13108b5320e6108f1146267cb9712a645df7d46": [
+    {
+      "kind": "decision",
+      "text": "El plan anual queda en dieciocho millones con IVA incluido",
+      "owner": "user",
+      "due": null,
+      "quote": "Listo, aceptamos el plan anual en esas condiciones."
+    },
+    {
+      "kind": "commitment",
+      "text": "Enviar el contrato el viernes para firmarlo",
+      "owner": "counterpart",
+      "due": "2026-10-10",
+      "quote": "Perfecto, te envío el contrato el viernes para firmarlo."
+    }
+  ],
+  "a37c72d97c19ee5435a4c27f3481f071d92c09b5e5358de2b64b36dfeb61e724": [
+    {
+      "kind": "decision",
+      "text": "El servicio contable anual cuesta dieciocho millones e incluye la declaración de renta y la información exógena.",
+      "owner": "counterpart",
+      "due": null,
+      "quote": "El servicio contable anual les queda en dieciocho millones. Incluye la declaración de renta y la información exógena."
+    },
+    {
+      "kind": "commitment",
+      "text": "La Contraparte solicita un anticipo del cincuenta por ciento para empezar.",
+      "owner": "counterpart",
+      "due": null,
+      "quote": "Les pediría un anticipo del cincuenta por ciento para empezar."
+    }
+  ],
+  "c9153741e098621088cc7a8727eaff8dc90f62ae665be8bd95383d62148a48f6": [
     {
       "kind": "commitment",
       "text": "Enviar los estados financieros del último año",

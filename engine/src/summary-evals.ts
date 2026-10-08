@@ -5,7 +5,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
 import { draftRecordingKey, type Recordings } from "./evals";
-import { buildSummaryPrompt, type CandidateDecision, type Summarizer } from "./summary";
+import { buildSummaryPrompt, grounded, type CandidateDecision, type Summarizer } from "./summary";
 
 /** Fecha fija para los evals: va en el prompt y en la clave de la grabación. */
 export const EVALS_TODAY = "2026-10-07";
@@ -102,7 +102,9 @@ export async function runSummaryEvals(
       out.push({ id: fixture.id, recorded: false, fails: ["sin grabar: corre evals/runner/summary.ts --record"] });
       continue;
     }
-    out.push({ id: fixture.id, recorded: true, decisions, fails: judgeSummary(fixture, decisions) });
+    // Lo mismo que hace el Motor al cerrar: solo pasan las que tienen su frase en la transcripción.
+    const kept = grounded(decisions, fixture.segments);
+    out.push({ id: fixture.id, recorded: true, decisions: kept, fails: judgeSummary(fixture, kept) });
   }
   return out;
 }

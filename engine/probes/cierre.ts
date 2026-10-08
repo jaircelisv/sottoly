@@ -35,6 +35,7 @@ await engine.handle({ type: "session", event: "start" });
 if (con_segmentos) {
   await engine.handle({ type: "segment", speaker: "counterpart", text: "Entonces cerramos el plan anual por dos millones más IVA.", t0: 0, t1: 4 });
   await engine.handle({ type: "segment", speaker: "user", text: "De acuerdo, me mandas la factura el viernes.", t0: 5, t1: 8 });
+  await engine.handle({ type: "segment", speaker: "counterpart", text: "Sí, te mando la factura el viernes.", t0: 9, t1: 11 });
 }
 const salida: unknown[] = [...(await engine.handle({ type: "session", event: "end" }))];
 const cerrar = (engine as any).close;
