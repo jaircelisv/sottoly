@@ -1,0 +1,19 @@
+{
+  "tarea": "14 · Creador de Roles: la entrevista",
+  "origen": "agente",
+  "modulo": "scripts/sottoly/harness/panel.mjs",
+  "funcion": "specs_de",
+  "casos": [
+    {
+      "nombre": "las specs de Playwright del creador de Roles (pasos, validación, crear, error, cancelar) pasan todas en WebKit",
+      "entrada": [
+        "creador.spec.ts"
+      ],
+      "esperado": {
+        "pasan": 5,
+        "fallan": 0,
+        "saltadas": 0
+      }
+    }
+  ]
+}
