@@ -1,0 +1,43 @@
+{
+  "id": "cierre-con-acuerdo",
+  "description": "El Usuario acepta el plan y la Contraparte se compromete a enviar el contrato el viernes.",
+  "segments": [
+    {
+      "speaker": "counterpart",
+      "text": "Entonces el plan anual queda en dieciocho millones con IVA incluido.",
+      "t0": 0,
+      "t1": 5
+    },
+    {
+      "speaker": "user",
+      "text": "Listo, aceptamos el plan anual en esas condiciones.",
+      "t0": 5.5,
+      "t1": 9
+    },
+    {
+      "speaker": "counterpart",
+      "text": "Perfecto, te envío el contrato el viernes para firmarlo.",
+      "t0": 9.5,
+      "t1": 13
+    }
+  ],
+  "expect": {
+    "include": [
+      {
+        "kind": "decision",
+        "all": [
+          "plan anual"
+        ]
+      },
+      {
+        "kind": "commitment",
+        "owner": "counterpart",
+        "all": [
+          "contrato"
+        ],
+        "due": true
+      }
+    ],
+    "max": 3
+  }
+}

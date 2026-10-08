@@ -11,3 +11,11 @@ export function evals_de_redaccion() {
   const { fixtures, cumplen, sin_grabar, fallan } = JSON.parse(r.stdout.trim().split("\n").at(-1));
   return { fixtures, cumplen, sin_grabar, fallan };
 }
+
+/** Evals de las Decisiones candidatas (tarea 16): reproduce lo grabado y aplica los criterios. */
+export function evals_de_decisiones() {
+  const r = spawnSync("bun", ["../evals/runner/summary.ts", "--json"], { cwd: ENGINE, encoding: "utf8" });
+  if (r.status !== 0) throw new Error(`el runner falló: ${r.stderr.slice(-2000)}`);
+  const { fixtures, cumplen, sin_grabar, fallan } = JSON.parse(r.stdout.trim().split("\n").at(-1));
+  return { fixtures, cumplen, sin_grabar, fallan };
+}

@@ -1,0 +1,44 @@
+{
+  "id": "exclusividad-rechazada",
+  "description": "La Contraparte pide exclusividad y el Usuario la rechaza.",
+  "segments": [
+    {
+      "speaker": "counterpart",
+      "text": "Para darles ese precio necesitamos exclusividad por dos años.",
+      "t0": 0,
+      "t1": 6
+    },
+    {
+      "speaker": "user",
+      "text": "No, la exclusividad no la podemos aceptar.",
+      "t0": 6.5,
+      "t1": 10
+    },
+    {
+      "speaker": "counterpart",
+      "text": "Entiendo, lo hablo internamente.",
+      "t0": 10.5,
+      "t1": 13
+    }
+  ],
+  "expect": {
+    "include": [
+      {
+        "kind": "decision",
+        "all": [
+          "exclusividad"
+        ]
+      }
+    ],
+    "forbid": [
+      {
+        "owner": "user",
+        "kind": "commitment",
+        "any": [
+          "exclusividad"
+        ]
+      }
+    ],
+    "max": 2
+  }
+}

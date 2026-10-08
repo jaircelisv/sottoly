@@ -1,0 +1,53 @@
+{
+  "26037fe1e1635fb9b62cc7d9765e3c30edcf97d64d615a39d23b9cca49dfaa85": [
+    {
+      "kind": "decision",
+      "text": "El usuario no acepta la exclusividad por dos años como condición para obtener el precio propuesto",
+      "owner": "user",
+      "due": null
+    },
+    {
+      "kind": "commitment",
+      "text": "La contraparte va a hablar internamente sobre la propuesta sin exclusividad",
+      "owner": "counterpart",
+      "due": null
+    }
+  ],
+  "2647454f2c9b75637d615e94780b147c43887cd1d644de0abd45ea833b0113c9": [
+    {
+      "kind": "commitment",
+      "text": "Revisar el presupuesto del servicio contable anual de dieciocho millones",
+      "owner": "user",
+      "due": null
+    },
+    {
+      "kind": "commitment",
+      "text": "Consultar con el socio sobre el anticipo del cincuenta por ciento del servicio contable y confirmar a la contraparte",
+      "owner": "user",
+      "due": null
+    }
+  ],
+  "3f7a26930a9dfa8f6f7d83166dcf7d5695368a3a15adff4c93bcd923d3ead63e": [
+    {
+      "kind": "commitment",
+      "text": "Enviar los estados financieros del último año",
+      "owner": "user",
+      "due": "2026-10-12"
+    }
+  ],
+  "f1f2deeb1d33e076d1f95b77e5d1acfcdbf083a2ca56f39adac02ecaa5d24257": [],
+  "f4eba2d68565de001430c9b9aa0e1dfe4b301331b9ea80006ee2b02a4d0c5f16": [
+    {
+      "kind": "decision",
+      "text": "Aceptar el plan anual en dieciocho millones con IVA incluido",
+      "owner": "user",
+      "due": null
+    },
+    {
+      "kind": "commitment",
+      "text": "Enviar el contrato para firmar",
+      "owner": "counterpart",
+      "due": "2026-10-10"
+    }
+  ]
+}
