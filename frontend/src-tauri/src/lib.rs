@@ -59,6 +59,7 @@ pub mod whisper_engine;
 pub mod overlay; // SOTTOLY: ventana overlay de Sugerencias
 pub mod local_model; // SOTTOLY: ¿está descargado y válido el modelo local?
 pub mod sottoly_roles; // SOTTOLY: Roles para el panel
+pub mod sottoly_decisions; // SOTTOLY: Decisiones del cierre y Memoria (tarea 17)
 
 use audio::{list_audio_devices, AudioDevice, trigger_audio_permission};
 use log::{error as log_error, info as log_info};
@@ -623,6 +624,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             sottoly_roles::sottoly_list_roles, // SOTTOLY: panel, pantalla Roles
             sottoly_roles::sottoly_create_role, // SOTTOLY: creador de Roles (tarea 14)
+            sottoly_decisions::sottoly_get_decisions, // SOTTOLY: tarea 17
+            sottoly_decisions::sottoly_save_decisions, // SOTTOLY: tarea 17
             engine_bridge::sottoly_chat_send, // SOTTOLY: chat con el Rol (tarea 13)
             start_recording,
             stop_recording,

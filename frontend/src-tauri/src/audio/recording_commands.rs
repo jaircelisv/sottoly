@@ -1219,6 +1219,11 @@ pub async fn get_recording_state() -> serde_json::Value {
     }
 }
 
+/// SOTTOLY: carpeta de la Reunión en curso, para guardar ahí las Decisiones del cierre (tarea 17).
+pub fn current_meeting_folder() -> Option<std::path::PathBuf> {
+    RECORDING_MANAGER.lock().ok()?.as_ref()?.get_meeting_folder()
+}
+
 /// Get the meeting folder path for the current recording
 /// Returns the path if a meeting name was set and folder structure initialized
 #[tauri::command]

@@ -6,6 +6,7 @@ import { Suspense, useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { invoke } from '@tauri-apps/api/core'
 import { LoadError } from '@/components/sottoly/PanelShell'
+import { DecisionsReview, type CandidateDecision } from '@/components/sottoly/DecisionsReview'
 
 interface TranscriptLine {
   id: string
@@ -39,15 +40,24 @@ function clock(line: TranscriptLine): string {
 
 type Load = { state: 'loading' } | { state: 'error' } | { state: 'ready'; meeting: MeetingDetails }
 
+interface DecisionsFile {
+  reviewed: boolean
+  decisions: CandidateDecision[]
+}
+
 function Reunion() {
   const id = useSearchParams()?.get('id') ?? ''
   const [load, setLoad] = useState<Load>({ state: 'loading' })
+  const [decisions, setDecisions] = useState<DecisionsFile | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
 
   const fetchMeeting = useCallback(async () => {
     setLoad({ state: 'loading' })
     try {
       const meeting = await invoke<MeetingDetails | null>('api_get_meeting', { meetingId: id })
       setLoad(meeting ? { state: 'ready', meeting } : { state: 'error' })
+      // Las Decisiones del cierre (tarea 17): si no hay, o no se pueden leer, la Reunión se ve igual.
+      setDecisions(await invoke<DecisionsFile | null>('sottoly_get_decisions', { meetingId: id }).catch(() => null))
     } catch {
       setLoad({ state: 'error' })
     }
@@ -66,6 +76,30 @@ function Reunion() {
       <header className="flex flex-col gap-1">
         <h1 className="m-0 text-[26px] font-semibold tracking-tight">{meeting.title}</h1>
       </header>
+      {notice && (
+        <p role="status" className="m-0 text-[15px] text-[#2F4A6B]">
+          {notice}
+        </p>
+      )}
+      {!notice && decisions?.reviewed && decisions.decisions.length > 0 && (
+        <p className="m-0 text-[15px] text-[#4A4A4F]">Ya revisaste las Decisiones de esta Reunión.</p>
+      )}
+      {!notice && decisions && !decisions.reviewed && decisions.decisions.length > 0 && (
+        <DecisionsReview
+          meetingId={meeting.id}
+          decisions={decisions.decisions}
+          onDone={(saved) => {
+            setDecisions({ ...decisions, reviewed: true })
+            setNotice(
+              saved === 0
+                ? 'No se guardó nada de esta Reunión.'
+                : saved === 1
+                  ? '1 Decisión guardada en tu Memoria.'
+                  : `${saved} Decisiones guardadas en tu Memoria.`,
+            )
+          }}
+        />
+      )}
       <section className="flex max-w-[880px] flex-col gap-3">
         <h2 className="m-0 text-[13px] font-semibold text-[#5C5C63]">Transcripción</h2>
         {meeting.transcripts.length === 0 ? (
