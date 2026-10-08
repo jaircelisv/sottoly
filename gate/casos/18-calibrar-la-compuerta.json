@@ -1,0 +1,13 @@
+{
+  "tarea": "18 · Calibrar la Compuerta",
+  "origen": "agente",
+  "modulo": "scripts/sottoly/evals/compuerta.mjs",
+  "funcion": "evals_de_la_compuerta",
+  "casos": [
+    {
+      "nombre": "con las respuestas grabadas de Jev, la Compuerta llega a precisión 0,85 sin bajar el recall de 0,75, y cada Rol activo dice con qué se calibró",
+      "entrada": [],
+      "esperado": { "precision_suficiente": true, "recall_suficiente": true, "sin_grabar": 0, "roles_activos_calibrados": true }
+    }
+  ]
+}
