@@ -265,9 +265,12 @@ mod tests {
     }
 
     #[test]
-    fn los_roles_del_repo_cargan_y_ninguno_esta_calibrado_todavia() {
+    // Hasta la tarea 18 ningún Rol estaba calibrado; desde entonces los activos lo están (evals de la
+    // Compuerta) y los experimentales siguen sin calibrar.
+    fn los_roles_del_repo_cargan_y_los_activos_estan_calibrados() {
         let roles = load_roles(&roles_dir()).unwrap();
         assert!(roles.iter().any(|r| r.id == "cfo" && r.persona == "Betty"));
-        assert!(roles.iter().all(|r| !r.calibrated));
+        assert!(roles.iter().filter(|r| r.status == "active").all(|r| r.calibrated));
+        assert!(roles.iter().filter(|r| r.status == "experimental").all(|r| !r.calibrated));
     }
 }

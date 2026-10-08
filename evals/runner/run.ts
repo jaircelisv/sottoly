@@ -6,6 +6,7 @@ import { join } from "node:path";
 import config from "../../engine/config.json";
 import {
   computeMetrics,
+  loadCreatorExampleFixtures,
   loadFixtures,
   recordingEvaluator,
   Recordings,
@@ -22,6 +23,7 @@ const model = config.gate.model;
 const fixtures = [
   ...loadFixtures(join(ROOT, "evals/fixtures")),
   ...(process.env.SOTTOLY_EVALS_DIR ? loadFixtures(join(process.env.SOTTOLY_EVALS_DIR, "fixtures")) : []),
+  ...loadCreatorExampleFixtures(join(ROOT, "roles")),
 ];
 const recordings = new Recordings(join(ROOT, `evals/recordings/${model}.json`));
 const evaluate = record ? recordingEvaluator(model, jevEvaluator(model), recordings) : replayEvaluator(model, recordings);
@@ -35,12 +37,18 @@ for (const fixture of fixtures) {
     const got = t.decision.speak ? t.decision.role : "none";
     const want = t.label.should_intervene ? t.label.expected_role : "none";
     const mark = got === want ? "✓" : "✗";
-    console.log(`${mark} ${fixture.id}#${t.label.turn} [${t.label.speaker}] esperado=${want} obtenido=${got} p=${t.decision.probability} — ${t.label.text}`);
+    if (!process.argv.includes("--json")) console.log(`${mark} ${fixture.id}#${t.label.turn} [${t.label.speaker}] esperado=${want} obtenido=${got} p=${t.decision.probability} — ${t.label.text}`);
   }
-  for (const e of run.errors) console.log(`! ${fixture.id}: ${e}`);
+  if (!process.argv.includes("--json")) for (const e of run.errors) console.log(`! ${fixture.id}: ${e}`);
 }
 recordings.save();
 
 const metrics = computeMetrics(runs);
+if (process.argv.includes("--json")) {
+  // Una línea para el gate (tarea 18): métricas y cuántos Turnos no tenían respuesta grabada.
+  const sinGrabar = runs.reduce((n, r) => n + r.errors.filter((e) => /missing|recording/i.test(e)).length, 0);
+  console.log(JSON.stringify({ ...metrics, fixtures: fixtures.length, sin_grabar: sinGrabar }));
+  process.exit(0);
+}
 console.log("\n" + JSON.stringify({ model, mode: record ? "record" : "replay", fixtures: fixtures.length, ...metrics }, null, 2));
 if (!record) console.log("(replay: la latencia no es real; usa --record para medirla)");
