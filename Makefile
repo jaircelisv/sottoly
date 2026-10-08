@@ -14,6 +14,8 @@ TRIPLE   := $(shell rustc -vV 2>/dev/null | sed -n 's/^host: //p')
 BINARIES := $(ROOT)/frontend/src-tauri/binaries
 PORT     := 3118
 LOG      ?= $(ROOT)/app.log
+# Salidas de cada suite de `make verify`, para sumar el total al final (tarea 20).
+VERIFY_OUT := $(ROOT)/.verify
 
 WORKTREES_DIR ?= $(HOME)/orca/workspaces/Sottoly
 PRIVATE       := $(HOME)/.sottoly/CLAUDE.private.md
@@ -28,7 +30,7 @@ endif
 LLAMA_HELPER   := $(BINARIES)/llama-helper-$(TRIPLE)
 SOTTOLY_ENGINE := $(BINARIES)/sottoly-engine-$(TRIPLE)
 
-.PHONY: verify verify-engine verify-overlay verify-panel verify-rust sidecars demo measure limpiar deps worktree
+.PHONY: verify verify-start verify-engine verify-overlay verify-panel verify-rust sidecars demo measure limpiar deps worktree
 
 # ── Dependencias ─────────────────────────────────────────────────────────────
 
@@ -48,24 +50,30 @@ deps: engine/node_modules overlay/node_modules frontend/node_modules
 
 # ── verify ───────────────────────────────────────────────────────────────────
 
-verify: verify-engine verify-overlay verify-panel verify-rust
+# Al final, el total de todas las suites: el gate se queda con el número más grande de la salida, y sin
+# esta línea solo veía el de cargo test.
+verify: verify-start verify-engine verify-overlay verify-panel verify-rust
+	@node scripts/sottoly/harness/total-tests.mjs $(VERIFY_OUT)
+
+verify-start:
+	@mkdir -p $(VERIFY_OUT) && rm -f $(VERIFY_OUT)/*.txt
 
 verify-engine: engine/node_modules
-	cd engine && bunx tsc --noEmit && bun test
-	cd engine && bun test ../scripts/sottoly/harness
+	cd engine && bunx tsc --noEmit && bun test 2>&1 | tee $(VERIFY_OUT)/engine.txt
+	cd engine && bun test ../scripts/sottoly/harness 2>&1 | tee $(VERIFY_OUT)/harness.txt
 	cd engine && bun src/contract.ts --check
 
 verify-overlay: engine/node_modules overlay/node_modules
-	cd overlay && bunx tsc --noEmit && bun test scripts
+	cd overlay && bunx tsc --noEmit && bun test scripts 2>&1 | tee $(VERIFY_OUT)/overlay-scripts.txt
 	cd overlay && bunx playwright install webkit >/dev/null
-	cd overlay && bunx playwright test
+	cd overlay && bunx playwright test 2>&1 | tee $(VERIFY_OUT)/overlay.txt
 
 verify-panel: frontend/node_modules
 	cd frontend && pnpm exec playwright install webkit >/dev/null
-	cd frontend && pnpm exec playwright test
+	cd frontend && pnpm exec playwright test 2>&1 | tee $(VERIFY_OUT)/panel.txt
 
 verify-rust: sidecars
-	cd frontend/src-tauri && cargo test --no-fail-fast
+	cd frontend/src-tauri && cargo test --no-fail-fast 2>&1 | tee $(VERIFY_OUT)/cargo.txt
 
 # ── sidecars ─────────────────────────────────────────────────────────────────
 

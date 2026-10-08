@@ -1,0 +1,15 @@
+{
+  "tarea": "20 · El gate cuenta todos los tests: make verify",
+  "origen": "agente",
+  "modulo": "scripts/sottoly/harness/conteo.mjs",
+  "funcion": "make_verify_cierra",
+  "casos": [
+    {
+      "nombre": "make verify termina imprimiendo el total de todas sus suites",
+      "entrada": [],
+      "esperado": {
+        "imprime_el_total_al_final": true
+      }
+    }
+  ]
+}

@@ -29,7 +29,7 @@ Salen de la prueba con audio real del 2026-10-07 (20 Sugerencias, todas del CFO)
 17. **Aprobar las Decisiones**: el `summary` del cierre se guarda con la Reunión; en el panel, cada Decisión se aprueba, edita o descarta, o «No guardar nada»; lo aprobado va a la Memoria (`~/.sottoly/memory/`, un Markdown por Reunión, SPEC §6). Diseño ya aprobado (pantalla 2). ✅ hecha
 18. **Calibrar la Compuerta**: evals de la Compuerta con Jev sobre los fixtures (precisión y recall por Rol, SPEC §8); el umbral de cada Rol se ajusta con esos números y `calibrated_with` dice con qué se calibró. Los ejemplos que guarda el creador de Roles entran como fixtures. ✅ hecha
 19. **Antiruido para la misma idea con otras palabras**: pares de Sugerencias parafraseadas (de los patrones de la prueba) se reconocen como la misma idea, y pares distintos no. ✅ hecha
-20. **El gate cuenta todos los tests**: `make verify` termina con el total real de todas sus suites (bun test, Playwright del overlay y del panel, cargo test), para que el mínimo de tests los proteja a todos.
+20. **El gate cuenta todos los tests**: `make verify` termina con el total real de todas sus suites (bun test, Playwright del overlay y del panel, cargo test), para que el mínimo de tests los proteja a todos. ✅ hecha
 
 ## Lo que hace Jair (fuera del bucle)
 

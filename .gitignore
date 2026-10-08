@@ -90,3 +90,6 @@ CLAUDE.local.md
 
 # SOTTOLY: log de la App para `make measure` (contiene texto transcrito)
 app.log
+
+# make verify: salidas de cada suite para el total (tarea 20)
+.verify/
