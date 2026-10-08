@@ -6,6 +6,7 @@ import { createTypeSafeAi } from "@ai-sdk/typesafe-ai";
 import { Draft, DraftOutput, type Drafter } from "./draft";
 import type { ChoiceEvaluator } from "./gate";
 import { SummaryOutput, type Summarizer } from "./summary";
+import type { Chatter } from "./chat";
 
 export function jevEvaluator(modelId: string): ChoiceEvaluator {
   const model = createTypeSafeAi().evaluationModel(modelId);
@@ -48,5 +49,21 @@ export function anthropicSummarizer(modelId: string, maxTokens: number, fetch?: 
   return async ({ system, prompt }) => {
     const { output } = await generateText({ model, system, prompt, maxOutputTokens: maxTokens, output: Output.object({ schema: SummaryOutput }) });
     return SummaryOutput.parse(output).decisions;
+  };
+}
+
+/** Chat con el Rol en streaming (texto libre). `onText` recibe el texto acumulado. `fetch` solo para pruebas. */
+export function anthropicChatter(modelId: string, maxTokens: number, fetch?: typeof globalThis.fetch): Chatter {
+  const model = createAnthropic({ fetch, apiKey: fetch ? "recorded" : undefined })(modelId);
+  return async ({ system, prompt }, onText) => {
+    let failure: unknown;
+    const result = streamText({ model, system, prompt, maxOutputTokens: maxTokens, onError: ({ error }) => void (failure = error) });
+    let text = "";
+    for await (const part of result.textStream) {
+      text += part;
+      onText?.(text);
+    }
+    if (failure) throw failure;
+    return text;
   };
 }

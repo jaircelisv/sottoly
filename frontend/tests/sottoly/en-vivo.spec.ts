@@ -21,7 +21,7 @@ async function abrir(page: Page, envio: "ok" | "sin-reunion" = "ok") {
   await page.addInitScript({ path: IPC });
   await page.addInitScript((modo) => {
     (window as any).__SOTTOLY_IPC__ = {
-      sottoly_list_roles: (window as any).__ROLES__,
+      sottoly_list_roles: () => (window as any).__ROLES__,
       sottoly_chat_send: (args: unknown) => {
         (window as any).__ENVIOS__ = [...((window as any).__ENVIOS__ ?? []), args];
         if (modo === "sin-reunion") return new Error("No hay una Reunión en curso");
@@ -34,8 +34,11 @@ async function abrir(page: Page, envio: "ok" | "sin-reunion" = "ok") {
   await expect(page.getByRole("heading", { level: 1, name: "En vivo" })).toBeVisible();
 }
 
-const emitir = (page: Page, evento: string, payload: unknown) =>
-  page.evaluate(([e, p]) => (window as any).__sottoly_emit(e, p), [evento, payload] as const);
+/** Emite un evento de Tauri cuando la pantalla ya se suscribió a él (listen es asíncrono). */
+async function emitir(page: Page, evento: string, payload: unknown) {
+  await page.waitForFunction((e) => (window as any).__sottoly_listening(e), evento);
+  await page.evaluate(([e, p]) => (window as any).__sottoly_emit(e, p), [evento, payload] as const);
+}
 
 const frase = (text: string, speaker: string, t: number) => ({ text, speaker, is_partial: false, audio_start_time: t, audio_end_time: t + 2 });
 const chat = (page: Page) => page.getByRole("complementary", { name: "Chat con la junta" });

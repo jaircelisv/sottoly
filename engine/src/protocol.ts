@@ -30,7 +30,17 @@ export const ClockMessage = z.object({
   t: z.number().nonnegative(),
 });
 
-export const InboundMessage = z.union([SegmentMessage, SessionMessage, ClockMessage]);
+/** El Usuario le escribe a un Rol durante la Reunión (tarea 13). `reply_to`: la Sugerencia que responde. */
+export const ChatMessage = z.object({
+  type: z.literal("chat"),
+  id: z.string().min(1),
+  role: RoleId,
+  text: z.string().min(1),
+  reply_to: z.string().min(1).optional(),
+});
+export type ChatMessage = z.infer<typeof ChatMessage>;
+
+export const InboundMessage = z.union([SegmentMessage, SessionMessage, ClockMessage, ChatMessage]);
 export type InboundMessage = z.infer<typeof InboundMessage>;
 
 // engine → app
@@ -89,7 +99,39 @@ export const SuggestionCancel = z.object({
 });
 export type SuggestionCancel = z.infer<typeof SuggestionCancel>;
 
-export const OutboundMessage = z.union([SuggestionMessage, SuggestionDelta, SuggestionCancel, SummaryMessage]);
+/** Respuesta del Rol en el chat, en streaming: `text` es el acumulado; el `chat_reply` la cierra. */
+export const ChatDelta = z.object({
+  type: z.literal("chat_delta"),
+  id: z.string().min(1),
+  role: RoleId,
+  text: z.string().min(1),
+});
+export type ChatDelta = z.infer<typeof ChatDelta>;
+
+export const ChatReply = z.object({
+  type: z.literal("chat_reply"),
+  id: z.string().min(1),
+  role: RoleId,
+  text: z.string().min(1),
+});
+export type ChatReply = z.infer<typeof ChatReply>;
+
+/** El Rol no pudo responder (no está en la junta, o falló el modelo). */
+export const ChatError = z.object({
+  type: z.literal("chat_error"),
+  id: z.string().min(1),
+});
+export type ChatError = z.infer<typeof ChatError>;
+
+export const OutboundMessage = z.union([
+  SuggestionMessage,
+  SuggestionDelta,
+  SuggestionCancel,
+  SummaryMessage,
+  ChatDelta,
+  ChatReply,
+  ChatError,
+]);
 export type OutboundMessage = z.infer<typeof OutboundMessage>;
 
 export type ParseResult =
