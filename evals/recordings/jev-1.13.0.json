@@ -1,10 +1,50 @@
 {
+  "06a1f4977b607b0eee0f3891d028a53a0db276388cac69c66642adca14f1f2d5": {
+    "choice": "cfo",
+    "probabilities": {
+      "none": 0.08,
+      "ceo_adversarial": 0,
+      "cfo": 0.92
+    }
+  },
+  "079dd248c172b1e1bc825a35563f37d616e78c97b8247ee1d14894c05b587464": {
+    "choice": "none",
+    "probabilities": {
+      "none": 1,
+      "ceo_adversarial": 0,
+      "cfo": 0
+    }
+  },
   "1009b0234a0fd33984454a8bdf86ede9f8d5e5643b3f203cbd6c7ec1b83870af": {
     "choice": "ceo_adversarial",
     "probabilities": {
       "ceo_adversarial": 0.77,
       "none": 0.02,
       "cfo": 0.21
+    }
+  },
+  "1a5b2d7d3c74a96bd2a1c0db7d6e50aae01bf35e53dbacfdf5e7ffb4dcf5d206": {
+    "choice": "none",
+    "probabilities": {
+      "none": 1,
+      "cfo": 0,
+      "ceo_adversarial": 0
+    }
+  },
+  "213c133c2a0708656382fbafd3319368d901a6c72770dfc4827dfaa1e2af5ccf": {
+    "choice": "ceo_adversarial",
+    "probabilities": {
+      "none": 0.3,
+      "ceo_adversarial": 0.46,
+      "cfo": 0.24
+    }
+  },
+  "27b5b3b46d1ca6bfa33432cc19315e64d2e9fc80e50f8684fb598319f9d5c96e": {
+    "choice": "cfo",
+    "probabilities": {
+      "ceo_adversarial": 0.09,
+      "cfo": 0.88,
+      "none": 0.03
     }
   },
   "2b34e1212649726c560979547c30196df2fc962e580562e671e4a1393a839047": {
@@ -39,6 +79,22 @@
       "cfo": 0.98
     }
   },
+  "31bf87ac2397d551d4634c1ea65c09b72364f62f44d9dca171febedabd1f3281": {
+    "choice": "none",
+    "probabilities": {
+      "ceo_adversarial": 0,
+      "cfo": 0,
+      "none": 1
+    }
+  },
+  "321a99d4dc0af50b9d49c93b9285cd6f136a27b80277125ac3c4da81402034c1": {
+    "choice": "cfo",
+    "probabilities": {
+      "cfo": 0.98,
+      "none": 0.02,
+      "ceo_adversarial": 0
+    }
+  },
   "377a98d43670a5cebeec2c047b556820f6c72a10cb212f02861172109eb24fcc": {
     "choice": "none",
     "probabilities": {
@@ -55,12 +111,44 @@
       "ceo_adversarial": 0.35
     }
   },
+  "3924a91549d22a10aa673aef4f64d593ce9c28383e65d68d71bc3555a1e16529": {
+    "choice": "cfo",
+    "probabilities": {
+      "none": 0.07,
+      "ceo_adversarial": 0.01,
+      "cfo": 0.92
+    }
+  },
+  "3a360de358811839b5baf6da0c8ecf99d22739401e1212ee0ec87e2caeb128bc": {
+    "choice": "cfo",
+    "probabilities": {
+      "ceo_adversarial": 0.04,
+      "none": 0.02,
+      "cfo": 0.94
+    }
+  },
+  "3bb1672a95d58cde3abf87d3dff87bfd99c4b11c7d76aa8e0b7315ae55fba2ac": {
+    "choice": "cfo",
+    "probabilities": {
+      "none": 0.03,
+      "cfo": 0.96,
+      "ceo_adversarial": 0.01
+    }
+  },
   "3e6ed794af164b5c25e61762144c2c21b1b375e4e0203350811ce07b51ca36b0": {
     "choice": "cfo",
     "probabilities": {
       "none": 0,
       "ceo_adversarial": 0.17,
       "cfo": 0.83
+    }
+  },
+  "40d27c97116d1bc0ebb7065afb5fb1098c847e3f08330652ef8d42e7d85cc3c4": {
+    "choice": "cfo",
+    "probabilities": {
+      "none": 0.36,
+      "ceo_adversarial": 0.03,
+      "cfo": 0.61
     }
   },
   "42cbd22bed4c8073848673b3786fa792f61b0c754de630027e995a5505608e3c": {
@@ -103,6 +191,62 @@
       "none": 0.01
     }
   },
+  "5228dee245f66b2443b65c86a4fb952e2f615870f62c1999c118e6cee6334f13": {
+    "choice": "cfo",
+    "probabilities": {
+      "none": 0.04,
+      "cfo": 0.93,
+      "ceo_adversarial": 0.02
+    }
+  },
+  "5a620cb4423821530267cb7d57b25f4355add0c0aafa43e498e186b83b48d576": {
+    "choice": "none",
+    "probabilities": {
+      "ceo_adversarial": 0,
+      "cfo": 0,
+      "none": 1
+    }
+  },
+  "5f5ac1cf433991951dd0d8e190923157207937a5d79a4be334a4a44bbfc80532": {
+    "choice": "cfo",
+    "probabilities": {
+      "none": 0.04,
+      "ceo_adversarial": 0.35,
+      "cfo": 0.61
+    }
+  },
+  "649aeb882baa3df46b3ed421845e7aed10f36e0b5470d30ec66127f7889c7afa": {
+    "choice": "ceo_adversarial",
+    "probabilities": {
+      "ceo_adversarial": 0.55,
+      "none": 0.18,
+      "cfo": 0.27
+    }
+  },
+  "66adb1546ea8d02a4872a4a39ca1b914181d9335c87709dde77d99f2b29a1017": {
+    "choice": "cfo",
+    "probabilities": {
+      "none": 0.02,
+      "cfo": 0.98,
+      "ceo_adversarial": 0
+    }
+  },
+  "78705862a6fac207fa760df60df1cbca64c54e20ca4bb3e8bb71c057e0aa9310": {
+    "choice": "none",
+    "probabilities": {
+      "none": 1,
+      "cfo": 0,
+      "ceo_adversarial": 0
+    }
+  },
+  "79682507de66bffcc5b6feb04ffb70a38dbbd51c631184e94809f0672a1e6d00": {
+    "choice": "cfo",
+    "probabilities": {
+      "none": 0.03,
+      "cfo": 0.96,
+      "ceo_adversarial": 0.01
+    }
+  },
   "7e54248144799bc1b6b06e5fe074dcc9a91089139e924900307f7c86160dcc52": {
     "choice": "ceo_adversarial",
     "probabilities": {
@@ -119,12 +263,28 @@
       "ceo_adversarial": 0.54
     }
   },
+  "82b9cba5a4ab4b333f00a0ed0d317fa8121dbdcfea7fdbc9ae1244bb202b9583": {
+    "choice": "ceo_adversarial",
+    "probabilities": {
+      "ceo_adversarial": 0.59,
+      "none": 0.23,
+      "cfo": 0.18
+    }
+  },
   "86519563ad2af6795dbb415ab6b157c9337b943d2f7faf67f25f76d6185c0917": {
     "choice": "cfo",
     "probabilities": {
       "cfo": 0.99,
       "ceo_adversarial": 0.01,
       "none": 0
+    }
+  },
+  "89013c7cc392a0826e1dffb8173a23b60f02980dc4f572503789c96371b3fbca": {
+    "choice": "cfo",
+    "probabilities": {
+      "cfo": 0.96,
+      "none": 0.04,
+      "ceo_adversarial": 0
     }
   },
   "8c068701ac9a2ef4a0f0d59ff668106e575a6b14a4c94d0dda60a233f16882e1": {
@@ -157,6 +317,30 @@
       "none": 0,
       "ceo_adversarial": 0.01,
       "cfo": 0.99
+    }
+  },
+  "97f19ac415c128258a273244dc29dc399fcb3e781e30122aa2a35d5dcd45c217": {
+    "choice": "cfo",
+    "probabilities": {
+      "none": 0.04,
+      "ceo_adversarial": 0.07,
+      "cfo": 0.89
+    }
+  },
+  "99d5cce880927f859397f74b2c1aeebda8bda3b09e72e087eb4c2aad7ba4eb9c": {
+    "choice": "cfo",
+    "probabilities": {
+      "ceo_adversarial": 0.02,
+      "cfo": 0.9,
+      "none": 0.08
+    }
+  },
+  "9ad6ca0c838daa0028e2f4eb5c9bb0f7d8636f296762cff307b7dfd2256c4adf": {
+    "choice": "ceo_adversarial",
+    "probabilities": {
+      "cfo": 0.09,
+      "none": 0.15,
+      "ceo_adversarial": 0.76
     }
   },
   "9b731017eb0c17f8a782f3bbd05cabee55f79cf519bc9c6b34d2a80a66c68fc5": {
@@ -199,6 +383,22 @@
       "cfo": 0
     }
   },
+  "b51b1dad160cf441097574b6475c599407aca265d0d16a58f1d3d147653f58ce": {
+    "choice": "cfo",
+    "probabilities": {
+      "ceo_adversarial": 0,
+      "cfo": 0.98,
+      "none": 0.02
+    }
+  },
+  "b5973abc7b8840c49ed1bf8786f2e8f18f8dcf7176a0c7e00f19b09a19858db1": {
+    "choice": "none",
+    "probabilities": {
+      "none": 1,
+      "ceo_adversarial": 0,
+      "cfo": 0
+    }
+  },
   "b8c880328683ddf21d73c9cadaae03248a0f9383bb2488b4d675420cac807e15": {
     "choice": "ceo_adversarial",
     "probabilities": {
@@ -207,12 +407,60 @@
       "cfo": 0.21
     }
   },
+  "bc599660b4ddc4d667ddde61801910e0e5f58501538d91a4f477a61072e18fde": {
+    "choice": "cfo",
+    "probabilities": {
+      "ceo_adversarial": 0.09,
+      "none": 0.04,
+      "cfo": 0.87
+    }
+  },
   "c24870a04925a63232f33691301070ad616f3f4b67d639a0543d584d398a3d50": {
     "choice": "cfo",
     "probabilities": {
       "cfo": 0.83,
       "none": 0,
       "ceo_adversarial": 0.17
+    }
+  },
+  "c7fa27bc080c064b49587b1c4d33a9cea5f526187a9633b66d90a906a4b201ff": {
+    "choice": "cfo",
+    "probabilities": {
+      "none": 0.02,
+      "cfo": 0.96,
+      "ceo_adversarial": 0.02
+    }
+  },
+  "c8e528d7d94b785e9a877875c4f2332bcf48d3a6586549b327576cd42052c5cc": {
+    "choice": "ceo_adversarial",
+    "probabilities": {
+      "none": 0.1,
+      "cfo": 0.05,
+      "ceo_adversarial": 0.85
+    }
+  },
+  "ca139615ea641f7569c7e960f677d7a802da8cbd70fc03844204b8255104e867": {
+    "choice": "none",
+    "probabilities": {
+      "none": 0.79,
+      "ceo_adversarial": 0.16,
+      "cfo": 0.05
+    }
+  },
+  "d141b906283a40d2b3e496ee3c11f6d11994f54ed27a92a1ec041b1135049f8c": {
+    "choice": "cfo",
+    "probabilities": {
+      "cfo": 0.77,
+      "ceo_adversarial": 0.12,
+      "none": 0.11
+    }
+  },
+  "d1ccdb1533e367ae98a4f4aefcc2f0b98dd51e0f35007a5b576cf803d3fe3b49": {
+    "choice": "ceo_adversarial",
+    "probabilities": {
+      "none": 0.16,
+      "ceo_adversarial": 0.77,
+      "cfo": 0.07
     }
   },
   "d31fe2dbf8e3d8c28867f5336fb3672b4265dc45283fe85bfac71318b6a17976": {
@@ -231,6 +479,14 @@
       "cfo": 0
     }
   },
+  "e28e2f5a7784a1069619a27b3c2e50fc328ac9314dbf22b39a630a2a119b7523": {
+    "choice": "none",
+    "probabilities": {
+      "cfo": 0.15,
+      "none": 0.84,
+      "ceo_adversarial": 0.01
+    }
+  },
   "e57fa5ebe4ba8333549a891199474bc0a509f3657c4f72d43fab17f46c569e6a": {
     "choice": "cfo",
     "probabilities": {
@@ -239,12 +495,28 @@
       "none": 0
     }
   },
+  "e70a4587e6267b1de576cf977c417ce1b85dc7b7e8726da1f79e7395daaab265": {
+    "choice": "cfo",
+    "probabilities": {
+      "ceo_adversarial": 0,
+      "cfo": 0.95,
+      "none": 0.05
+    }
+  },
   "f19b36824fe23b9100a3758a1c76ea947f4432370bd438ecfb56dc1f0721e582": {
     "choice": "none",
     "probabilities": {
       "cfo": 0,
       "ceo_adversarial": 0.01,
       "none": 0.99
+    }
+  },
+  "f40448916316dfea90396b116df20639b8ace9480b98a0333ebdc45a050143a1": {
+    "choice": "none",
+    "probabilities": {
+      "none": 1,
+      "ceo_adversarial": 0,
+      "cfo": 0
     }
   },
   "f42bfd629df909f8c36f3ebd5b7cce722cfa4789e1bec987605989ed239ce8b6": {
@@ -277,6 +549,14 @@
       "none": 0.03,
       "cfo": 0.65,
       "ceo_adversarial": 0.32
+    }
+  },
+  "fbc458eef66700d9f06fd583189ae91895e18293cd54352556641f056b284c1e": {
+    "choice": "none",
+    "probabilities": {
+      "none": 1,
+      "ceo_adversarial": 0,
+      "cfo": 0
     }
   }
 }

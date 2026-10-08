@@ -6,6 +6,7 @@ import { join } from "node:path";
 import config from "../../engine/config.json";
 import {
   computeMetrics,
+  loadCreatorExampleFixtures,
   loadFixtures,
   recordingEvaluator,
   Recordings,
@@ -22,6 +23,7 @@ const model = config.gate.model;
 const fixtures = [
   ...loadFixtures(join(ROOT, "evals/fixtures")),
   ...(process.env.SOTTOLY_EVALS_DIR ? loadFixtures(join(process.env.SOTTOLY_EVALS_DIR, "fixtures")) : []),
+  ...loadCreatorExampleFixtures(join(ROOT, "roles")),
 ];
 const recordings = new Recordings(join(ROOT, `evals/recordings/${model}.json`));
 const evaluate = record ? recordingEvaluator(model, jevEvaluator(model), recordings) : replayEvaluator(model, recordings);

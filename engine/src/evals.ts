@@ -28,6 +28,32 @@ export const Fixture = z.object({
 });
 export type Fixture = z.infer<typeof Fixture>;
 
+/**
+ * Los ejemplos que guarda el creador de Roles (roles/<id>.examples.json, tarea 14) como fixtures de un
+ * Turno: «cuándo sí» espera que hable ese Rol, «cuándo no» que no hable nadie (tarea 18).
+ */
+export function loadCreatorExampleFixtures(rolesDir: string): Fixture[] {
+  if (!existsSync(rolesDir)) return [];
+  const out: Fixture[] = [];
+  for (const f of readdirSync(rolesDir).filter((f) => f.endsWith(".examples.json")).sort()) {
+    const role = f.replace(/\.examples\.json$/, "");
+    const ex = JSON.parse(readFileSync(join(rolesDir, f), "utf8")) as { speak?: string[]; silent?: string[] };
+    const one = (text: string, speak: boolean, i: number): Fixture => ({
+      id: `${role}-${speak ? "si" : "no"}-${i + 1}`,
+      description: `Ejemplo del creador de Roles (${speak ? "cuándo sí" : "cuándo no"}).`,
+      roles: [role],
+      segments: [
+        { speaker: "counterpart", text, t0: 0, t1: 3 },
+        { speaker: "user", text: "Ajá.", t0: 3.5, t1: 4 },
+      ],
+      labels: [{ turn: 0, speaker: "counterpart", text, should_intervene: speak, expected_role: speak ? role : null, reason: "ejemplo del creador" }],
+    });
+    (ex.speak ?? []).forEach((t, i) => out.push(one(t, true, i)));
+    (ex.silent ?? []).forEach((t, i) => out.push(one(t, false, i)));
+  }
+  return out;
+}
+
 export function loadFixtures(dir: string): Fixture[] {
   if (!existsSync(dir)) return [];
   return readdirSync(dir)
