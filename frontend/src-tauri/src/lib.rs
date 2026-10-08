@@ -58,6 +58,7 @@ pub mod utils;
 pub mod whisper_engine;
 pub mod overlay; // SOTTOLY: ventana overlay de Sugerencias
 pub mod local_model; // SOTTOLY: ¿está descargado y válido el modelo local?
+pub mod sottoly_roles; // SOTTOLY: Roles para el panel
 
 use audio::{list_audio_devices, AudioDevice, trigger_audio_permission};
 use log::{error as log_error, info as log_info};
@@ -620,6 +621,7 @@ pub fn run() {
             }
         })
         .invoke_handler(tauri::generate_handler![
+            sottoly_roles::sottoly_list_roles, // SOTTOLY: panel, pantalla Roles
             start_recording,
             stop_recording,
             is_recording,

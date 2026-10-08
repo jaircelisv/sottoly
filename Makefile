@@ -1,5 +1,5 @@
 # Sottoly — punto de entrada (PLAN.md, tarea 1).
-#   make verify     las tres suites: bun test (Motor y hooks), Playwright (overlay), cargo test
+#   make verify     las suites: bun test (Motor y hooks), Playwright (overlay y panel), cargo test
 #   make sidecars   llama-helper y sottoly-engine en frontend/src-tauri/binaries/
 #   make demo       Next en http://localhost:3118 precalentado, luego Tauri con Sugerencias de demo
 #   make measure    latencia de Segmentos con la App corriendo (LOG=app.log por defecto)
@@ -28,7 +28,7 @@ endif
 LLAMA_HELPER   := $(BINARIES)/llama-helper-$(TRIPLE)
 SOTTOLY_ENGINE := $(BINARIES)/sottoly-engine-$(TRIPLE)
 
-.PHONY: verify verify-engine verify-overlay verify-rust sidecars demo measure limpiar deps worktree
+.PHONY: verify verify-engine verify-overlay verify-panel verify-rust sidecars demo measure limpiar deps worktree
 
 # ── Dependencias ─────────────────────────────────────────────────────────────
 
@@ -48,7 +48,7 @@ deps: engine/node_modules overlay/node_modules frontend/node_modules
 
 # ── verify ───────────────────────────────────────────────────────────────────
 
-verify: verify-engine verify-overlay verify-rust
+verify: verify-engine verify-overlay verify-panel verify-rust
 
 verify-engine: engine/node_modules
 	cd engine && bunx tsc --noEmit && bun test
@@ -59,6 +59,10 @@ verify-overlay: engine/node_modules overlay/node_modules
 	cd overlay && bunx tsc --noEmit && bun test scripts
 	cd overlay && bunx playwright install webkit >/dev/null
 	cd overlay && bunx playwright test
+
+verify-panel: frontend/node_modules
+	cd frontend && pnpm exec playwright install webkit >/dev/null
+	cd frontend && pnpm exec playwright test
 
 verify-rust: sidecars
 	cd frontend/src-tauri && cargo test --no-fail-fast
