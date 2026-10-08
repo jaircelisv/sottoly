@@ -1,0 +1,24 @@
+{
+  "tarea": "15 · Quién habló, en las Reuniones guardadas",
+  "origen": "agente",
+  "modulo": "scripts/sottoly/harness/reunion.mjs",
+  "funcion": "guardar_y_leer",
+  "casos": [
+    {
+      "nombre": "al guardar una Reunión, cada frase conserva si la dijo el Usuario o la Contraparte",
+      "entrada": [[
+        { "text": "El servicio cuesta dieciocho millones.", "speaker": "counterpart" },
+        { "text": "Ok, suena razonable.", "speaker": "user" }
+      ]],
+      "esperado": { "speakers": ["counterpart", "user"], "texts": ["El servicio cuesta dieciocho millones.", "Ok, suena razonable."] }
+    },
+    {
+      "nombre": "una frase sin quién habló (audio mezclado o Reunión vieja) se guarda igual, sin inventarlo",
+      "entrada": [[
+        { "text": "Listo, cerramos.", "speaker": "counterpart" },
+        { "text": "Gracias a todos." }
+      ]],
+      "esperado": { "speakers": ["counterpart", null], "texts": ["Listo, cerramos.", "Gracias a todos."] }
+    }
+  ]
+}
