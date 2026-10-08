@@ -1,0 +1,13 @@
+{
+  "tarea": "19 · Antiruido para la misma idea con otras palabras",
+  "origen": "agente",
+  "modulo": "scripts/sottoly/evals/redaccion.mjs",
+  "funcion": "evals_de_parafrasis",
+  "casos": [
+    {
+      "nombre": "el Motor reconoce como la misma idea las paráfrasis de una Sugerencia ya mostrada, y como distintas las que solo comparten palabras",
+      "entrada": [],
+      "esperado": { "pares": 10, "aciertan": 10, "sin_grabar": 0, "fallan": [] }
+    }
+  ]
+}
