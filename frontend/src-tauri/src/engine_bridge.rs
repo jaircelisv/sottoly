@@ -379,6 +379,19 @@ struct Session {
 
 static SESSION: Mutex<Option<Session>> = Mutex::new(None);
 
+/// Guarda el `summary` del cierre con la Reunión, para revisarlo en el panel (tarea 17).
+pub fn persist_summary(folder: Option<&std::path::Path>, event: &EngineEvent) {
+    let EngineEvent::Summary { decisions } = event else { return };
+    match folder {
+        Some(folder) => {
+            if let Err(e) = crate::sottoly_decisions::store_summary(folder, decisions) {
+                warn!("SOTTOLY: no se pudieron guardar las Decisiones: {}", e);
+            }
+        }
+        None => warn!("SOTTOLY: Reunión sin carpeta; las Decisiones del cierre no se guardan"),
+    }
+}
+
 fn start_session<R: tauri::Runtime>(app: tauri::AppHandle<R>) {
     use std::sync::atomic::{AtomicBool, Ordering};
     use std::sync::Arc;
@@ -387,11 +400,14 @@ fn start_session<R: tauri::Runtime>(app: tauri::AppHandle<R>) {
     stop_session();
     let emitter = app.clone();
     let stream_log = Mutex::new(StreamLog::default());
+    // Carpeta de la Reunión en curso: ahí se guardan las Decisiones del cierre (tarea 17).
+    let meeting_folder = crate::audio::recording_commands::current_meeting_folder();
     let bridge = match EngineBridge::spawn(engine_command(), move |event| {
         let now_ms = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_millis()).unwrap_or(0);
         if let Some(line) = lock(&stream_log).line(&event, now_ms) {
             info!("{}", line);
         }
+        persist_summary(meeting_folder.as_deref(), &event);
         if let Err(e) = emitter.emit(event.tauri_event(), &event) {
             warn!("SOTTOLY: no se pudo emitir {}: {}", event.tauri_event(), e);
         }
@@ -492,6 +508,19 @@ mod tests {
     }
 
     use std::sync::mpsc;
+
+    #[test]
+    fn el_summary_del_cierre_se_guarda_en_la_carpeta_de_la_reunion() {
+        let dir = tempfile::tempdir().unwrap();
+        let event: EngineEvent = serde_json::from_str(r#"{"type":"summary","decisions":[{"id":"m-d1","kind":"decision","text":"Se contrata.","owner":"user","due":null,"source":"engine","meeting_id":"m","created_at":"2026-10-07T22:00:00Z","approved":false}]}"#).unwrap();
+        persist_summary(Some(dir.path()), &event);
+        let file = crate::sottoly_decisions::load_decisions(dir.path()).unwrap();
+        assert_eq!((file.decisions.len(), file.reviewed), (1, false));
+        // Otros eventos no escriben nada.
+        let otra = tempfile::tempdir().unwrap();
+        persist_summary(Some(otra.path()), &EngineEvent::ChatError { id: "c".into() });
+        assert!(crate::sottoly_decisions::load_decisions(otra.path()).is_none());
+    }
 
     // Chat con el Rol (tarea 13)
     #[test]
