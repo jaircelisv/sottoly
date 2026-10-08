@@ -1,0 +1,120 @@
+{
+  "tarea": "14 · Creador de Roles",
+  "origen": "agente",
+  "modulo": "scripts/sottoly/harness/creador.mjs",
+  "funcion": "crear_rol",
+  "casos": [
+    {
+      "nombre": "un Rol creado se escribe en roles/, el Motor lo carga con su validación y nace sin calibrar, con umbral conservador y sus ejemplos",
+      "entrada": [
+        {
+          "name": "Negociador",
+          "persona": "Nora",
+          "function": "Que me avise cuando un cliente pida descuentos sin dar nada a cambio.",
+          "tone": "Directa y tranquila, como una negociadora con experiencia.",
+          "when": "Interviene cuando la Contraparte pide un descuento, un plazo extra o algo gratis sin ofrecer nada a cambio.",
+          "example_speak": "Si nos haces un diez por ciento de descuento, firmamos hoy.",
+          "example_silent": "Qué bien que pudimos reunirnos esta semana.",
+          "limits": [
+            "legal opinions",
+            "personal topics"
+          ]
+        }
+      ],
+      "esperado": {
+        "creado": true,
+        "carga_en_el_motor": true,
+        "sin_calibrar": true,
+        "umbral_conservador": true,
+        "con_ejemplos": true,
+        "en_la_junta": true,
+        "roles_del_repo_intactos": true,
+        "motivo": null
+      }
+    },
+    {
+      "nombre": "respuestas con dos puntos, comillas y saltos de línea no rompen el archivo del Rol",
+      "entrada": [
+        {
+          "name": "Abogado del diablo",
+          "persona": "Max \"el duro\"",
+          "function": "Que me avise cuando un cliente pida descuentos sin dar nada a cambio.",
+          "tone": "Seco: va al grano.",
+          "when": "Interviene cuando dicen: \"esto es final\"\no aceptan sin datos.",
+          "example_speak": "Si nos haces un diez por ciento de descuento, firmamos hoy.",
+          "example_silent": "Qué bien que pudimos reunirnos esta semana.",
+          "limits": [
+            "legal opinions",
+            "personal topics"
+          ]
+        }
+      ],
+      "esperado": {
+        "creado": true,
+        "carga_en_el_motor": true,
+        "sin_calibrar": true,
+        "umbral_conservador": true,
+        "con_ejemplos": true,
+        "en_la_junta": true,
+        "roles_del_repo_intactos": true,
+        "motivo": null
+      }
+    },
+    {
+      "nombre": "no se puede crear un Rol con el nombre de uno que ya existe",
+      "entrada": [
+        {
+          "name": "CFO",
+          "persona": "Nora",
+          "function": "Que me avise cuando un cliente pida descuentos sin dar nada a cambio.",
+          "tone": "Directa y tranquila, como una negociadora con experiencia.",
+          "when": "Interviene cuando la Contraparte pide un descuento, un plazo extra o algo gratis sin ofrecer nada a cambio.",
+          "example_speak": "Si nos haces un diez por ciento de descuento, firmamos hoy.",
+          "example_silent": "Qué bien que pudimos reunirnos esta semana.",
+          "limits": [
+            "legal opinions",
+            "personal topics"
+          ]
+        }
+      ],
+      "esperado": {
+        "creado": false,
+        "carga_en_el_motor": false,
+        "sin_calibrar": false,
+        "umbral_conservador": false,
+        "con_ejemplos": false,
+        "en_la_junta": false,
+        "roles_del_repo_intactos": true,
+        "motivo": "ya_existe"
+      }
+    },
+    {
+      "nombre": "sin decir cuándo interviene, el Rol no se crea",
+      "entrada": [
+        {
+          "name": "Negociador",
+          "persona": "Nora",
+          "function": "Que me avise cuando un cliente pida descuentos sin dar nada a cambio.",
+          "tone": "Directa y tranquila, como una negociadora con experiencia.",
+          "when": "  ",
+          "example_speak": "Si nos haces un diez por ciento de descuento, firmamos hoy.",
+          "example_silent": "Qué bien que pudimos reunirnos esta semana.",
+          "limits": [
+            "legal opinions",
+            "personal topics"
+          ]
+        }
+      ],
+      "esperado": {
+        "creado": false,
+        "carga_en_el_motor": false,
+        "sin_calibrar": false,
+        "umbral_conservador": false,
+        "con_ejemplos": false,
+        "en_la_junta": false,
+        "roles_del_repo_intactos": true,
+        "motivo": "falta_cuando"
+      }
+    }
+  ]
+}
