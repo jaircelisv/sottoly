@@ -22,6 +22,15 @@ Salen de la prueba con audio real del 2026-10-07 (20 Sugerencias, todas del CFO)
 13. **Chat con el Rol**: en la ventana principal, junto a la transcripción en vivo, el Usuario le responde a una Sugerencia o le pregunta al Rol por lo que se está diciendo, y la respuesta llega en streaming. Mensajes nuevos en `engine/src/protocol.ts` primero (la regla de integridad los cubre), después Rust y la pantalla. Diseño aprobado primero. ✅ hecha
 14. **Creador de Roles**: entrevista guiada (función, Persona, cuándo interviene, límites, nombre) que escribe el archivo del Rol en `roles/`. El Rol nace sin calibrar (`calibrated_with: none`) con un umbral conservador y ejemplos para calibrarlo. Diseño aprobado primero. ✅ hecha
 
+### Tercera etapa (2026-10-07, los huecos que dejó la segunda)
+
+15. **Quién habló, en las Reuniones guardadas**: Meetily tiene la columna `speaker` pero no la llena; al guardar la Reunión se guarda si cada frase fue del Usuario o de la Contraparte, y el panel lo muestra. Casos con una Reunión guardada en una base temporal.
+16. **Evals de las Decisiones: no inventar**: Reuniones sintéticas con la respuesta correcta (lo que se decidió y lo que no; un pedido que nadie aceptó no es un compromiso) y criterios sobre lo que propone el modelo real, grabado; el prompt se ajusta hasta que pasen.
+17. **Aprobar las Decisiones**: el `summary` del cierre se guarda con la Reunión; en el panel, cada Decisión se aprueba, edita o descarta, o «No guardar nada»; lo aprobado va a la Memoria (`~/.sottoly/memory/`, un Markdown por Reunión, SPEC §6). Diseño ya aprobado (pantalla 2).
+18. **Calibrar la Compuerta**: evals de la Compuerta con Jev sobre los fixtures (precisión y recall por Rol, SPEC §8); el umbral de cada Rol se ajusta con esos números y `calibrated_with` dice con qué se calibró. Los ejemplos que guarda el creador de Roles entran como fixtures.
+19. **Antiruido para la misma idea con otras palabras**: pares de Sugerencias parafraseadas (de los patrones de la prueba) se reconocen como la misma idea, y pares distintos no.
+20. **El gate cuenta todos los tests**: `make verify` termina con el total real de todas sus suites (bun test, Playwright del overlay y del panel, cargo test), para que el mínimo de tests los proteja a todos.
+
 ## Lo que hace Jair (fuera del bucle)
 
 - **Integrar los PRs**, solo con checks en verde. Pendientes hoy: #25 → #28 (documentación) y #26 (`check_local_model`).
