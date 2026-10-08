@@ -1,0 +1,19 @@
+{
+  "tarea": "17 · Aprobar las Decisiones: la revisión en el panel",
+  "origen": "agente",
+  "modulo": "scripts/sottoly/harness/panel.mjs",
+  "funcion": "specs_de",
+  "casos": [
+    {
+      "nombre": "las specs de Playwright de la revisión de Decisiones (mostrar, aprobar/editar/descartar, no guardar nada, ya revisada, sin Decisiones) pasan todas en WebKit",
+      "entrada": [
+        "decisiones.spec.ts"
+      ],
+      "esperado": {
+        "pasan": 5,
+        "fallan": 0,
+        "saltadas": 0
+      }
+    }
+  ]
+}

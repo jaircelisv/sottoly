@@ -1,0 +1,209 @@
+{
+  "tarea": "17 · Aprobar las Decisiones",
+  "origen": "agente",
+  "modulo": "scripts/sottoly/harness/decisiones.mjs",
+  "funcion": "revisar_decisiones",
+  "casos": [
+    {
+      "nombre": "el summary del cierre queda guardado con la Reunión y por revisar",
+      "entrada": [
+        {
+          "title": "Reunión con el contador",
+          "created_at": "2026-10-07T22:00:00Z",
+          "summary": [
+            {
+              "id": "m1-d1",
+              "kind": "decision",
+              "text": "Se contrata el plan anual por dieciocho millones con IVA incluido.",
+              "owner": "user",
+              "due": null,
+              "source": "engine",
+              "meeting_id": "m1",
+              "created_at": "2026-10-07T22:00:00Z",
+              "approved": false
+            },
+            {
+              "id": "m1-d2",
+              "kind": "commitment",
+              "text": "Enviar el contrato para firmar.",
+              "owner": "counterpart",
+              "due": "2026-10-09",
+              "source": "engine",
+              "meeting_id": "m1",
+              "created_at": "2026-10-07T22:00:00Z",
+              "approved": false
+            },
+            {
+              "id": "m1-d3",
+              "kind": "decision",
+              "text": "El anticipo es del cincuenta por ciento.",
+              "owner": "counterpart",
+              "due": null,
+              "source": "engine",
+              "meeting_id": "m1",
+              "created_at": "2026-10-07T22:00:00Z",
+              "approved": false
+            }
+          ],
+          "review": null
+        }
+      ],
+      "esperado": {
+        "guardadas": 3,
+        "por_revisar": true,
+        "memoria_lineas": null
+      }
+    },
+    {
+      "nombre": "aprobar dos (una editada) y descartar una lleva a la Memoria solo las aprobadas, con el texto editado",
+      "entrada": [
+        {
+          "title": "Reunión con el contador",
+          "created_at": "2026-10-07T22:00:00Z",
+          "summary": [
+            {
+              "id": "m1-d1",
+              "kind": "decision",
+              "text": "Se contrata el plan anual por dieciocho millones con IVA incluido.",
+              "owner": "user",
+              "due": null,
+              "source": "engine",
+              "meeting_id": "m1",
+              "created_at": "2026-10-07T22:00:00Z",
+              "approved": false
+            },
+            {
+              "id": "m1-d2",
+              "kind": "commitment",
+              "text": "Enviar el contrato para firmar.",
+              "owner": "counterpart",
+              "due": "2026-10-09",
+              "source": "engine",
+              "meeting_id": "m1",
+              "created_at": "2026-10-07T22:00:00Z",
+              "approved": false
+            },
+            {
+              "id": "m1-d3",
+              "kind": "decision",
+              "text": "El anticipo es del cincuenta por ciento.",
+              "owner": "counterpart",
+              "due": null,
+              "source": "engine",
+              "meeting_id": "m1",
+              "created_at": "2026-10-07T22:00:00Z",
+              "approved": false
+            }
+          ],
+          "review": [
+            {
+              "id": "m1-d1",
+              "approved": true,
+              "text": "Se contrata el plan anual por dieciocho millones con IVA incluido."
+            },
+            {
+              "id": "m1-d2",
+              "approved": true,
+              "text": "La Contraparte envía el contrato firmado el viernes."
+            },
+            {
+              "id": "m1-d3",
+              "approved": false,
+              "text": "El anticipo es del cincuenta por ciento."
+            }
+          ]
+        }
+      ],
+      "esperado": {
+        "guardadas": 3,
+        "por_revisar": false,
+        "memoria_lineas": [
+          "Se contrata el plan anual por dieciocho millones con IVA incluido. (Tú)",
+          "La Contraparte envía el contrato firmado el viernes. (Contraparte, para el 2026-10-09)"
+        ]
+      }
+    },
+    {
+      "nombre": "«No guardar nada» no escribe en la Memoria y la Reunión queda revisada",
+      "entrada": [
+        {
+          "title": "Reunión con el contador",
+          "created_at": "2026-10-07T22:00:00Z",
+          "summary": [
+            {
+              "id": "m1-d1",
+              "kind": "decision",
+              "text": "Se contrata el plan anual por dieciocho millones con IVA incluido.",
+              "owner": "user",
+              "due": null,
+              "source": "engine",
+              "meeting_id": "m1",
+              "created_at": "2026-10-07T22:00:00Z",
+              "approved": false
+            },
+            {
+              "id": "m1-d2",
+              "kind": "commitment",
+              "text": "Enviar el contrato para firmar.",
+              "owner": "counterpart",
+              "due": "2026-10-09",
+              "source": "engine",
+              "meeting_id": "m1",
+              "created_at": "2026-10-07T22:00:00Z",
+              "approved": false
+            },
+            {
+              "id": "m1-d3",
+              "kind": "decision",
+              "text": "El anticipo es del cincuenta por ciento.",
+              "owner": "counterpart",
+              "due": null,
+              "source": "engine",
+              "meeting_id": "m1",
+              "created_at": "2026-10-07T22:00:00Z",
+              "approved": false
+            }
+          ],
+          "review": [
+            {
+              "id": "m1-d1",
+              "approved": false,
+              "text": "x"
+            },
+            {
+              "id": "m1-d2",
+              "approved": false,
+              "text": "x"
+            },
+            {
+              "id": "m1-d3",
+              "approved": false,
+              "text": "x"
+            }
+          ]
+        }
+      ],
+      "esperado": {
+        "guardadas": 3,
+        "por_revisar": false,
+        "memoria_lineas": null
+      }
+    },
+    {
+      "nombre": "una Reunión sin summary no pide revisión",
+      "entrada": [
+        {
+          "title": "Reunión con el contador",
+          "created_at": "2026-10-07T22:00:00Z",
+          "summary": null,
+          "review": null
+        }
+      ],
+      "esperado": {
+        "guardadas": 0,
+        "por_revisar": false,
+        "memoria_lineas": null
+      }
+    }
+  ]
+}
