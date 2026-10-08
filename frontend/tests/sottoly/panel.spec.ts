@@ -68,7 +68,8 @@ test("sin Reuniones guardadas, el panel lo dice", async ({ page }) => {
 
 test("si no se pueden cargar las Reuniones, lo dice y se puede reintentar", async ({ page }) => {
   await abrir(page, "/sottoly", { api_get_meetings: "error:database is locked" });
-  await expect(page.getByRole("alert")).toContainText("No se pudieron cargar las Reuniones");
+  // Next tiene su propio role="alert" (el anunciador de rutas): se filtra por el texto del error.
+  await expect(page.getByRole("alert").filter({ hasText: "No se pudieron cargar las Reuniones" })).toBeVisible();
   await page.evaluate(() => {
     (window as unknown as { __SOTTOLY_IPC__: Record<string, unknown> }).__SOTTOLY_IPC__.api_get_meetings = [{ id: "m", title: "Ya cargó" }];
   });

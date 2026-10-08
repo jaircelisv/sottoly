@@ -6,6 +6,13 @@
   const callbacks = new Map();
   const calls = [];
   window.__SOTTOLY_CALLS__ = calls;
+  // Lo que los proveedores de Meetily piden al arrancar, con la App ya configurada y sin grabar.
+  const DEFAULTS = {
+    get_onboarding_status: { completed: true },
+    get_recording_state: { is_recording: false, is_paused: false, is_active: false, recording_duration: null, active_duration: null },
+    check_first_launch: false,
+    api_get_meetings: [],
+  };
   window.__TAURI_INTERNALS__ = {
     metadata: { currentWindow: { label: "main" }, currentWebview: { windowLabel: "main", label: "main" } },
     transformCallback(cb) {
@@ -22,7 +29,7 @@
     async invoke(cmd, args) {
       calls.push({ cmd, args });
       if (cmd.startsWith("plugin:event|")) return next++;
-      if (cmd === "get_onboarding_status") return { completed: true };
+      if (cmd in DEFAULTS && !(cmd in (window.__SOTTOLY_IPC__ || {}))) return DEFAULTS[cmd];
       const table = window.__SOTTOLY_IPC__ || {};
       if (!(cmd in table)) return null;
       const v = table[cmd];

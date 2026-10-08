@@ -9,6 +9,7 @@ import AnalyticsProvider from '@/components/AnalyticsProvider'
 import { Toaster, toast } from 'sonner'
 import "sonner/dist/styles.css"
 import { useState, useEffect, useCallback } from 'react'
+import { usePathname } from 'next/navigation' // SOTTOLY: el panel va sin el chrome de Meetily
 import { listen, UnlistenFn } from '@tauri-apps/api/event'
 import { invoke } from '@tauri-apps/api/core'
 import { TooltipProvider } from '@/components/ui/tooltip'
@@ -70,6 +71,8 @@ export default function RootLayout({
 }) {
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [onboardingCompleted, setOnboardingCompleted] = useState(false)
+  // SOTTOLY: /sottoly es el panel de Sottoly, con su propio menú (sin el Sidebar de Meetily)
+  const isSottolyPanel = usePathname()?.startsWith('/sottoly') ?? false
 
   // Import audio state
   const [showDropOverlay, setShowDropOverlay] = useState(false)
@@ -228,6 +231,15 @@ export default function RootLayout({
     setOnboardingCompleted(true)
     // Optionally reload the window to ensure all state is fresh
     window.location.reload()
+  }
+
+  // SOTTOLY: el panel (/sottoly) no usa los proveedores ni el Sidebar de Meetily: su propio menú y sus datos
+  if (isSottolyPanel) {
+    return (
+      <html lang="es">
+        <body className={`${sourceSans3.variable} font-sans antialiased`}>{children}</body>
+      </html>
+    )
   }
 
   return (
