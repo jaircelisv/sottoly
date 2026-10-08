@@ -12,3 +12,10 @@
 {"direction":"outbound","valid":false,"message":{"type":"suggestion","id":"s2","role":"cfo","persona":"Betty","text":"Sin role_label.","reason":"x","confidence":0.5}}
 {"direction":"outbound","valid":false,"message":{"type":"suggestion_cancel"}}
 {"direction":"outbound","valid":false,"message":{"type":"suggestion","role":"cfo","role_label":"CFO","persona":"Betty","text":"Sin id.","reason":"x","confidence":0.5}}
+{"direction":"inbound","valid":true,"message":{"type":"chat","id":"c1","role":"cfo","text":"¿Qué dijo exactamente del anticipo?"}}
+{"direction":"inbound","valid":true,"message":{"type":"chat","id":"c2","role":"cfo","text":"¿Y si me dice que el IVA va aparte?","reply_to":"s1"}}
+{"direction":"inbound","valid":false,"message":{"type":"chat","id":"c3","role":"cfo","text":""}}
+{"direction":"outbound","valid":true,"message":{"type":"chat_delta","id":"c1","role":"cfo","text":"Pidió un anticipo"}}
+{"direction":"outbound","valid":true,"message":{"type":"chat_reply","id":"c1","role":"cfo","text":"Pidió un anticipo del cincuenta por ciento para empezar."}}
+{"direction":"outbound","valid":true,"message":{"type":"chat_error","id":"c1"}}
+{"direction":"outbound","valid":false,"message":{"type":"chat_reply","role":"cfo","text":"Sin id no se sabe a qué pregunta responde."}}

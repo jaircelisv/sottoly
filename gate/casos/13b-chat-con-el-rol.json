@@ -1,0 +1,82 @@
+{
+  "tarea": "13 · Chat con el Rol: el Motor responde en streaming con lo que se está diciendo",
+  "origen": "agente",
+  "modulo": "scripts/sottoly/engine/redaccion.mjs",
+  "funcion": "chat_con_el_rol",
+  "casos": [
+    {
+      "nombre": "una pregunta al Rol se responde en streaming, con el mismo id, sabiendo lo que se dijo en la Reunión",
+      "entrada": [
+        {
+          "pregunta": "¿Cuánto dijo que cuesta el servicio?",
+          "modelo": "Dijo que el servicio anual cuesta dieciocho millones, sin aclarar el IVA."
+        }
+      ],
+      "esperado": {
+        "respuesta": true,
+        "error": false,
+        "deltas_antes_del_final": true,
+        "mismo_id": true,
+        "ve_la_transcripcion": true,
+        "cumple_el_protocolo": true,
+        "ve_la_sugerencia": false
+      }
+    },
+    {
+      "nombre": "al responder a una Sugerencia, el Rol sabe cuál era",
+      "entrada": [
+        {
+          "pregunta": "¿Y si me dice que el IVA va aparte?",
+          "responde_a_la_sugerencia": true,
+          "modelo": "Pide el total con IVA por escrito antes de aceptar."
+        }
+      ],
+      "esperado": {
+        "respuesta": true,
+        "error": false,
+        "deltas_antes_del_final": true,
+        "mismo_id": true,
+        "ve_la_transcripcion": true,
+        "cumple_el_protocolo": true,
+        "ve_la_sugerencia": true
+      }
+    },
+    {
+      "nombre": "una pregunta a un Rol que no está en la junta recibe chat_error y no llama al modelo",
+      "entrada": [
+        {
+          "pregunta": "¿Qué opinas?",
+          "role": "cmo",
+          "modelo": "No debería llegar aquí."
+        }
+      ],
+      "esperado": {
+        "respuesta": false,
+        "error": true,
+        "deltas_antes_del_final": false,
+        "mismo_id": true,
+        "ve_la_transcripcion": false,
+        "ve_la_sugerencia": false,
+        "cumple_el_protocolo": true
+      }
+    },
+    {
+      "nombre": "si el modelo falla, el chat recibe chat_error y el Motor sigue",
+      "entrada": [
+        {
+          "pregunta": "¿Cuánto cuesta?",
+          "modelo": null
+        }
+      ],
+      "esperado": {
+        "respuesta": false,
+        "error": true,
+        "deltas_antes_del_final": false,
+        "mismo_id": true,
+        "ve_la_transcripcion": true,
+        "ve_la_sugerencia": false,
+        "cumple_el_protocolo": true
+      }
+    }
+  ]
+}

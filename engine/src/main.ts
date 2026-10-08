@@ -15,7 +15,7 @@ import {
   replaySummarizer,
 } from "./evals";
 import { encodeOutbound, parseInbound } from "./protocol";
-import { anthropicDrafter, anthropicSummarizer, jevEvaluator } from "./providers";
+import { anthropicChatter, anthropicDrafter, anthropicSummarizer, jevEvaluator } from "./providers";
 import type { CandidateDecision } from "./summary";
 import { loadRoles } from "./roles";
 
@@ -38,6 +38,7 @@ function providers() {
       evaluate: jevEvaluator(gateModel),
       draft: anthropicDrafter(draftModel, config.draft.max_tokens),
       summarize: liveSummarizer(),
+      chat: anthropicChatter(config.chat.model, config.chat.max_tokens),
       save() {},
     };
   }
@@ -73,12 +74,15 @@ function log(entry: Record<string, unknown>) {
 }
 
 async function main() {
-  const { evaluate, draft, summarize, save } = providers();
+  const { evaluate, draft, summarize, save, ...rest } = providers();
+  // El chat solo con modelos reales: grabado no hay (cada pregunta recibe chat_error).
+  const chat = "chat" in rest ? rest.chat : undefined;
   const engine = new Engine({
     roles: loadRoles(ROLES_DIR),
     evaluate,
     draft,
     summarize,
+    chat,
     // Grabaciones y pruebas fijan la fecha: va en el prompt de las Decisiones y en su clave.
     today: process.env.SOTTOLY_TODAY ? () => process.env.SOTTOLY_TODAY! : undefined,
     config,
@@ -91,6 +95,11 @@ async function main() {
     const parsed = parseInbound(line);
     if (!parsed.ok) {
       log({ level: "warn", event: "invalid_message", error: parsed.error });
+      continue;
+    }
+    // El chat no frena la Reunión: su respuesta sale por onStream mientras siguen llegando Segmentos.
+    if (parsed.message.type === "chat") {
+      void engine.handle(parsed.message);
       continue;
     }
     for (const suggestion of await engine.handle(parsed.message)) {

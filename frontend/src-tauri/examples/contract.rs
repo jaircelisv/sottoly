@@ -30,6 +30,8 @@ fn main() {
                 EngineMessage::Session { event: SessionEvent::Start, roles: Some(vec!["cfo".into(), "ceo".into()]) },
                 EngineMessage::Session { event: SessionEvent::End, roles: None },
                 EngineMessage::Clock { t: 6.1 },
+                EngineMessage::Chat { id: "c-1".into(), role: "cfo".into(), text: "¿Qué dijo del anticipo?".into(), reply_to: None },
+                EngineMessage::Chat { id: "c-2".into(), role: "cfo".into(), text: "¿Y si el IVA va aparte?".into(), reply_to: Some("s1".into()) },
             ];
             for m in mensajes {
                 println!("{}", serde_json::to_string(&m).unwrap());

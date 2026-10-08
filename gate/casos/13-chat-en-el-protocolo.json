@@ -1,0 +1,23 @@
+{
+  "tarea": "13 · Chat con el Rol: los mensajes del chat en el protocolo",
+  "origen": "agente",
+  "modulo": "scripts/sottoly/contract/contrato.mjs",
+  "funcion": "aceptan",
+  "casos": [
+    {
+      "nombre": "la respuesta del Rol en el chat la aceptan Zod y Rust",
+      "entrada": [{ "type": "chat_reply", "id": "c1", "role": "cfo", "text": "Pidió un anticipo del cincuenta por ciento." }],
+      "esperado": { "zod": true, "rust": true }
+    },
+    {
+      "nombre": "un trozo de la respuesta en streaming lo aceptan Zod y Rust",
+      "entrada": [{ "type": "chat_delta", "id": "c1", "role": "cfo", "text": "Pidió un anticipo" }],
+      "esperado": { "zod": true, "rust": true }
+    },
+    {
+      "nombre": "una respuesta del chat sin id la rechazan Zod y Rust",
+      "entrada": [{ "type": "chat_reply", "role": "cfo", "text": "¿A qué pregunta respondo?" }],
+      "esperado": { "zod": false, "rust": false }
+    }
+  ]
+}

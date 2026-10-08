@@ -4,7 +4,14 @@
 (() => {
   let next = 1;
   const callbacks = new Map();
+  const listeners = new Map(); // evento → ids de callback
   const calls = [];
+  // Emite un evento de Tauri como lo haría el puente con el Motor: window.__sottoly_emit(evento, payload).
+  // ¿Ya se suscribió la pantalla a este evento? (las pruebas esperan esto antes de emitir)
+  window.__sottoly_listening = (event) => (listeners.get(event) || []).length > 0;
+  window.__sottoly_emit = (event, payload) => {
+    for (const id of listeners.get(event) || []) callbacks.get(id)?.({ event, id: 0, payload });
+  };
   window.__SOTTOLY_CALLS__ = calls;
   // Lo que los proveedores de Meetily piden al arrancar, con la App ya configurada y sin grabar.
   const DEFAULTS = {
@@ -28,13 +35,19 @@
     },
     async invoke(cmd, args) {
       calls.push({ cmd, args });
-      if (cmd.startsWith("plugin:event|")) return next++;
+      if (cmd === "plugin:event|listen") {
+        const ids = listeners.get(args.event) || [];
+        ids.push(args.handler);
+        listeners.set(args.event, ids);
+        return args.handler;
+      }
+      if (cmd.startsWith("plugin:event|")) return null;
       if (cmd in DEFAULTS && !(cmd in (window.__SOTTOLY_IPC__ || {}))) return DEFAULTS[cmd];
       const table = window.__SOTTOLY_IPC__ || {};
       if (!(cmd in table)) return null;
-      const v = table[cmd];
+      const v = typeof table[cmd] === "function" ? table[cmd](args) : table[cmd];
       if (v instanceof Error) throw v.message;
-      return typeof v === "function" ? v(args) : v;
+      return v;
     },
   };
   window.__TAURI_EVENT_PLUGIN_INTERNALS__ = { unregisterListener() {} };

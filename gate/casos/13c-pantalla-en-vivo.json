@@ -1,0 +1,19 @@
+{
+  "tarea": "13 · Chat con el Rol: la pantalla En vivo",
+  "origen": "agente",
+  "modulo": "scripts/sottoly/harness/panel.mjs",
+  "funcion": "specs_de",
+  "casos": [
+    {
+      "nombre": "las specs de Playwright de la pantalla En vivo (transcripción, Sugerencia, chat en streaming, errores, elegir Rol) pasan todas en WebKit",
+      "entrada": [
+        "en-vivo.spec.ts"
+      ],
+      "esperado": {
+        "pasan": 6,
+        "fallan": 0,
+        "saltadas": 0
+      }
+    }
+  ]
+}

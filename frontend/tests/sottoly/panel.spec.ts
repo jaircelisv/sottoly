@@ -93,9 +93,11 @@ test("un Rol calibrado no lleva la marca Sin calibrar", async ({ page }) => {
   await expect(sheldon).not.toContainText("Sin calibrar");
 });
 
-test("el menú lateral lleva entre Reuniones y Roles, y En vivo a la grabación", async ({ page }) => {
+// «En vivo» lleva a la pantalla de Sottoly durante la Reunión (decisión de Jair, 2026-10-07, tarea 13);
+// antes llevaba a la grabación de Meetily ("/").
+test("el menú lateral lleva entre Reuniones y Roles, y En vivo a la Reunión en curso", async ({ page }) => {
   await abrir(page, "/sottoly", { api_get_meetings: [], sottoly_list_roles: roles });
-  await expect(menu(page).getByRole("link", { name: "En vivo" })).toHaveAttribute("href", "/");
+  await expect(menu(page).getByRole("link", { name: "En vivo" })).toHaveAttribute("href", "/sottoly/en-vivo");
   await menu(page).getByRole("link", { name: "Roles" }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Tu junta" })).toBeVisible();
   await menu(page).getByRole("link", { name: "Reuniones" }).click();

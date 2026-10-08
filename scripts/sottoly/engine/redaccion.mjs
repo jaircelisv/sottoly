@@ -38,3 +38,10 @@ export function cerrar_reunion({ modelo, con_segmentos = true }) {
   if (r.status !== 0) throw new Error(`la sonda falló: ${r.stderr.slice(-2000)}`);
   return JSON.parse(r.stdout.trim().split("\n").at(-1));
 }
+
+/** El Usuario escribe en el chat durante la Reunión y el Rol responde (tarea 13). */
+export function chat_con_el_rol({ pregunta, role = "cfo", responde_a_la_sugerencia = false, modelo }) {
+  const r = spawnSync("bun", ["probes/chat.ts"], { cwd: ENGINE, input: JSON.stringify({ pregunta, role, responde_a_la_sugerencia, modelo }), encoding: "utf8" });
+  if (r.status !== 0) throw new Error(`la sonda falló: ${r.stderr.slice(-2000)}`);
+  return JSON.parse(r.stdout.trim().split("\n").at(-1));
+}

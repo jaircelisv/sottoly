@@ -24,6 +24,14 @@ pub enum EngineMessage {
     Segment { speaker: Speaker, text: String, t0: f64, t1: f64 },
     Session { event: SessionEvent, #[serde(skip_serializing_if = "Option::is_none")] roles: Option<Vec<String>> },
     Clock { t: f64 },
+    /// El Usuario le escribe a un Rol en el chat (tarea 13); `reply_to`: la Sugerencia que responde.
+    Chat {
+        id: String,
+        role: String,
+        text: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        reply_to: Option<String>,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize)]
@@ -101,6 +109,10 @@ pub enum EngineEvent {
     SuggestionCancel { id: String },
     // SOTTOLY: antes el puente descartaba el summary (Decisiones al cerrar), que el contrato sí define.
     Summary { decisions: Vec<Decision> },
+    /// Chat con el Rol (tarea 13): texto acumulado mientras llega, la respuesta final, o que no pudo responder.
+    ChatDelta { id: String, role: String, text: String },
+    ChatReply { id: String, role: String, text: String },
+    ChatError { id: String },
 }
 
 impl EngineEvent {
@@ -111,6 +123,9 @@ impl EngineEvent {
             EngineEvent::Suggestion(_) => "suggestion",
             EngineEvent::SuggestionCancel { .. } => "suggestion_cancel",
             EngineEvent::Summary { .. } => "summary",
+            EngineEvent::ChatDelta { .. } => "chat_delta",
+            EngineEvent::ChatReply { .. } => "chat_reply",
+            EngineEvent::ChatError { .. } => "chat_error",
         }
     }
 }
@@ -294,6 +309,10 @@ impl StreamLog {
             EngineEvent::SuggestionCancel { id } => Some(format!("SOTTOLY_SUGGESTION_CANCEL at_ms={} id={}", unix_ms, id)),
             // Sin el texto de las Decisiones: el log no guarda contenido de la Reunión.
             EngineEvent::Summary { decisions } => Some(format!("SOTTOLY_SUMMARY at_ms={} decisions={}", unix_ms, decisions.len())),
+            // Sin el texto del chat, por lo mismo; solo cuándo respondió.
+            EngineEvent::ChatReply { id, role, .. } => Some(format!("SOTTOLY_CHAT_REPLY at_ms={} id={} role={}", unix_ms, id, role)),
+            EngineEvent::ChatError { id } => Some(format!("SOTTOLY_CHAT_ERROR at_ms={} id={}", unix_ms, id)),
+            EngineEvent::ChatDelta { .. } => None,
         }
     }
 }
@@ -413,6 +432,22 @@ fn send_segment(payload: &str) {
     }
 }
 
+/// Manda al Motor lo que el Usuario escribe en el chat (tarea 13). Devuelve el id con el que llegan
+/// `chat_delta` / `chat_reply` / `chat_error`. Sin Reunión en curso no hay Motor que responda.
+pub fn send_chat(role: String, text: String, reply_to: Option<String>) -> Result<String, String> {
+    let id = format!("c-{}", uuid::Uuid::new_v4());
+    let message = EngineMessage::Chat { id: id.clone(), role, text, reply_to };
+    match lock(&SESSION).as_ref() {
+        Some(session) => session.bridge.send(&message).map(|_| id).map_err(|e| format!("No se pudo hablar con el Motor: {e}")),
+        None => Err("No hay una Reunión en curso: inicia la grabación para hablar con tu junta.".into()),
+    }
+}
+
+#[tauri::command]
+pub async fn sottoly_chat_send(role: String, text: String, reply_to: Option<String>) -> Result<String, String> {
+    send_chat(role, text, reply_to)
+}
+
 fn stop_session() {
     let Some(session) = lock(&SESSION).take() else { return };
     session.running.store(false, std::sync::atomic::Ordering::SeqCst);
@@ -457,6 +492,30 @@ mod tests {
     }
 
     use std::sync::mpsc;
+
+    // Chat con el Rol (tarea 13)
+    #[test]
+    fn el_chat_sale_como_lo_espera_el_motor() {
+        let m = EngineMessage::Chat { id: "c1".into(), role: "cfo".into(), text: "¿Y el IVA?".into(), reply_to: Some("s1".into()) };
+        assert_eq!(m.to_line(), "{\"type\":\"chat\",\"id\":\"c1\",\"role\":\"cfo\",\"text\":\"¿Y el IVA?\",\"reply_to\":\"s1\"}\n");
+        let sin = EngineMessage::Chat { id: "c2".into(), role: "cfo".into(), text: "Hola".into(), reply_to: None };
+        assert!(!sin.to_line().contains("reply_to"));
+    }
+
+    #[test]
+    fn las_respuestas_del_chat_llegan_como_eventos_de_tauri() {
+        let d: EngineEvent = serde_json::from_str(r#"{"type":"chat_delta","id":"c1","role":"cfo","text":"Pidió"}"#).unwrap();
+        let r: EngineEvent = serde_json::from_str(r#"{"type":"chat_reply","id":"c1","role":"cfo","text":"Pidió un anticipo."}"#).unwrap();
+        let e: EngineEvent = serde_json::from_str(r#"{"type":"chat_error","id":"c1"}"#).unwrap();
+        assert_eq!((d.tauri_event(), r.tauri_event(), e.tauri_event()), ("chat_delta", "chat_reply", "chat_error"));
+        assert!(serde_json::from_str::<EngineEvent>(r#"{"type":"chat_reply","role":"cfo","text":"sin id"}"#).is_err());
+    }
+
+    #[test]
+    fn sin_reunion_en_curso_el_chat_lo_dice() {
+        let err = send_chat("cfo".into(), "Hola".into(), None).unwrap_err();
+        assert!(err.contains("inicia la grabación"), "{err}");
+    }
 
     #[test]
     fn segment_and_session_serialize_like_the_engine_protocol() {

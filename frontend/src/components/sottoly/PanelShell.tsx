@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 const SECCIONES = [
-  { href: '/', label: 'En vivo', live: true },
+  { href: '/sottoly/en-vivo', label: 'En vivo', live: true, match: (p: string) => p.startsWith('/sottoly/en-vivo') },
   { href: '/sottoly', label: 'Reuniones', match: (p: string) => p === '/sottoly' || p.startsWith('/sottoly/reunion') },
   { href: '/sottoly/roles', label: 'Roles', match: (p: string) => p.startsWith('/sottoly/roles') },
 ]
