@@ -1,0 +1,42 @@
+{
+  "id": "anticipo-pedido-sin-aceptar",
+  "description": "La Contraparte da un precio y pide un anticipo; el Usuario no acepta nada todavía.",
+  "segments": [
+    {
+      "speaker": "counterpart",
+      "text": "El servicio contable anual les queda en dieciocho millones.",
+      "t0": 0,
+      "t1": 5
+    },
+    {
+      "speaker": "user",
+      "text": "Ok, lo reviso.",
+      "t0": 5.5,
+      "t1": 7
+    },
+    {
+      "speaker": "counterpart",
+      "text": "Les pediría un anticipo del cincuenta por ciento para empezar.",
+      "t0": 7.5,
+      "t1": 12
+    },
+    {
+      "speaker": "user",
+      "text": "Déjame consultarlo con mi socio y te confirmo.",
+      "t0": 12.5,
+      "t1": 15
+    }
+  ],
+  "expect": {
+    "none": true,
+    "forbid": [
+      {
+        "owner": "user",
+        "kind": "commitment",
+        "any": [
+          "anticipo"
+        ]
+      }
+    ]
+  }
+}

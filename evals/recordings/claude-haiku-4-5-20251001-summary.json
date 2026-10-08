@@ -1,4 +1,18 @@
 {
+  "6d8634c53b00863eab1b9d98b1a2b112b44d6b1700f5d3820380a96d9399a6fe": [
+    {
+      "kind": "decision",
+      "text": "El servicio contable anual tiene un costo de dieciocho millones, incluyendo declaración de renta e información exógena",
+      "owner": "counterpart",
+      "due": null
+    },
+    {
+      "kind": "commitment",
+      "text": "Pagar un anticipo del cincuenta por ciento del servicio contable para iniciar",
+      "owner": "user",
+      "due": null
+    }
+  ],
   "85ee2a7c51d49248a8436b57cbf6673d11dcc652c235a8a8a9b4606618af4695": [
     {
       "kind": "decision",
@@ -17,6 +31,15 @@
       "text": "Pagar un anticipo del cincuenta por ciento para empezar el servicio contable",
       "owner": "user",
       "due": null
+    }
+  ],
+  "a37c72d97c19ee5435a4c27f3481f071d92c09b5e5358de2b64b36dfeb61e724": [
+    {
+      "kind": "decision",
+      "text": "El servicio contable anual tiene un valor de dieciocho millones e incluye la declaración de renta y la información exógena.",
+      "owner": "counterpart",
+      "due": null,
+      "quote": "El servicio contable anual les queda en dieciocho millones. Incluye la declaración de renta y la información exógena."
     }
   ]
 }

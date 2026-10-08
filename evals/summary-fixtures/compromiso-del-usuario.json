@@ -1,0 +1,31 @@
+{
+  "id": "compromiso-del-usuario",
+  "description": "El Usuario se compromete a enviar los estados financieros el lunes.",
+  "segments": [
+    {
+      "speaker": "counterpart",
+      "text": "Para avanzar con el crédito necesito los estados financieros del último año.",
+      "t0": 0,
+      "t1": 5
+    },
+    {
+      "speaker": "user",
+      "text": "Claro, yo te los mando el lunes sin falta.",
+      "t0": 5.5,
+      "t1": 9
+    }
+  ],
+  "expect": {
+    "include": [
+      {
+        "kind": "commitment",
+        "owner": "user",
+        "all": [
+          "estados financieros"
+        ],
+        "due": true
+      }
+    ],
+    "max": 2
+  }
+}

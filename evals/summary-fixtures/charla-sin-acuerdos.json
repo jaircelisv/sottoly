@@ -1,0 +1,27 @@
+{
+  "id": "charla-sin-acuerdos",
+  "description": "Charla de cortesía, sin acuerdos.",
+  "segments": [
+    {
+      "speaker": "counterpart",
+      "text": "¿Cómo les fue con el lanzamiento?",
+      "t0": 0,
+      "t1": 4
+    },
+    {
+      "speaker": "user",
+      "text": "Muy bien, el equipo quedó contento.",
+      "t0": 4.5,
+      "t1": 8
+    },
+    {
+      "speaker": "counterpart",
+      "text": "Qué bueno, hablamos la próxima semana.",
+      "t0": 8.5,
+      "t1": 11
+    }
+  ],
+  "expect": {
+    "none": true
+  }
+}

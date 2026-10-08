@@ -1,0 +1,18 @@
+{
+  "tarea": "16 · Evals de las Decisiones: no inventar",
+  "origen": "agente",
+  "modulo": "scripts/sottoly/evals/redaccion.mjs",
+  "funcion": "evals_de_decisiones",
+  "casos": [
+    {
+      "nombre": "las Decisiones que propone el modelo real para las Reuniones sintéticas están grabadas con el prompt actual y no inventan ni se pierden nada",
+      "entrada": [],
+      "esperado": {
+        "fixtures": 6,
+        "cumplen": 6,
+        "sin_grabar": 0,
+        "fallan": []
+      }
+    }
+  ]
+}
