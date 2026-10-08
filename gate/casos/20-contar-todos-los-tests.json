@@ -1,0 +1,32 @@
+{
+  "tarea": "20 · El gate cuenta todos los tests",
+  "origen": "agente",
+  "modulo": "scripts/sottoly/harness/conteo.mjs",
+  "funcion": "contar_total",
+  "casos": [
+    {
+      "nombre": "suma los tests que pasaron en todas las suites de make verify (bun, Playwright y cargo)",
+      "entrada": [
+        " 92 pass\n 0 fail\n 12 pass\n 1 pass\n  19 passed (8.6s)\n  23 passed (39.2s)\ntest result: FAILED. 313 passed; 1 failed; 3 ignored; 0 measured; 0 filtered out; finished in 20.30s\ntest result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.16s"
+      ],
+      "esperado": {
+        "bun": 105,
+        "playwright": 42,
+        "cargo": 314,
+        "total": 461
+      }
+    },
+    {
+      "nombre": "los que fallan no se cuentan como pasados",
+      "entrada": [
+        " 10 pass\n 3 fail\n  5 passed (1.2s)\n  2 failed"
+      ],
+      "esperado": {
+        "bun": 10,
+        "playwright": 5,
+        "cargo": 0,
+        "total": 15
+      }
+    }
+  ]
+}
