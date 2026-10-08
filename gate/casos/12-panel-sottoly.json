@@ -1,0 +1,13 @@
+{
+  "tarea": "12 · Panel Sottoly: Reuniones y Roles",
+  "origen": "agente",
+  "modulo": "scripts/sottoly/harness/panel.mjs",
+  "funcion": "specs_del_panel",
+  "casos": [
+    {
+      "nombre": "las specs de Playwright del panel (Reuniones, transcripción, Roles, menú) pasan todas en WebKit",
+      "entrada": [],
+      "esperado": { "pasan": 7, "fallan": 0, "saltadas": 0, "al_menos_7": true }
+    }
+  ]
+}
