@@ -108,11 +108,25 @@ pub enum EngineEvent {
     Suggestion(SuggestionMessage),
     SuggestionCancel { id: String },
     // SOTTOLY: antes el puente descartaba el summary (Decisiones al cerrar), que el contrato sí define.
-    Summary { decisions: Vec<Decision> },
+    Summary {
+        /// Título que propone el modelo (tarea 28); el protocolo lo exige no vacío cuando viene.
+        #[serde(default, skip_serializing_if = "Option::is_none", deserialize_with = "non_empty_title")]
+        title: Option<String>,
+        decisions: Vec<Decision>,
+    },
     /// Chat con el Rol (tarea 13): texto acumulado mientras llega, la respuesta final, o que no pudo responder.
     ChatDelta { id: String, role: String, text: String },
     ChatReply { id: String, role: String, text: String },
     ChatError { id: String },
+}
+
+/// `title` del `summary`: si viene, no puede ser vacío (`z.string().min(1)` en `protocol.ts`).
+fn non_empty_title<'de, D: serde::Deserializer<'de>>(d: D) -> Result<Option<String>, D::Error> {
+    let title = Option::<String>::deserialize(d)?;
+    match title {
+        Some(t) if t.trim().is_empty() => Err(serde::de::Error::custom("title vacío")),
+        other => Ok(other),
+    }
 }
 
 impl EngineEvent {
@@ -308,7 +322,7 @@ impl StreamLog {
             )),
             EngineEvent::SuggestionCancel { id } => Some(format!("SOTTOLY_SUGGESTION_CANCEL at_ms={} id={}", unix_ms, id)),
             // Sin el texto de las Decisiones: el log no guarda contenido de la Reunión.
-            EngineEvent::Summary { decisions } => Some(format!("SOTTOLY_SUMMARY at_ms={} decisions={}", unix_ms, decisions.len())),
+            EngineEvent::Summary { decisions, .. } => Some(format!("SOTTOLY_SUMMARY at_ms={} decisions={}", unix_ms, decisions.len())),
             // Sin el texto del chat, por lo mismo; solo cuándo respondió.
             EngineEvent::ChatReply { id, role, .. } => Some(format!("SOTTOLY_CHAT_REPLY at_ms={} id={} role={}", unix_ms, id, role)),
             EngineEvent::ChatError { id } => Some(format!("SOTTOLY_CHAT_ERROR at_ms={} id={}", unix_ms, id)),
@@ -381,11 +395,17 @@ static SESSION: Mutex<Option<Session>> = Mutex::new(None);
 
 /// Guarda el `summary` del cierre con la Reunión, para revisarlo en el panel (tarea 17).
 pub fn persist_summary(folder: Option<&std::path::Path>, event: &EngineEvent) {
-    let EngineEvent::Summary { decisions } = event else { return };
+    let EngineEvent::Summary { decisions, title } = event else { return };
     match folder {
         Some(folder) => {
             if let Err(e) = crate::sottoly_decisions::store_summary(folder, decisions) {
                 warn!("SOTTOLY: no se pudieron guardar las Decisiones: {}", e);
+            }
+            // El título queda pendiente con la Reunión; el panel lo aplica (tarea 28).
+            if let Some(title) = title {
+                if let Err(e) = crate::sottoly_decisions::store_title(folder, title) {
+                    warn!("SOTTOLY: no se pudo guardar el título propuesto: {}", e);
+                }
             }
         }
         None => warn!("SOTTOLY: Reunión sin carpeta; las Decisiones del cierre no se guardan"),

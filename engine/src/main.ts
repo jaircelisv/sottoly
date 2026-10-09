@@ -15,7 +15,7 @@ import {
   replaySummarizer,
 } from "./evals";
 import { encodeOutbound, parseInbound } from "./protocol";
-import { anthropicChatter, anthropicDeduper, anthropicDrafter, anthropicSummarizer, jevEvaluator } from "./providers";
+import { anthropicChatter, anthropicDeduper, anthropicDrafter, anthropicSummarizer, anthropicTitler, jevEvaluator } from "./providers";
 import type { CandidateDecision } from "./summary";
 import { buildDedupePrompt } from "./dedupe";
 import { loadRoles } from "./roles";
@@ -40,6 +40,7 @@ function providers() {
       draft: anthropicDrafter(draftModel, config.draft.max_tokens),
       summarize: liveSummarizer(),
       chat: anthropicChatter(config.chat.model, config.chat.max_tokens),
+      title: anthropicTitler(config.title.model, config.title.max_tokens),
       dedupe: (candidate: string, previous: string[]) => anthropicDeduper(draftModel)(buildDedupePrompt(candidate, previous)),
       save() {},
     };
@@ -80,6 +81,7 @@ async function main() {
   // El chat y el juez de paráfrasis solo con modelos reales: grabados, no hay.
   const chat = "chat" in rest ? rest.chat : undefined;
   const dedupe = "dedupe" in rest ? rest.dedupe : undefined;
+  const title = "title" in rest ? rest.title : undefined;
   const engine = new Engine({
     roles: loadRoles(ROLES_DIR),
     evaluate,
@@ -87,6 +89,7 @@ async function main() {
     summarize,
     chat,
     dedupe,
+    title,
     // Grabaciones y pruebas fijan la fecha: va en el prompt de las Decisiones y en su clave.
     today: process.env.SOTTOLY_TODAY ? () => process.env.SOTTOLY_TODAY! : undefined,
     config,

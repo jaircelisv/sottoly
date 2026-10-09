@@ -77,6 +77,8 @@ export type Decision = z.infer<typeof Decision>;
 
 export const SummaryMessage = z.object({
   type: z.literal("summary"),
+  /** Título que propone el modelo (tarea 28). Falta si el modelo del título falló. */
+  title: z.string().min(1).max(120).optional(),
   decisions: z.array(Decision),
 });
 export type SummaryMessage = z.infer<typeof SummaryMessage>;

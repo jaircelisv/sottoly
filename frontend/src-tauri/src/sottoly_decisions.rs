@@ -14,6 +14,12 @@ pub struct DecisionsFile {
     /// true cuando el Usuario ya decidió (aprobó algo o eligió no guardar nada).
     pub reviewed: bool,
     pub decisions: Vec<Decision>,
+    /// Título que propuso el modelo al cerrar (tarea 28).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    /// true cuando el título ya se aplicó a la Reunión, o el Usuario puso el suyo: el del modelo ya no se aplica.
+    #[serde(default)]
+    pub title_settled: bool,
 }
 
 /// Lo que eligió el Usuario para una Decisión: si se guarda y con qué texto (puede venir editado).
@@ -26,7 +32,39 @@ pub struct ReviewItem {
 
 /// Guarda las Decisiones candidatas con la Reunión. Sin candidatas no hay nada que revisar.
 pub fn store_summary(folder: &Path, decisions: &[Decision]) -> Result<(), String> {
-    let file = DecisionsFile { reviewed: decisions.is_empty(), decisions: decisions.to_vec() };
+    // Lo que ya se sabía del título (tarea 28) se conserva.
+    let before = load_decisions(folder);
+    let file = DecisionsFile {
+        reviewed: decisions.is_empty(),
+        decisions: decisions.to_vec(),
+        title: before.as_ref().and_then(|f| f.title.clone()),
+        title_settled: before.map(|f| f.title_settled).unwrap_or(false),
+    };
+    write(folder, &file)
+}
+
+/// Guarda el título que propuso el modelo, pendiente de aplicar a la Reunión (tarea 28).
+pub fn store_title(folder: &Path, title: &str) -> Result<(), String> {
+    let mut file = load_decisions(folder).unwrap_or(DecisionsFile { reviewed: true, decisions: vec![], title: None, title_settled: false });
+    file.title = Some(title.to_string());
+    write(folder, &file)
+}
+
+/// El título del modelo si todavía no se aplicó ni lo reemplazó el Usuario; lo marca como aplicado.
+pub fn take_pending_title(folder: &Path) -> Result<Option<String>, String> {
+    let Some(mut file) = load_decisions(folder) else { return Ok(None) };
+    if file.title_settled || file.title.is_none() {
+        return Ok(None);
+    }
+    file.title_settled = true;
+    write(folder, &file)?;
+    Ok(file.title)
+}
+
+/// El Usuario puso su título: el del modelo, llegue cuando llegue, ya no lo pisa.
+pub fn settle_title(folder: &Path) -> Result<(), String> {
+    let mut file = load_decisions(folder).unwrap_or(DecisionsFile { reviewed: true, decisions: vec![], title: None, title_settled: false });
+    file.title_settled = true;
     write(folder, &file)
 }
 
@@ -120,6 +158,28 @@ pub async fn sottoly_get_decisions(meeting_id: String, state: tauri::State<'_, c
     Ok(folder.and_then(|f| load_decisions(Path::new(&f))))
 }
 
+/// Aplica a la Reunión el título que propuso el modelo, una sola vez (tarea 28). Devuelve el título aplicado.
+#[tauri::command]
+pub async fn sottoly_apply_title(meeting_id: String, state: tauri::State<'_, crate::state::AppState>) -> Result<Option<String>, String> {
+    let (_, _, folder) = meeting_row(&state, &meeting_id).await?;
+    let Some(folder) = folder else { return Ok(None) };
+    let Some(title) = take_pending_title(Path::new(&folder))? else { return Ok(None) };
+    crate::database::repositories::meeting::MeetingsRepository::update_meeting_title(state.db_manager.pool(), &meeting_id, &title)
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(Some(title))
+}
+
+/// El Usuario cambió el título: el del modelo ya no se aplica.
+#[tauri::command]
+pub async fn sottoly_title_settled(meeting_id: String, state: tauri::State<'_, crate::state::AppState>) -> Result<(), String> {
+    let (_, _, folder) = meeting_row(&state, &meeting_id).await?;
+    match folder {
+        Some(folder) => settle_title(Path::new(&folder)),
+        None => Ok(()),
+    }
+}
+
 #[derive(Serialize)]
 pub struct SaveResult {
     pub saved: usize,
@@ -137,6 +197,31 @@ pub async fn sottoly_save_decisions(meeting_id: String, items: Vec<ReviewItem>, 
 mod tests {
     use super::*;
     use crate::engine_bridge::DecisionSource;
+
+    #[test]
+    fn el_titulo_del_modelo_se_aplica_una_sola_vez_y_sobrevive_a_las_decisiones() {
+        let dir = tempfile::tempdir().unwrap();
+        store_title(dir.path(), "Cotización del servicio contable").unwrap();
+        store_summary(dir.path(), &[]).unwrap();
+        assert_eq!(take_pending_title(dir.path()).unwrap().as_deref(), Some("Cotización del servicio contable"));
+        assert_eq!(take_pending_title(dir.path()).unwrap(), None);
+    }
+
+    #[test]
+    fn si_el_usuario_puso_su_titulo_el_del_modelo_no_lo_pisa_aunque_llegue_despues() {
+        let dir = tempfile::tempdir().unwrap();
+        settle_title(dir.path()).unwrap();
+        store_summary(dir.path(), &[]).unwrap();
+        store_title(dir.path(), "Plan de pagos").unwrap();
+        assert_eq!(take_pending_title(dir.path()).unwrap(), None);
+    }
+
+    #[test]
+    fn un_summary_con_titulo_vacio_no_cumple_el_protocolo() {
+        assert!(serde_json::from_str::<crate::engine_bridge::EngineEvent>(r#"{"type":"summary","title":"","decisions":[]}"#).is_err());
+        let ok = serde_json::from_str::<crate::engine_bridge::EngineEvent>(r#"{"type":"summary","title":"Plan","decisions":[]}"#).unwrap();
+        assert!(matches!(ok, crate::engine_bridge::EngineEvent::Summary { title: Some(ref t), .. } if t == "Plan"));
+    }
 
     fn d(id: &str, kind: DecisionKind, owner: DecisionOwner, text: &str) -> Decision {
         Decision { id: id.into(), kind, text: text.into(), owner, due: None, source: DecisionSource::Engine, meeting_id: "m".into(), created_at: "2026-10-07T22:00:00Z".into(), approved: false }
