@@ -1,0 +1,19 @@
+{
+  "tarea": "29 · Hablar con la junta después de la Reunión",
+  "origen": "agente",
+  "modulo": "scripts/sottoly/engine/revision.mjs",
+  "funcion": "chat_despues_de_la_reunion",
+  "casos": [
+    {
+      "nombre": "en una sesión de revisión el Rol responde con la transcripción guardada, sin pasar por la Compuerta ni cerrar con un summary",
+      "entrada": [{ "pregunta": "¿Qué quedó pendiente?", "modelo": "Falta que confirmes el lunes y pedir el IVA desglosado." }],
+      "esperado": {
+        "llamadas_a_la_compuerta": 0,
+        "respuesta": true,
+        "ve_la_transcripcion": true,
+        "summary_al_cerrar": false,
+        "cumple_el_protocolo": true
+      }
+    }
+  ]
+}

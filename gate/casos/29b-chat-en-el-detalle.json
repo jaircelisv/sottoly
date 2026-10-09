@@ -1,0 +1,19 @@
+{
+  "tarea": "29 · El chat en el detalle de la Reunión",
+  "origen": "agente",
+  "modulo": "scripts/sottoly/harness/panel.mjs",
+  "funcion": "specs_de",
+  "casos": [
+    {
+      "nombre": "las specs de Playwright del chat en el detalle (con «Todos» primero, la pregunta va con la Reunión y la respuesta llega en streaming, preguntas de ejemplo para después) pasan todas en WebKit",
+      "entrada": [
+        "reunion-chat.spec.ts"
+      ],
+      "esperado": {
+        "pasan": 4,
+        "fallan": 0,
+        "saltadas": 0
+      }
+    }
+  ]
+}
