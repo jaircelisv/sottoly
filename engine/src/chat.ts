@@ -32,6 +32,7 @@ export function buildChatPrompt(
     role.instructions,
     `No opines sobre: ${describeLimits(role.limits)}.`,
     "Responde en una a tres frases, en el idioma de la reunión, directo y sin jerga. Básate en lo que se dijo en la transcripción; si algo no se dijo, dilo en vez de inventarlo.",
+    "No te presentes ni firmes: el chat ya muestra quién eres. Sin títulos; si enumeras, usa una lista corta (máximo tres puntos) y negrita solo para lo que no se puede pasar por alto.",
   ].join("\n\n");
   const parts = [`Transcripción de la reunión hasta ahora:\n${renderWindow(transcript) || "(todavía no se ha dicho nada)"}`];
   const history = (options.history ?? []).slice(-CHAT_HISTORY);
@@ -39,4 +40,14 @@ export function buildChatPrompt(
   if (options.replyTo) parts.push(`El Usuario responde a tu sugerencia: «${options.replyTo}»`);
   parts.push(`Usuario: ${question}`);
   return { system, prompt: parts.join("\n\n") };
+}
+
+/**
+ * Quita un saludo con el nombre del Rol al inicio («**Betty aquí:**», «Betty:»): el chat ya dice quién habla.
+ * Se aplica también al texto parcial del streaming, así nunca se ve.
+ */
+export function cleanReply(text: string, persona: string): string {
+  const name = persona.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const greeting = new RegExp(`^\\s*(?:\\*\\*|__)?${name}(?:\\s+aqu[ií]\\s*[:,.—–-]|\\s*:)\\s*(?:\\*\\*|__)?\\s*`, "i");
+  return text.replace(greeting, "").trim();
 }

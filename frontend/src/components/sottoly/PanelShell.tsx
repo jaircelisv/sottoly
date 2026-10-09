@@ -19,7 +19,7 @@ export function PanelShell({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen flex-wrap bg-[#FAFAF9] font-sans text-[#18181A]">
       <nav
         aria-label="Secciones"
-        className="box-border flex max-w-[240px] flex-[1_1_220px] flex-col gap-8 border-r border-[#E4E4E1] bg-[#F2F2F0] px-5 py-7"
+        className="box-border flex max-w-[232px] flex-[1_1_208px] flex-col gap-8 border-r border-[#E4E4E1] bg-[#F2F2F0] px-4 py-7"
       >
         <div className="text-xl font-bold tracking-tight">Sottoly</div>
         <div className="flex flex-col gap-1">
@@ -86,17 +86,17 @@ function DemoSwitch() {
     }
   }
   return (
-    <div className="mt-auto flex items-center justify-between gap-3 border-t border-[#E4E4E1] pt-4 text-[13px] text-[#4A4A4F]">
-      <span id="demo-label">Tarjetas de demostración</span>
+    <div className="mt-auto flex items-center justify-between gap-2 border-t border-[#E4E4E1] px-1 pt-4 text-xs text-[#4A4A4F]">
+      <span id="demo-label" className="whitespace-nowrap">Tarjetas de demostración</span>
       <button
         type="button"
         role="switch"
         aria-checked={status.on}
         aria-labelledby="demo-label"
         onClick={toggle}
-        className={`relative h-6 w-10 flex-none rounded-full transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2F4A6B] ${status.on ? 'bg-[#2F4A6B]' : 'bg-[#D4D4D0]'}`}
+        className={`relative h-5 w-[34px] flex-none rounded-full transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2F4A6B] ${status.on ? 'bg-[#2F4A6B]' : 'bg-[#D4D4D0]'}`}
       >
-        <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${status.on ? 'translate-x-[18px]' : 'translate-x-0.5'}`} />
+        <span className={`absolute left-0 top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${status.on ? 'translate-x-[16px]' : 'translate-x-0.5'}`} />
       </button>
     </div>
   )
