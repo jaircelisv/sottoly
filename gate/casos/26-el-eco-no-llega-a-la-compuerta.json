@@ -1,0 +1,56 @@
+{
+  "tarea": "26 · El eco no llega a la Compuerta",
+  "origen": "agente",
+  "modulo": "scripts/sottoly/engine/eco.mjs",
+  "funcion": "eco_en_el_motor",
+  "casos": [
+    {
+      "nombre": "una frase del Usuario que repite lo que la Contraparte acaba de decir no llega a la Compuerta y queda en el log",
+      "entrada": [
+        {
+          "segmentos": [
+            { "speaker": "counterpart", "text": "El anticipo es del cincuenta por ciento del total.", "t0": 0, "t1": 3 },
+            { "speaker": "user", "text": "el anticipo es del cincuenta por ciento del total", "t0": 0.5, "t1": 3.2 },
+            { "speaker": "user", "text": "Prefiero pagar contra entrega.", "t0": 6, "t1": 8 }
+          ]
+        }
+      ],
+      "esperado": {
+        "la_compuerta_vio_del_usuario": ["Prefiero pagar contra entrega."],
+        "descartes_por_eco_en_el_log": 1
+      }
+    },
+    {
+      "nombre": "si el eco llega antes que la frase de la Contraparte, y con los números en palabras, también se descarta",
+      "entrada": [
+        {
+          "segmentos": [
+            { "speaker": "user", "text": "tiene planes de cien doscientos y quinientos dólares al mes", "t0": 10, "t1": 13 },
+            { "speaker": "counterpart", "text": "Tiene planes de 100, 200 y 500 dólares al mes.", "t0": 10.2, "t1": 13.1 },
+            { "speaker": "counterpart", "text": "Y se renueva solo cada mes.", "t0": 14, "t1": 16 }
+          ]
+        }
+      ],
+      "esperado": {
+        "la_compuerta_vio_del_usuario": [],
+        "descartes_por_eco_en_el_log": 1
+      }
+    },
+    {
+      "nombre": "lo que el Usuario dice de verdad sí llega a la Compuerta, aunque sea corto o repita palabras",
+      "entrada": [
+        {
+          "segmentos": [
+            { "speaker": "counterpart", "text": "El servicio anual cuesta dieciocho millones con IVA incluido.", "t0": 0, "t1": 4 },
+            { "speaker": "user", "text": "Sí, claro.", "t0": 5, "t1": 6 },
+            { "speaker": "user", "text": "¿Los dieciocho millones se pueden pagar en cuotas?", "t0": 7, "t1": 10 }
+          ]
+        }
+      ],
+      "esperado": {
+        "la_compuerta_vio_del_usuario": ["Sí, claro.", "¿Los dieciocho millones se pueden pagar en cuotas?"],
+        "descartes_por_eco_en_el_log": 0
+      }
+    }
+  ]
+}
