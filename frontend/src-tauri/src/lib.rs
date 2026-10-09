@@ -61,6 +61,7 @@ pub mod local_model; // SOTTOLY: ¿está descargado y válido el modelo local?
 pub mod sottoly_roles; // SOTTOLY: Roles para el panel
 pub mod sottoly_decisions; // SOTTOLY: Decisiones del cierre y Memoria (tarea 17)
 pub mod sottoly_suggestions; // SOTTOLY: Sugerencias guardadas con la Reunión (tarea 27)
+pub mod sottoly_review; // SOTTOLY: chat con la junta después de la Reunión (tarea 29)
 pub mod sottoly_demo; // SOTTOLY: interruptor de las tarjetas de demostración (tarea 22)
 
 use audio::{list_audio_devices, AudioDevice, trigger_audio_permission};
@@ -632,6 +633,7 @@ pub fn run() {
             sottoly_suggestions::sottoly_get_suggestions, // SOTTOLY: tarea 27
             sottoly_decisions::sottoly_apply_title, // SOTTOLY: tarea 28
             sottoly_decisions::sottoly_title_settled, // SOTTOLY: tarea 28
+            sottoly_review::sottoly_review_chat_send, // SOTTOLY: tarea 29
             sottoly_demo::sottoly_demo_status, // SOTTOLY: tarea 22
             sottoly_demo::sottoly_set_demo, // SOTTOLY: tarea 22
             engine_bridge::sottoly_chat_send, // SOTTOLY: chat con el Rol (tarea 13)

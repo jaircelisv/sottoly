@@ -23,6 +23,11 @@ export const SessionMessage = z.object({
   type: z.literal("session"),
   event: z.enum(["start", "end"]),
   roles: z.array(RoleId).optional(),
+  /**
+   * `live` (por defecto): la Reunión en curso. `review` (tarea 29): una Reunión ya terminada que se carga para
+   * conversar con la junta; sus Segmentos no pasan por la Compuerta y al cerrar no hay `summary`.
+   */
+  mode: z.enum(["live", "review"]).optional(),
 });
 
 export const ClockMessage = z.object({

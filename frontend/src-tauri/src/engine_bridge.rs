@@ -22,7 +22,14 @@ fn lock<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum EngineMessage {
     Segment { speaker: Speaker, text: String, t0: f64, t1: f64 },
-    Session { event: SessionEvent, #[serde(skip_serializing_if = "Option::is_none")] roles: Option<Vec<String>> },
+    Session {
+        event: SessionEvent,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        roles: Option<Vec<String>>,
+        /// `review` (tarea 29): una Reunión terminada que se carga para el chat; sin Compuerta ni `summary`.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        mode: Option<SessionMode>,
+    },
     Clock { t: f64 },
     /// El Usuario le escribe a un Rol en el chat (tarea 13); `reply_to`: la Sugerencia que responde.
     Chat {
@@ -39,6 +46,13 @@ pub enum EngineMessage {
 pub enum SessionEvent {
     Start,
     End,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum SessionMode {
+    Live,
+    Review,
 }
 
 /// Sugerencia final del Motor (engine → app); `id` es el de sus deltas.
@@ -344,7 +358,7 @@ fn keychain_secret(service: &str) -> Option<String> {
 }
 
 /// Comando del Motor: `SOTTOLY_ENGINE_CMD` si está, si no el sidecar junto al ejecutable.
-fn engine_command() -> Command {
+pub(crate) fn engine_command() -> Command {
     let mut command = match std::env::var("SOTTOLY_ENGINE_CMD") {
         Ok(cmd) => {
             let mut c = Command::new("sh");
@@ -438,7 +452,7 @@ fn start_session<R: tauri::Runtime>(app: tauri::AppHandle<R>) {
             return;
         }
     };
-    if let Err(e) = bridge.send(&EngineMessage::Session { event: SessionEvent::Start, roles: None }) {
+    if let Err(e) = bridge.send(&EngineMessage::Session { event: SessionEvent::Start, roles: None, mode: None }) {
         warn!("SOTTOLY: el Motor no aceptó session start: {}", e);
     }
 
@@ -573,9 +587,9 @@ mod tests {
             segment.to_line(),
             "{\"type\":\"segment\",\"speaker\":\"counterpart\",\"text\":\"Son 18 millones.\",\"t0\":7.2,\"t1\":11.4}\n"
         );
-        let start = EngineMessage::Session { event: SessionEvent::Start, roles: Some(vec!["cfo".into()]) };
+        let start = EngineMessage::Session { event: SessionEvent::Start, roles: Some(vec!["cfo".into()]), mode: None };
         assert_eq!(start.to_line(), "{\"type\":\"session\",\"event\":\"start\",\"roles\":[\"cfo\"]}\n");
-        let end = EngineMessage::Session { event: SessionEvent::End, roles: None };
+        let end = EngineMessage::Session { event: SessionEvent::End, roles: None, mode: None };
         assert_eq!(end.to_line(), "{\"type\":\"session\",\"event\":\"end\"}\n");
     }
 
@@ -706,7 +720,7 @@ mod tests {
         let (tx, rx) = mpsc::channel();
         let bridge = EngineBridge::spawn(engine, move |e| tx.send(e).unwrap()).expect("¿bun en el PATH?");
 
-        bridge.send(&EngineMessage::Session { event: SessionEvent::Start, roles: Some(fixture.roles) }).unwrap();
+        bridge.send(&EngineMessage::Session { event: SessionEvent::Start, roles: Some(fixture.roles), mode: None }).unwrap();
         for s in fixture.segments {
             bridge.send(&EngineMessage::Segment { speaker: s.speaker, text: s.text, t0: s.t0, t1: s.t1 }).unwrap();
         }
