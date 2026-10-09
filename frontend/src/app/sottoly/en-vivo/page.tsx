@@ -84,13 +84,22 @@ export default function EnVivoPage() {
   const visible = (onlyCards ? allCards : s.feed).filter((i) => i.kind === 'card' || !i.echo || showEcho)
 
   // Si estás abajo, lo nuevo te sigue; si subiste a leer, no te mueve y aparece «Ir a lo último».
+  // Se baja después del render (requestAnimationFrame): en una máquina lenta, bajar en el acto quedaba corto.
   useEffect(() => {
+    if (!atBottom) return
     const el = listRef.current
-    if (el && atBottom) el.scrollTop = el.scrollHeight
+    if (!el) return
+    el.scrollTop = el.scrollHeight
+    const id = requestAnimationFrame(() => (el.scrollTop = el.scrollHeight))
+    return () => cancelAnimationFrame(id)
   }, [s.feed, onlyCards, showEcho, atBottom])
   useEffect(() => {
+    if (!chatAtBottom) return
     const el = chatRef.current
-    if (el && chatAtBottom) el.scrollTop = el.scrollHeight
+    if (!el) return
+    el.scrollTop = el.scrollHeight
+    const id = requestAnimationFrame(() => (el.scrollTop = el.scrollHeight))
+    return () => cancelAnimationFrame(id)
   }, [s.chat, chatAtBottom])
   const onScroll = () => {
     const el = listRef.current
@@ -121,9 +130,9 @@ export default function EnVivoPage() {
   return (
     <>
       <style>{`
-        @keyframes sottoly-in { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: none } }
+        @keyframes sottoly-in { from { opacity: 0 } to { opacity: 1 } }
         @keyframes sottoly-dot { 0%, 80%, 100% { opacity: .25 } 40% { opacity: 1 } }
-        .sottoly-in { animation: sottoly-in 200ms cubic-bezier(.2,.7,.3,1) both }
+        .sottoly-in { animation: sottoly-in 180ms ease-out both }
         .sottoly-dot { animation: sottoly-dot 1.2s infinite }
         @media (prefers-reduced-motion: reduce) { .sottoly-in, .sottoly-dot { animation: none } }
       `}</style>
