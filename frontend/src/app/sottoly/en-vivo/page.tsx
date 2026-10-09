@@ -63,6 +63,39 @@ function Formatted({ text }: { text: string }) {
   )
 }
 
+/**
+ * Mantiene una lista con scroll propio pegada al final mientras `active`: baja cuando cambian `deps` y cuando
+ * cambia el tamaño de cualquiera de sus elementos (ResizeObserver), así nada la deja a medio camino.
+ */
+function useStickToBottom(ref: React.RefObject<HTMLElement>, active: boolean, deps: unknown[]) {
+  const activeRef = useRef(active)
+  activeRef.current = active
+  useEffect(() => {
+    const el = ref.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const stick = () => {
+      if (activeRef.current) el.scrollTop = el.scrollHeight
+    }
+    const sizes = new ResizeObserver(stick)
+    const watch = () => Array.from(el.children).forEach((child) => sizes.observe(child))
+    watch()
+    const added = new MutationObserver(() => {
+      watch()
+      stick()
+    })
+    added.observe(el, { childList: true })
+    return () => {
+      sizes.disconnect()
+      added.disconnect()
+    }
+  }, [ref])
+  useEffect(() => {
+    const el = ref.current
+    if (el && active) el.scrollTop = el.scrollHeight
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, ...deps])
+}
+
 export default function EnVivoPage() {
   const s = useLiveSession()
   const [onlyCards, setOnlyCards] = useState(false)
@@ -89,23 +122,10 @@ export default function EnVivoPage() {
   const visible = (onlyCards ? allCards : s.feed).filter((i) => i.kind === 'card' || !i.echo || showEcho)
 
   // Si estás abajo, lo nuevo te sigue; si subiste a leer, no te mueve y aparece «Ir a lo último».
-  // Se baja después del render (requestAnimationFrame): en una máquina lenta, bajar en el acto quedaba corto.
-  useEffect(() => {
-    if (!atBottom) return
-    const el = listRef.current
-    if (!el) return
-    el.scrollTop = el.scrollHeight
-    const id = requestAnimationFrame(() => (el.scrollTop = el.scrollHeight))
-    return () => cancelAnimationFrame(id)
-  }, [s.feed, onlyCards, showEcho, atBottom])
-  useEffect(() => {
-    if (!chatAtBottom) return
-    const el = chatRef.current
-    if (!el) return
-    el.scrollTop = el.scrollHeight
-    const id = requestAnimationFrame(() => (el.scrollTop = el.scrollHeight))
-    return () => cancelAnimationFrame(id)
-  }, [s.chat, chatAtBottom])
+  // Si estás abajo, lo nuevo te sigue: también cuando una frase crece después de dibujarse (llega la tipografía,
+  // cambia el ancho), no solo cuando llega una nueva.
+  useStickToBottom(listRef, atBottom, [s.feed, onlyCards, showEcho])
+  useStickToBottom(chatRef, chatAtBottom, [s.chat])
   const onScroll = () => {
     const el = listRef.current
     if (el) setAtBottom(el.scrollTop + el.clientHeight >= el.scrollHeight - 8)
