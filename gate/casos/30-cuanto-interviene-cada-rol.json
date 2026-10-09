@@ -1,0 +1,68 @@
+{
+  "tarea": "30 · Cuánto interviene cada Rol",
+  "origen": "agente",
+  "modulo": "scripts/sottoly/engine/nivel.mjs",
+  "funcion": "habla_el_rol",
+  "casos": [
+    {
+      "nombre": "con «Solo lo importante» el CFO (umbral calibrado 0.70) no habla con una probabilidad de 0.65",
+      "entrada": [
+        {
+          "nivel": "important",
+          "probabilidad": 0.65
+        }
+      ],
+      "esperado": {
+        "habla": false
+      }
+    },
+    {
+      "nombre": "con «Equilibrado» el mismo CFO sí habla con 0.65",
+      "entrada": [
+        {
+          "nivel": "balanced",
+          "probabilidad": 0.65
+        }
+      ],
+      "esperado": {
+        "habla": true
+      }
+    },
+    {
+      "nombre": "con «Más seguido» el CFO habla con 0.55",
+      "entrada": [
+        {
+          "nivel": "often",
+          "probabilidad": 0.55
+        }
+      ],
+      "esperado": {
+        "habla": true
+      }
+    },
+    {
+      "nombre": "con «Equilibrado» el CFO no habla con 0.55",
+      "entrada": [
+        {
+          "nivel": "balanced",
+          "probabilidad": 0.55
+        }
+      ],
+      "esperado": {
+        "habla": false
+      }
+    },
+    {
+      "nombre": "sin nivel elegido se usa el umbral calibrado",
+      "entrada": [
+        {
+          "nivel": null,
+          "probabilidad": 0.65
+        }
+      ],
+      "esperado": {
+        "habla": false
+      }
+    }
+  ]
+}
