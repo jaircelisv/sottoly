@@ -4,6 +4,8 @@
 // Diseño aprobado por Jair el 2026-10-07: austero, Source Sans 3, un acento azul tinta.
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { invoke } from '@tauri-apps/api/core'
 
 const SECCIONES = [
   { href: '/sottoly/en-vivo', label: 'En vivo', live: true, match: (p: string) => p.startsWith('/sottoly/en-vivo') },
@@ -41,6 +43,7 @@ export function PanelShell({ children }: { children: React.ReactNode }) {
             )
           })}
         </div>
+        <DemoSwitch />
       </nav>
       <main className="box-border flex min-w-0 flex-[999_1_520px] flex-col gap-6 px-9 pb-10 pt-7">{children}</main>
     </div>
@@ -58,6 +61,42 @@ export function LoadError({ message, onRetry }: { message: string; onRetry: () =
         className="h-10 rounded-full border border-[#D4D4D0] bg-white px-4 text-sm text-[#18181A] hover:bg-[#F2F2F0] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2F4A6B]"
       >
         Reintentar
+      </button>
+    </div>
+  )
+}
+
+/**
+ * Tarjetas de demostración (tarea 22, pedido de Jair): solo en desarrollo, se prenden o apagan sin reiniciar.
+ * En producción el comando dice que no existen y el interruptor no aparece.
+ */
+function DemoSwitch() {
+  const [status, setStatus] = useState<{ available: boolean; on: boolean } | null>(null)
+  useEffect(() => {
+    invoke<{ available: boolean; on: boolean } | null>('sottoly_demo_status')
+      .then(setStatus)
+      .catch(() => setStatus(null))
+  }, [])
+  if (!status?.available) return null
+  const toggle = async () => {
+    try {
+      setStatus(await invoke<{ available: boolean; on: boolean }>('sottoly_set_demo', { on: !status.on }))
+    } catch {
+      // si falla, el interruptor se queda como estaba
+    }
+  }
+  return (
+    <div className="mt-auto flex items-center justify-between gap-3 border-t border-[#E4E4E1] pt-4 text-[13px] text-[#4A4A4F]">
+      <span id="demo-label">Tarjetas de demostración</span>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={status.on}
+        aria-labelledby="demo-label"
+        onClick={toggle}
+        className={`relative h-6 w-10 flex-none rounded-full transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2F4A6B] ${status.on ? 'bg-[#2F4A6B]' : 'bg-[#D4D4D0]'}`}
+      >
+        <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${status.on ? 'translate-x-[18px]' : 'translate-x-0.5'}`} />
       </button>
     </div>
   )

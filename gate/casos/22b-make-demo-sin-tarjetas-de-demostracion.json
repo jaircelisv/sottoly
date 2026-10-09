@@ -1,0 +1,16 @@
+{
+  "tarea": "22 · make demo sin tarjetas de demostración",
+  "origen": "agente",
+  "modulo": "scripts/sottoly/harness/demo.mjs",
+  "funcion": "tarjetas_de_demostracion",
+  "casos": [
+    {
+      "nombre": "make demo no muestra tarjetas de demostración salvo que se pida con DEMO=1",
+      "entrada": [],
+      "esperado": {
+        "por_defecto": false,
+        "con_DEMO_1": true
+      }
+    }
+  ]
+}

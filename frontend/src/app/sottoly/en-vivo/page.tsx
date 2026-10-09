@@ -4,7 +4,7 @@
 // Sugerencias y el chat con la junta. Todo llega por eventos del puente con el Motor (engine_bridge.rs).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { invoke } from '@tauri-apps/api/core'
-import { listen } from '@tauri-apps/api/event'
+import { emit, listen } from '@tauri-apps/api/event'
 import { appDataDir } from '@tauri-apps/api/path'
 import { useRouter } from 'next/navigation'
 
@@ -86,6 +86,12 @@ export default function EnVivoPage() {
   const [recError, setRecError] = useState<string | null>(null)
   const recordingRef = useRef(false)
   const transcriptRef = useRef<SavedLine[]>([])
+  // En vivo v2 (tarea 22): cada tarjeta se contrae o se ignora, el motivo va detrás de «Por qué», Útil / No útil,
+  // filtro «Solo Sugerencias» y scroll propio con «Ir a lo último».
+  const [cards, setCards] = useState<Record<string, { mode: 'open' | 'collapsed' | 'ignored'; why: boolean; mark: boolean | null }>>({})
+  const [onlyCards, setOnlyCards] = useState(false)
+  const [atBottom, setAtBottom] = useState(true)
+  const listRef = useRef<HTMLOListElement>(null)
   const seq = useRef(0)
   const key = () => `k${++seq.current}`
 
@@ -166,6 +172,39 @@ export default function EnVivoPage() {
       offs.forEach((p) => p.then((off) => off()))
     }
   }, [])
+
+  const cardOf = (id: string) => cards[id] ?? { mode: 'open' as const, why: false, mark: null }
+  const setCard = (id: string, patch: Partial<{ mode: 'open' | 'collapsed' | 'ignored'; why: boolean; mark: boolean | null }>) =>
+    setCards((c) => ({ ...c, [id]: { ...(c[id] ?? { mode: 'open', why: false, mark: null }), ...patch } }))
+  // La misma marca que manda el overlay: así la junta aprende qué te sirve.
+  const markCard = (card: Card, useful: boolean) => {
+    setCard(card.id, { mark: useful })
+    void emit('suggestion-feedback', { id: card.id, role: card.role, useful })
+  }
+  const ignoreCard = (card: Card) => {
+    setCard(card.id, { mode: 'ignored' })
+    if (cardOf(card.id).mark === null) void emit('suggestion-feedback', { id: card.id, role: card.role, useful: false })
+  }
+
+  // Si estás abajo, lo nuevo te sigue; si subiste a leer, no te mueve y aparece «Ir a lo último».
+  useEffect(() => {
+    const el = listRef.current
+    if (el && atBottom) el.scrollTop = el.scrollHeight
+  }, [feed, onlyCards, atBottom])
+  const onScroll = () => {
+    const el = listRef.current
+    if (el) setAtBottom(el.scrollTop + el.clientHeight >= el.scrollHeight - 8)
+  }
+  const goBottom = () => {
+    const el = listRef.current
+    if (el) el.scrollTop = el.scrollHeight
+    setAtBottom(true)
+  }
+
+  const allCards = feed.filter((i): i is Card => i.kind === 'card')
+  const ignoredCount = allCards.filter((c) => cardOf(c.id).mode === 'ignored').length
+  const counter = `${allCards.length} ${allCards.length === 1 ? 'Sugerencia' : 'Sugerencias'}${ignoredCount ? ` · ${ignoredCount} ${ignoredCount === 1 ? 'ignorada' : 'ignoradas'}` : ''}`
+  const visible = onlyCards ? allCards : feed
 
   const startRecording = async () => {
     setRecError(null)
@@ -256,38 +295,124 @@ export default function EnVivoPage() {
       )}
 
       <div className="flex min-h-[560px] flex-wrap gap-6">
-        <section aria-label="Transcripción" className="flex min-w-0 flex-[999_1_420px] flex-col gap-4">
-          {feed.length === 0 && <p className="m-0 text-[15px] text-[#4A4A4F]">Cuando empiece la grabación, aquí aparece lo que se dice.</p>}
-          <ol aria-label="Transcripción en vivo" className="m-0 flex list-none flex-col gap-4 p-0">
-            {feed.map((item) =>
-              item.kind === 'line' ? (
-                <li key={item.key} className="grid grid-cols-[64px_minmax(0,1fr)] gap-x-4 text-base leading-relaxed">
-                  <span className="pt-1 font-mono text-xs text-[#6B6B72]">{clock(item.t)}</span>
-                  <span className="min-w-0">
-                    {item.who && <span className="block text-[13px] font-semibold text-[#5C5C63]">{item.who}</span>}
-                    {item.text}
-                  </span>
-                </li>
-              ) : (
-                <li key={item.key} className="grid grid-cols-[64px_minmax(0,1fr)] gap-x-4">
-                  <span />
-                  <article aria-label={`Sugerencia de ${item.persona}`} className="flex flex-col gap-2 rounded-[10px] border border-[#C9D4E2] bg-[#F2F5F9] px-[18px] py-4">
-                    <span className="text-[13px] font-semibold text-[#2F4A6B]">{`${item.persona} · ${item.roleLabel}`}</span>
-                    <span className="text-[17px] font-semibold leading-snug">{item.text}</span>
-                    <span className="text-sm text-[#4A4A4F]">{item.reason}</span>
-                    <span className="flex flex-wrap gap-2 pt-1">
-                      <button type="button" onClick={() => answerCard(item)} className={`${pill} border-[#2F4A6B] bg-[#2F4A6B] font-semibold text-white`}>
-                        {`Responder a ${item.persona}`}
+        <section aria-label="Transcripción" className="flex min-w-0 flex-[999_1_420px] flex-col">
+          <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-[#EDEDEA] pb-3">
+            <div role="group" aria-label="Qué ver" className="inline-flex rounded-full bg-[#EFEFEC] p-[3px]">
+              {[
+                { label: 'Todo', on: !onlyCards, set: false },
+                { label: 'Solo Sugerencias', on: onlyCards, set: true },
+              ].map((b) => (
+                <button
+                  key={b.label}
+                  type="button"
+                  aria-pressed={b.on}
+                  onClick={() => setOnlyCards(b.set)}
+                  className={`h-[30px] rounded-full px-3.5 text-[13px] font-semibold text-[#18181A] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2F4A6B] ${b.on ? 'bg-white shadow-sm' : 'bg-transparent'}`}
+                >
+                  {b.label}
+                </button>
+              ))}
+            </div>
+            <span className="text-[13px] text-[#5C5C63]">{counter}</span>
+          </div>
+          <div className="relative min-h-0">
+            {feed.length === 0 && <p className="m-0 pt-4 text-[15px] text-[#4A4A4F]">Cuando empiece la grabación, aquí aparece lo que se dice.</p>}
+            <ol
+              ref={listRef}
+              onScroll={onScroll}
+              aria-label="Transcripción en vivo"
+              className="m-0 flex h-[calc(100vh-260px)] min-h-[320px] list-none flex-col gap-3 overflow-y-auto p-0 pb-16 pt-4"
+            >
+              {visible.map((item) => {
+                if (item.kind === 'line')
+                  return (
+                    <li key={item.key} className="grid grid-cols-[52px_minmax(0,1fr)] gap-x-3 text-[15px] leading-normal">
+                      <span className="pt-[3px] font-mono text-[11px] text-[#6B6B72]">{clock(item.t)}</span>
+                      <span className="min-w-0">
+                        {item.who && <span className="mr-1.5 text-xs font-semibold text-[#5C5C63]">{item.who}</span>}
+                        {item.text}
+                      </span>
+                    </li>
+                  )
+                const st = cardOf(item.id)
+                if (st.mode === 'ignored')
+                  return (
+                    <li key={item.key} className="grid grid-cols-[52px_minmax(0,1fr)] gap-x-3">
+                      <span />
+                      <span className="flex items-center gap-2 text-[13px] text-[#6B6B72]">
+                        {`Ignoraste una Sugerencia de ${item.persona}.`}
+                        <button type="button" onClick={() => setCard(item.id, { mode: 'open' })} className="p-1 text-[13px] font-semibold text-[#2F4A6B] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2F4A6B]">
+                          Deshacer
+                        </button>
+                      </span>
+                    </li>
+                  )
+                if (st.mode === 'collapsed')
+                  return (
+                    <li key={item.key} className="grid grid-cols-[52px_minmax(0,1fr)] gap-x-3">
+                      <span />
+                      <button
+                        type="button"
+                        aria-label={`Abrir la Sugerencia de ${item.persona}`}
+                        onClick={() => setCard(item.id, { mode: 'open' })}
+                        className="flex h-[34px] min-w-0 items-center gap-2 rounded-lg border border-[#DCE3EC] bg-[#F8F9FB] pl-3 pr-2.5 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2F4A6B]"
+                      >
+                        <span className="flex-none text-xs font-semibold text-[#2F4A6B]">{item.persona}</span>
+                        <span className="min-w-0 flex-1 truncate text-sm">{item.text}</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4A4A4F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
                       </button>
-                    </span>
-                  </article>
-                </li>
-              ),
+                    </li>
+                  )
+                const small = 'h-7 rounded-md px-2 text-[13px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2F4A6B]'
+                const icon = 'flex h-7 w-7 items-center justify-center rounded-md text-[#4A4A4F] hover:bg-[#E9EEF5] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2F4A6B]'
+                return (
+                  <li key={item.key} className="grid grid-cols-[52px_minmax(0,1fr)] gap-x-3">
+                    <span />
+                    <article aria-label={`Sugerencia de ${item.persona}`} className="flex flex-col gap-1.5 rounded-[10px] border border-[#C9D4E2] bg-[#F5F7FA] py-2.5 pl-3.5 pr-3">
+                      <div className="flex items-center gap-2">
+                        <span className="flex-1 text-xs font-semibold text-[#2F4A6B]">{`${item.persona} · ${item.roleLabel}`}</span>
+                        <button type="button" aria-label="Contraer" onClick={() => setCard(item.id, { mode: 'collapsed' })} className={icon}>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6" /></svg>
+                        </button>
+                        <button type="button" aria-label="Ignorar" onClick={() => ignoreCard(item)} className={icon}>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 6l12 12" /><path d="M18 6L6 18" /></svg>
+                        </button>
+                      </div>
+                      <span className="text-base font-semibold leading-snug">{item.text}</span>
+                      {st.why && <span className="text-[13px] text-[#4A4A4F]">{item.reason}</span>}
+                      <div className="-ml-2 flex flex-wrap items-center gap-1">
+                        <button type="button" aria-label={`Responder a ${item.persona}`} onClick={() => answerCard(item)} className={`${small} font-semibold text-[#2F4A6B]`}>
+                          Responder
+                        </button>
+                        <button type="button" onClick={() => setCard(item.id, { why: !st.why })} className={`${small} text-[#4A4A4F]`}>
+                          {st.why ? 'Ocultar por qué' : 'Por qué'}
+                        </button>
+                        <span className="flex-1" />
+                        <button type="button" aria-pressed={st.mark === true} onClick={() => markCard(item, true)} className={`${small} ${st.mark === true ? 'bg-[#E3EAF3] font-semibold text-[#2F4A6B]' : 'text-[#4A4A4F]'}`}>
+                          Útil
+                        </button>
+                        <button type="button" aria-pressed={st.mark === false} onClick={() => markCard(item, false)} className={`${small} ${st.mark === false ? 'bg-[#E3EAF3] font-semibold text-[#2F4A6B]' : 'text-[#4A4A4F]'}`}>
+                          No útil
+                        </button>
+                      </div>
+                    </article>
+                  </li>
+                )
+              })}
+            </ol>
+            {!atBottom && (
+              <button
+                type="button"
+                onClick={goBottom}
+                className="absolute bottom-4 left-1/2 h-[34px] -translate-x-1/2 rounded-full border border-[#D4D4D0] bg-white px-3.5 text-[13px] font-semibold text-[#18181A] shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2F4A6B]"
+              >
+                Ir a lo último ↓
+              </button>
             )}
-          </ol>
+          </div>
         </section>
 
-        <aside aria-label="Chat con la junta" className="box-border flex max-w-[420px] flex-[1_1_360px] flex-col rounded-xl border border-[#E4E4E1] bg-white">
+        <aside aria-label="Chat con la junta" className="box-border flex h-[calc(100vh-200px)] min-h-[380px] max-w-[420px] flex-[1_1_360px] flex-col rounded-xl border border-[#E4E4E1] bg-white">
           <div className="flex flex-col gap-3 border-b border-[#E4E4E1] px-[22px] pb-3.5 pt-5">
             <h2 className="m-0 text-base font-semibold">Conversa con tu junta</h2>
             <div role="group" aria-label="Con quién hablas" className="flex flex-wrap gap-2">
@@ -308,7 +433,7 @@ export default function EnVivoPage() {
             </div>
           </div>
 
-          <ol aria-label="Conversación" className="m-0 flex flex-1 list-none flex-col gap-4 px-[22px] py-5 text-[15px] leading-normal">
+          <ol aria-label="Conversación" className="m-0 flex min-h-0 flex-1 list-none flex-col gap-4 overflow-y-auto px-[22px] py-5 text-[15px] leading-normal">
             {chat.map((e) =>
               e.from === 'user' ? (
                 <li key={e.key} className="flex max-w-[88%] flex-col gap-1.5 self-end">

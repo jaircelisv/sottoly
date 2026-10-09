@@ -1,0 +1,30 @@
+{
+  "tarea": "22 · En vivo, versión 2",
+  "origen": "agente",
+  "modulo": "scripts/sottoly/harness/panel.mjs",
+  "funcion": "specs_de",
+  "casos": [
+    {
+      "nombre": "las specs de Playwright de En vivo v2 (contraer, ignorar con Deshacer y No útil, Por qué, Útil / No útil, filtro, scroll propio) pasan todas en WebKit",
+      "entrada": [
+        "en-vivo-v2.spec.ts"
+      ],
+      "esperado": {
+        "pasan": 6,
+        "fallan": 0,
+        "saltadas": 0
+      }
+    },
+    {
+      "nombre": "el panel prende o apaga las tarjetas de demostración en desarrollo, y en producción no muestra el interruptor",
+      "entrada": [
+        "demo.spec.ts"
+      ],
+      "esperado": {
+        "pasan": 2,
+        "fallan": 0,
+        "saltadas": 0
+      }
+    }
+  ]
+}

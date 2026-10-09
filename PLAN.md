@@ -34,6 +34,7 @@ Salen de la prueba con audio real del 2026-10-07 (20 Sugerencias, todas del CFO)
 ### Cuarta etapa (2026-10-08, para probar con audio real sin la consola)
 
 21. **Grabar desde el panel**: «En vivo» tiene «Iniciar grabación» y «Detener y revisar Decisiones»; al detener guarda la Reunión con toda la transcripción que vio el panel (con quién habló) y abre su detalle, donde las Decisiones aparecen en cuanto el Motor las propone. El menú de Meetily tiene un enlace al panel. Specs de Playwright con IPC simulado antes del código. ✅ hecha
+22. **En vivo, versión 2** (diseño aprobado por Jair el 2026-10-08, canvas «1b»): tarjetas compactas que se contraen a una línea o se ignoran (con Deshacer; ignorar marca «No útil»), el motivo detrás de «Por qué», Útil / No útil, filtro «Todo / Solo Sugerencias» con contador, y scroll propio en la transcripción y en el chat con «Ir a lo último». Además, `make demo` deja de mostrar tarjetas de demostración salvo con `DEMO=1`, y en desarrollo el panel tiene un interruptor para prenderlas o apagarlas sin reiniciar (pedido de Jair). ✅ hecha
 
 ## Lo que hace Jair (fuera del bucle)
 
