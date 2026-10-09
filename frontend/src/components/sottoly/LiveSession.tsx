@@ -141,6 +141,8 @@ export function LiveSessionProvider({ children }: { children: React.ReactNode })
   const feedRef = useRef<(Line | Card)[]>([])
   const [chat, setChat] = useState<ChatEntry[]>([])
   const [cards, setCards] = useState<Record<string, CardState>>({})
+  const cardsRef = useRef<Record<string, CardState>>({})
+  cardsRef.current = cards
   const [draft, setDraft] = useState('')
   const [replyTo, setReplyTo] = useState<Card | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
@@ -207,6 +209,13 @@ export function LiveSessionProvider({ children }: { children: React.ReactNode })
             transcripts,
             folderPath: payload.folder_path ?? null,
           })
+          // Las Sugerencias que vio el panel, con su momento y la marca que les dio el Usuario (tarea 27).
+          const suggestions = feedRef.current
+            .filter((i): i is Card => i.kind === 'card')
+            .map((c) => ({ id: c.id, role: c.role, persona: c.persona, role_label: c.roleLabel, text: c.text, reason: c.reason, at: c.at, useful: cardsRef.current[c.id]?.mark ?? null }))
+          if (suggestions.length && payload.folder_path) {
+            await invoke('sottoly_save_suggestions', { folderPath: payload.folder_path, suggestions }).catch(() => {})
+          }
           updateFeed(() => [])
           setChat([])
           setCards({})

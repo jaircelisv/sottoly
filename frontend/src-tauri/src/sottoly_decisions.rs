@@ -105,7 +105,7 @@ pub fn memory_dir() -> PathBuf {
     dirs::home_dir().unwrap_or_default().join(".sottoly").join("memory")
 }
 
-async fn meeting_row(state: &crate::state::AppState, meeting_id: &str) -> Result<(String, String, Option<String>), String> {
+pub(crate) async fn meeting_row(state: &crate::state::AppState, meeting_id: &str) -> Result<(String, String, Option<String>), String> {
     sqlx::query_as::<_, (String, String, Option<String>)>("SELECT title, created_at, folder_path FROM meetings WHERE id = ?")
         .bind(meeting_id)
         .fetch_optional(state.db_manager.pool())

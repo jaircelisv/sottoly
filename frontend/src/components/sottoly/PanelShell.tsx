@@ -15,11 +15,13 @@ const SECCIONES = [
 
 export function PanelShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? ''
+  // El CSS de Meetily pone overflow: hidden en el body: el panel tiene su propio scroll (tarea 27), y el menú
+  // se queda quieto al bajar.
   return (
-    <div className="flex min-h-screen flex-wrap bg-[#FAFAF9] font-sans text-[#18181A]">
+    <div className="flex h-screen flex-wrap overflow-y-auto bg-[#FAFAF9] font-sans text-[#18181A]">
       <nav
         aria-label="Secciones"
-        className="box-border flex max-w-[232px] flex-[1_1_208px] flex-col gap-8 border-r border-[#E4E4E1] bg-[#F2F2F0] px-4 py-7"
+        className="box-border flex max-w-[232px] flex-[1_1_208px] flex-col gap-8 border-r border-[#E4E4E1] bg-[#F2F2F0] px-4 py-7 md:sticky md:top-0 md:h-screen md:self-start"
       >
         <div className="-mb-4 flex flex-col gap-5">
           <Link

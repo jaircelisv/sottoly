@@ -51,11 +51,17 @@ export function DecisionsReview({ meetingId, decisions, onDone }: { meetingId: s
   }
 
   const allChosen = rows.every((r) => r.choice !== null)
+  // Cuántas faltan (tarea 27): «Guardar» se habilita cuando todas están aprobadas o descartadas, y lo dice.
+  const chosen = rows.filter((r) => r.choice !== null).length
+  const missing = rows.length - chosen
 
   return (
     <section aria-label="Decisiones por revisar" className="flex max-w-[880px] flex-col gap-3.5">
       <div className="flex flex-col gap-1">
-        <h2 className="m-0 text-lg font-semibold">Decisiones por revisar</h2>
+        <div className="flex flex-wrap items-baseline justify-between gap-3">
+          <h2 className="m-0 text-lg font-semibold">Decisiones por revisar</h2>
+          <span className="text-[13px] text-[#5C5C63]">{`${chosen} de ${rows.length} revisadas`}</span>
+        </div>
         <p className="m-0 max-w-[60ch] text-[15px] text-[#4A4A4F]">Sottoly propone lo que entendió. Solo se guarda en tu Memoria lo que apruebes.</p>
       </div>
       <ul className="m-0 flex list-none flex-col overflow-hidden rounded-xl border border-[#E4E4E1] bg-white p-0">
@@ -106,6 +112,9 @@ export function DecisionsReview({ meetingId, decisions, onDone }: { meetingId: s
         >
           Guardar en mi Memoria
         </button>
+        {missing > 0 && (
+          <span className="self-center text-[13px] text-[#5C5C63]">{`Falta revisar ${missing} ${missing === 1 ? 'Decisión' : 'Decisiones'}.`}</span>
+        )}
         <button
           type="button"
           disabled={saving}
