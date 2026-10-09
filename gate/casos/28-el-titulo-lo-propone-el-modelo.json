@@ -1,0 +1,18 @@
+{
+  "tarea": "28 · El título lo propone el modelo",
+  "origen": "agente",
+  "modulo": "scripts/sottoly/engine/titulo.mjs",
+  "funcion": "titulo_al_cerrar",
+  "casos": [
+    {
+      "nombre": "al cerrar la Reunión, el summary trae el título que propone el modelo, limpio y dentro del protocolo",
+      "entrada": [{ "modelo": "«Cotización del servicio contable anual.»" }],
+      "esperado": { "summary": true, "titulo": "Cotización del servicio contable anual", "cumple_el_protocolo": true }
+    },
+    {
+      "nombre": "si el modelo del título falla, la Reunión se cierra igual, sin título",
+      "entrada": [{ "modelo": null }],
+      "esperado": { "summary": true, "titulo": null, "cumple_el_protocolo": true }
+    }
+  ]
+}

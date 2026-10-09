@@ -1,0 +1,19 @@
+{
+  "tarea": "28 · El título del modelo en la Reunión",
+  "origen": "agente",
+  "modulo": "scripts/sottoly/harness/panel.mjs",
+  "funcion": "specs_de",
+  "casos": [
+    {
+      "nombre": "las specs de Playwright del título (el del modelo reemplaza al automático, llega sin recargar y no pisa uno que cambió el Usuario) pasan todas en WebKit",
+      "entrada": [
+        "titulo.spec.ts"
+      ],
+      "esperado": {
+        "pasan": 3,
+        "fallan": 0,
+        "saltadas": 0
+      }
+    }
+  ]
+}
