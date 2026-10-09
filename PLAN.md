@@ -43,7 +43,7 @@ Salen de la prueba con audio real del 2026-10-07 (20 Sugerencias, todas del CFO)
 
 ### Sexta etapa (2026-10-09, de la segunda prueba con audio; decisiones de Jair del mismo día)
 
-25. **Meetily y Sottoly se encuentran** (Meetily es la casa; canvas «4»): el menú de Meetily tiene una sección «Sottoly · tu junta» siempre visible (En vivo, Reuniones y Decisiones, Roles), y el panel tiene «Volver a Meetily» arriba del menú. Specs de Playwright antes del código.
+25. **Meetily y Sottoly se encuentran** (Meetily es la casa; canvas «4»): el menú de Meetily tiene una sección «Sottoly · tu junta» siempre visible (En vivo, Reuniones y Decisiones, Roles), y el panel tiene «Volver a Meetily» arriba del menú. Specs de Playwright antes del código. ✅ hecha
 26. **El eco no llega a la Compuerta**: el Motor descarta un Segmento del Usuario que repite lo que la Contraparte acaba de decir (o al revés, si llegó primero), con los números en palabras o cifras, y lo registra en el log; la Compuerta y la Redacción ven la conversación real. Casos con una Reunión simulada con eco.
 27. **Detalle de la Reunión, versión 2** (canvas «5»): la pantalla hace scroll; el título se cambia con un clic; las Sugerencias de la junta se guardan con la Reunión y aparecen en la transcripción en su momento, con la marca Útil / No útil; «Guardar en mi Memoria» dice cuántas Decisiones faltan por revisar. Specs de Playwright antes del código.
 28. **El título lo propone el modelo**: al cerrar la Reunión, el `summary` trae un título corto de lo que se habló y la Reunión se guarda con él; el Usuario lo puede cambiar. Mensaje nuevo en `engine/src/protocol.ts` primero (la regla de integridad lo cubre), después el Motor, Rust y la pantalla.

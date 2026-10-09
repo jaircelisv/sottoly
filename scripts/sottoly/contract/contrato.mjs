@@ -17,8 +17,10 @@ function correr(cmd, args, cwd, entrada = "") {
   return r;
 }
 
+// Solo las líneas JSON: la primera vez que se compila el ejemplo en un checkout nuevo, el build script de
+// Meetily deja salida suelta en stdout («…framework=Cocoa»). Si Rust responde de menos, las cuentas no cuadran.
 function lineasJson(texto) {
-  return texto.split("\n").filter((l) => l.trim()).map((l) => JSON.parse(l));
+  return texto.split("\n").filter((l) => l.trim().startsWith("{")).map((l) => JSON.parse(l));
 }
 
 /** Veredicto de Zod para cada {direction, message}. */
