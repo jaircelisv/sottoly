@@ -31,6 +31,10 @@ Salen de la prueba con audio real del 2026-10-07 (20 Sugerencias, todas del CFO)
 19. **Antiruido para la misma idea con otras palabras**: pares de Sugerencias parafraseadas (de los patrones de la prueba) se reconocen como la misma idea, y pares distintos no. ✅ hecha
 20. **El gate cuenta todos los tests**: `make verify` termina con el total real de todas sus suites (bun test, Playwright del overlay y del panel, cargo test), para que el mínimo de tests los proteja a todos. ✅ hecha
 
+### Cuarta etapa (2026-10-08, para probar con audio real sin la consola)
+
+21. **Grabar desde el panel**: «En vivo» tiene «Iniciar grabación» y «Detener y revisar Decisiones»; al detener guarda la Reunión con toda la transcripción que vio el panel (con quién habló) y abre su detalle, donde las Decisiones aparecen en cuanto el Motor las propone. El menú de Meetily tiene un enlace al panel. Specs de Playwright con IPC simulado antes del código.
+
 ## Lo que hace Jair (fuera del bucle)
 
 - **Integrar los PRs**, solo con checks en verde. Pendientes hoy: #25 → #28 (documentación) y #26 (`check_local_model`).

@@ -19,6 +19,10 @@
     get_recording_state: { is_recording: false, is_paused: false, is_active: false, recording_duration: null, active_duration: null },
     check_first_launch: false,
     api_get_meetings: [],
+    // La pantalla principal de Meetily (tarea 21: su menú enlaza al panel)
+    get_ollama_models: [],
+    parakeet_get_available_models: [],
+    get_notification_settings: { recording_notifications: false },
   };
   window.__TAURI_INTERNALS__ = {
     metadata: { currentWindow: { label: "main" }, currentWebview: { windowLabel: "main", label: "main" } },
