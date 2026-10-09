@@ -1,0 +1,19 @@
+{
+  "tarea": "27 · Detalle de la Reunión, versión 2",
+  "origen": "agente",
+  "modulo": "scripts/sottoly/harness/panel.mjs",
+  "funcion": "specs_de",
+  "casos": [
+    {
+      "nombre": "las specs de Playwright del detalle de la Reunión v2 (scroll, título que se cambia con un clic, Sugerencias guardadas y en su momento con su marca, cuántas Decisiones faltan) pasan todas en WebKit",
+      "entrada": [
+        "reunion-v2.spec.ts"
+      ],
+      "esperado": {
+        "pasan": 5,
+        "fallan": 0,
+        "saltadas": 0
+      }
+    }
+  ]
+}
