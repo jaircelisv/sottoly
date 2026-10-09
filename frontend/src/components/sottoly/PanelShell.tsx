@@ -21,7 +21,15 @@ export function PanelShell({ children }: { children: React.ReactNode }) {
         aria-label="Secciones"
         className="box-border flex max-w-[232px] flex-[1_1_208px] flex-col gap-8 border-r border-[#E4E4E1] bg-[#F2F2F0] px-4 py-7"
       >
-        <div className="text-xl font-bold tracking-tight">Sottoly</div>
+        <div className="-mb-4 flex flex-col gap-5">
+          <Link
+            href="/"
+            className="-ml-1.5 w-fit rounded-md px-1.5 py-1 text-[13px] text-[#4A4A4F] no-underline hover:bg-white/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2F4A6B]"
+          >
+            <span aria-hidden="true">← </span>Volver a Meetily
+          </Link>
+          <div className="text-xl font-bold tracking-tight">Sottoly</div>
+        </div>
         <div className="flex flex-col gap-1">
           {SECCIONES.map((s) => {
             const current = s.match?.(pathname) ?? false

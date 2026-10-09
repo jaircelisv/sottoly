@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { ChevronDown, ChevronRight, File, Settings, ChevronLeftCircle, ChevronRightCircle, Calendar, StickyNote, Home, Trash2, Mic, Square, Plus, Search, Pencil, NotebookPen, SearchIcon, X, Upload, Users } from 'lucide-react';
+import { ChevronDown, ChevronRight, File, Settings, ChevronLeftCircle, ChevronRightCircle, Calendar, StickyNote, Home, Trash2, Mic, Square, Plus, Search, Pencil, NotebookPen, SearchIcon, X, Upload, Users, ListChecks } from 'lucide-react'; // SOTTOLY: ListChecks
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link'; // SOTTOLY: enlace al panel
 import { useSidebar } from './SidebarProvider';
@@ -525,17 +525,25 @@ const Sidebar: React.FC = () => {
             </TooltipContent>
           </Tooltip>
 
-          {/* SOTTOLY: enlace al panel de Sottoly (tarea 21) */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Link href="/sottoly/en-vivo" aria-label="Sottoly · En vivo" className="p-2 rounded-lg transition-colors duration-150 hover:bg-gray-100">
-                <Users className="w-5 h-5 text-gray-600" />
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent side="right">
-              <p>Sottoly · En vivo</p>
-            </TooltipContent>
-          </Tooltip>
+          {/* SOTTOLY: la sección de Sottoly también con el menú contraído, como íconos (tareas 21 y 25) */}
+          <nav aria-label="Sottoly · tu junta" className="flex flex-col items-center gap-1 rounded-xl border border-gray-200 p-1">
+            {[
+              { href: '/sottoly/en-vivo', label: 'Sottoly · En vivo', tip: 'Sottoly · En vivo', icon: <span className="block h-2.5 w-2.5 rounded-full bg-red-600" /> },
+              { href: '/sottoly', label: 'Reuniones y Decisiones', tip: 'Sottoly · Reuniones y Decisiones', icon: <ListChecks className="w-5 h-5 text-gray-600" /> },
+              { href: '/sottoly/roles', label: 'Roles', tip: 'Sottoly · Roles', icon: <Users className="w-5 h-5 text-gray-600" /> },
+            ].map((l) => (
+              <Tooltip key={l.href}>
+                <TooltipTrigger asChild>
+                  <Link href={l.href} aria-label={l.label} className="flex h-9 w-9 items-center justify-center rounded-lg transition-colors duration-150 hover:bg-gray-100">
+                    {l.icon}
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>{l.tip}</p>
+                </TooltipContent>
+              </Tooltip>
+            ))}
+          </nav>
 
           <Tooltip>
             <TooltipTrigger asChild>
@@ -744,6 +752,28 @@ const Sidebar: React.FC = () => {
                 <span>Home</span>
               </div>
             )}
+            {/* SOTTOLY: la sección de Sottoly, siempre visible en el menú de Meetily (tarea 25) */}
+            {!isCollapsed && (
+              <nav aria-label="Sottoly · tu junta" className="mx-3 mt-3 rounded-xl border border-gray-200 bg-white p-2">
+                <div className="px-2 pb-1.5 pt-0.5 text-[11px] font-bold uppercase tracking-wider text-gray-500">Sottoly · tu junta</div>
+                <Link
+                  href="/sottoly/en-vivo"
+                  aria-label="Sottoly · En vivo"
+                  className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm font-medium text-gray-800 hover:bg-gray-100"
+                >
+                  <span aria-hidden="true" className="h-2 w-2 rounded-full bg-red-600" />
+                  En vivo
+                </Link>
+                <Link href="/sottoly" className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                  <ListChecks className="w-4 h-4 text-gray-500" aria-hidden="true" />
+                  Reuniones y Decisiones
+                </Link>
+                <Link href="/sottoly/roles" className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                  <Users className="w-4 h-4 text-gray-500" aria-hidden="true" />
+                  Roles
+                </Link>
+              </nav>
+            )}
           </div>
 
           {/* Content area */}
@@ -815,14 +845,7 @@ const Sidebar: React.FC = () => {
               </button>
             )}
 
-            {/* SOTTOLY: enlace al panel de Sottoly (tarea 21) */}
-            <Link
-              href="/sottoly/en-vivo"
-              className="w-full flex items-center justify-center px-3 py-1.5 mt-1 text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 rounded-lg transition-colors shadow-sm"
-            >
-              <Users className="w-4 h-4 mr-2" />
-              <span>Sottoly · En vivo</span>
-            </Link>
+            {/* SOTTOLY: el enlace al panel (tarea 21) pasó a la sección de Sottoly de arriba (tarea 25) */}
             <button
               onClick={() => router.push('/settings')}
               className="w-full flex items-center justify-center px-3 py-1.5 mt-1 mb-1 text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors shadow-sm"
