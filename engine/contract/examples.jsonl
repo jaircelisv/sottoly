@@ -19,3 +19,5 @@
 {"direction":"outbound","valid":true,"message":{"type":"chat_reply","id":"c1","role":"cfo","text":"Pidió un anticipo del cincuenta por ciento para empezar."}}
 {"direction":"outbound","valid":true,"message":{"type":"chat_error","id":"c1"}}
 {"direction":"outbound","valid":false,"message":{"type":"chat_reply","role":"cfo","text":"Sin id no se sabe a qué pregunta responde."}}
+{"direction":"outbound","valid":true,"message":{"type":"summary","title":"Cotización del servicio contable anual","decisions":[]}}
+{"direction":"outbound","valid":false,"message":{"type":"summary","title":"","decisions":[]}}

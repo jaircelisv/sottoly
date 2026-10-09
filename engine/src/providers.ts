@@ -7,6 +7,7 @@ import { Draft, DraftOutput, type Drafter } from "./draft";
 import type { ChoiceEvaluator } from "./gate";
 import { SummaryOutput, type Summarizer } from "./summary";
 import type { Chatter } from "./chat";
+import type { Titler } from "./title";
 import type { DedupePrompt } from "./dedupe";
 import { z } from "zod";
 
@@ -52,6 +53,12 @@ export function anthropicSummarizer(modelId: string, maxTokens: number, fetch?: 
     const { output } = await generateText({ model, system, prompt, maxOutputTokens: maxTokens, output: Output.object({ schema: SummaryOutput }) });
     return SummaryOutput.parse(output).decisions;
   };
+}
+
+/** Título de la Reunión (tarea 28): texto corto, sin streaming. `fetch` solo para pruebas. */
+export function anthropicTitler(modelId: string, maxTokens: number, fetch?: typeof globalThis.fetch): Titler {
+  const model = createAnthropic({ fetch, apiKey: fetch ? "recorded" : undefined })(modelId);
+  return async ({ system, prompt }) => (await generateText({ model, system, prompt, maxOutputTokens: maxTokens, maxRetries: fetch ? 0 : 2 })).text;
 }
 
 /** Chat con el Rol en streaming (texto libre). `onText` recibe el texto acumulado. `fetch` solo para pruebas. */

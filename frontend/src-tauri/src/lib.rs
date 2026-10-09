@@ -630,6 +630,8 @@ pub fn run() {
             sottoly_decisions::sottoly_save_decisions, // SOTTOLY: tarea 17
             sottoly_suggestions::sottoly_save_suggestions, // SOTTOLY: tarea 27
             sottoly_suggestions::sottoly_get_suggestions, // SOTTOLY: tarea 27
+            sottoly_decisions::sottoly_apply_title, // SOTTOLY: tarea 28
+            sottoly_decisions::sottoly_title_settled, // SOTTOLY: tarea 28
             sottoly_demo::sottoly_demo_status, // SOTTOLY: tarea 22
             sottoly_demo::sottoly_set_demo, // SOTTOLY: tarea 22
             engine_bridge::sottoly_chat_send, // SOTTOLY: chat con el Rol (tarea 13)

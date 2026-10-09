@@ -89,12 +89,16 @@ function Reunion() {
   const [suggestions, setSuggestions] = useState<SavedSuggestion[]>([])
   const [editing, setEditing] = useState<string | null>(null)
   const [titleError, setTitleError] = useState<string | null>(null)
+  const [proposed, setProposed] = useState(false)
 
   const fetchMeeting = useCallback(async () => {
     setLoad({ state: 'loading' })
     try {
       const meeting = await invoke<MeetingDetails | null>('api_get_meeting', { meetingId: id })
-      setLoad(meeting ? { state: 'ready', meeting } : { state: 'error' })
+      // El título que propuso el modelo al cerrar (tarea 28) reemplaza al automático, una sola vez.
+      const title = meeting ? await invoke<string | null>('sottoly_apply_title', { meetingId: id }).catch(() => null) : null
+      if (title) setProposed(true)
+      setLoad(meeting ? { state: 'ready', meeting: title ? { ...meeting, title } : meeting } : { state: 'error' })
       // Las Decisiones del cierre (tarea 17): si no hay, o no se pueden leer, la Reunión se ve igual.
       setDecisions(await invoke<DecisionsFile | null>('sottoly_get_decisions', { meetingId: id }).catch(() => null))
       // Las Sugerencias de la junta (tarea 27): si no hay, la transcripción se ve igual.
@@ -113,6 +117,11 @@ function Reunion() {
     if (!id) return
     const off = listen('summary', async () => {
       setDecisions(await invoke<DecisionsFile | null>('sottoly_get_decisions', { meetingId: id }).catch(() => null))
+      const title = await invoke<string | null>('sottoly_apply_title', { meetingId: id }).catch(() => null)
+      if (title) {
+        setProposed(true)
+        setLoad((l) => (l.state === 'ready' ? { state: 'ready', meeting: { ...l.meeting, title } } : l))
+      }
     })
     return () => {
       off.then((f) => f())
@@ -131,6 +140,9 @@ function Reunion() {
     }
     try {
       await invoke('api_save_meeting_title', { meetingId: meeting.id, title })
+      // El título que pusiste manda: el que proponga el modelo después ya no lo pisa (tarea 28).
+      await invoke('sottoly_title_settled', { meetingId: meeting.id }).catch(() => {})
+      setProposed(false)
       setLoad({ state: 'ready', meeting: { ...meeting, title } })
       setEditing(null)
       setTitleError(null)
@@ -139,7 +151,7 @@ function Reunion() {
     }
   }
   const count = suggestions.length
-  const meta = [dateLabel(meeting.created_at), count ? `${count} ${count === 1 ? 'Sugerencia' : 'Sugerencias'} de tu junta` : null].filter(Boolean).join(' · ')
+  const meta = [dateLabel(meeting.created_at), proposed ? 'Título propuesto por Sottoly' : null, count ? `${count} ${count === 1 ? 'Sugerencia' : 'Sugerencias'} de tu junta` : null].filter(Boolean).join(' · ')
   return (
     <>
       <header className="flex flex-col gap-1.5">

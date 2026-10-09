@@ -3,6 +3,7 @@
 import { evaluateGate, slideWindow, type ChoiceEvaluator, type GateDecision, type WindowSegment } from "./gate";
 import { buildDraftPrompt, finalizeDraft, headWords, sameIdea, type Drafter } from "./draft";
 import { ECHO_WINDOW_SECONDS, isEcho } from "./echo";
+import { buildTitlePrompt, cleanTitle, type Titler } from "./title";
 import { buildChatPrompt, cleanReply, type Chatter, type ChatTurn } from "./chat";
 import type { Deduper } from "./dedupe";
 import type {
@@ -33,7 +34,7 @@ export interface EngineConfig {
 export type EngineLog =
   | { event: "gate_decision"; trigger: TurnEvent["kind"]; turn: number; decision: GateDecision; latency_ms: number }
   | { event: "suggestion_suppressed"; role: string; reason: SuppressReason }
-  | { event: "provider_failed"; stage: "gate" | "draft" | "summary" | "chat" | "dedupe"; error: string }
+  | { event: "provider_failed"; stage: "gate" | "draft" | "summary" | "chat" | "dedupe" | "title"; error: string }
   | { event: "echo_dropped"; t0: number };
 
 export type SuppressReason = "cooldown" | "repeated" | "meeting_cap" | "invalid_draft" | "declined";
@@ -49,6 +50,8 @@ export interface EngineDeps {
   log?: (entry: EngineLog) => void;
   /** Decisiones candidatas al cerrar la Reunión (SPEC §6). Sin él, la Reunión se cierra sin `summary`. */
   summarize?: Summarizer;
+  /** Título de la Reunión al cerrar (tarea 28). Sin él, el `summary` va sin título. */
+  title?: Titler;
   /** Juez del antiruido para paráfrasis (tarea 19). Sin él, solo se compara por palabras. */
   dedupe?: Deduper;
   /** Chat con el Rol (tarea 13). Sin él, cada pregunta recibe chat_error. Las respuestas salen por `onStream`. */
@@ -173,11 +176,25 @@ export class Engine {
     if (!this.deps.summarize || this.segments.length === 0) return null;
     const now = new Date();
     const today = this.deps.today?.() ?? now.toISOString().slice(0, 10);
+    // El título va en paralelo con las Decisiones; si falla, la Reunión se cierra igual, sin título.
+    const titled = this.proposeTitle();
     try {
       const candidates = await this.deps.summarize(buildSummaryPrompt(this.segments, today));
-      return { type: "summary", decisions: toDecisions(grounded(candidates, this.segments), this.meetingId, now.toISOString()) };
+      const decisions = toDecisions(grounded(candidates, this.segments), this.meetingId, now.toISOString());
+      const title = await titled;
+      return { type: "summary", ...(title ? { title } : {}), decisions };
     } catch (error) {
       this.deps.log?.({ event: "provider_failed", stage: "summary", error: String(error) });
+      return null;
+    }
+  }
+
+  private async proposeTitle(): Promise<string | null> {
+    if (!this.deps.title) return null;
+    try {
+      return cleanTitle(await this.deps.title(buildTitlePrompt(this.segments))) || null;
+    } catch (error) {
+      this.deps.log?.({ event: "provider_failed", stage: "title", error: String(error) });
       return null;
     }
   }
