@@ -1,5 +1,7 @@
 // Motor (sidecar): lee mensajes por stdin y escribe Sugerencias por stdout, una línea JSON por mensaje.
 // Los registros (decisiones de la Compuerta, errores) van por stderr para no ensuciar el protocolo.
+import { readFileSync } from "node:fs";
+import { homedir } from "node:os";
 import { join } from "node:path";
 import config from "../config.json";
 import type { Draft } from "./draft";
@@ -72,6 +74,16 @@ function providers() {
   };
 }
 
+/** El nivel de intervención que eligió el Usuario para cada Rol (tarea 30); sin archivo, ninguno. */
+function roleLevels(): Record<string, string> {
+  try {
+    const parsed = JSON.parse(readFileSync(join(process.env.SOTTOLY_HOME ?? join(homedir(), ".sottoly"), "role-levels.json"), "utf8"));
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
 function log(entry: Record<string, unknown>) {
   process.stderr.write(JSON.stringify({ ...entry, at: new Date().toISOString() }) + "\n");
 }
@@ -93,6 +105,7 @@ async function main() {
     // Grabaciones y pruebas fijan la fecha: va en el prompt de las Decisiones y en su clave.
     today: process.env.SOTTOLY_TODAY ? () => process.env.SOTTOLY_TODAY! : undefined,
     config,
+    levels: roleLevels,
     log,
     onStream: (message) => process.stdout.write(encodeOutbound(message)),
   });

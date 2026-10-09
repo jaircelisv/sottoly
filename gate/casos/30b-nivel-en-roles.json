@@ -1,0 +1,19 @@
+{
+  "tarea": "30 · El nivel de intervención en Roles",
+  "origen": "agente",
+  "modulo": "scripts/sottoly/harness/panel.mjs",
+  "funcion": "specs_de",
+  "casos": [
+    {
+      "nombre": "las specs de Playwright del nivel de intervención (tres niveles por Rol activo, se guarda, se explica y se recuerda) pasan todas en WebKit",
+      "entrada": [
+        "roles-nivel.spec.ts"
+      ],
+      "esperado": {
+        "pasan": 3,
+        "fallan": 0,
+        "saltadas": 0
+      }
+    }
+  ]
+}

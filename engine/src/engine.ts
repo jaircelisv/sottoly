@@ -4,6 +4,7 @@ import { evaluateGate, slideWindow, type ChoiceEvaluator, type GateDecision, typ
 import { buildDraftPrompt, finalizeDraft, headWords, sameIdea, type Drafter } from "./draft";
 import { ECHO_WINDOW_SECONDS, isEcho } from "./echo";
 import { buildTitlePrompt, cleanTitle, type Titler } from "./title";
+import { withLevels } from "./levels";
 import { buildChatPrompt, cleanReply, type Chatter, type ChatTurn } from "./chat";
 import type { Deduper } from "./dedupe";
 import type {
@@ -52,6 +53,8 @@ export interface EngineDeps {
   summarize?: Summarizer;
   /** Título de la Reunión al cerrar (tarea 28). Sin él, el `summary` va sin título. */
   title?: Titler;
+  /** El nivel de intervención de cada Rol (tarea 30); se lee al empezar cada Reunión. */
+  levels?: () => Record<string, string>;
   /** Juez del antiruido para paráfrasis (tarea 19). Sin él, solo se compara por palabras. */
   dedupe?: Deduper;
   /** Chat con el Rol (tarea 13). Sin él, cada pregunta recibe chat_error. Las respuestas salen por `onStream`. */
@@ -129,7 +132,7 @@ export class Engine {
   }
 
   private reset(roles: string[] | undefined) {
-    this.board = selectBoard(this.deps.roles, roles);
+    this.board = withLevels(selectBoard(this.deps.roles, roles), this.deps.levels?.() ?? {});
     this.segments = [];
     this.turns = new TurnAssembler(this.deps.config.turns);
     this.lastByRole.clear();

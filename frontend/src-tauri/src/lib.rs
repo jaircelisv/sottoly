@@ -62,6 +62,7 @@ pub mod sottoly_roles; // SOTTOLY: Roles para el panel
 pub mod sottoly_decisions; // SOTTOLY: Decisiones del cierre y Memoria (tarea 17)
 pub mod sottoly_suggestions; // SOTTOLY: Sugerencias guardadas con la Reunión (tarea 27)
 pub mod sottoly_review; // SOTTOLY: chat con la junta después de la Reunión (tarea 29)
+pub mod sottoly_levels; // SOTTOLY: cuánto interviene cada Rol (tarea 30)
 pub mod sottoly_demo; // SOTTOLY: interruptor de las tarjetas de demostración (tarea 22)
 
 use audio::{list_audio_devices, AudioDevice, trigger_audio_permission};
@@ -627,6 +628,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             sottoly_roles::sottoly_list_roles, // SOTTOLY: panel, pantalla Roles
             sottoly_roles::sottoly_create_role, // SOTTOLY: creador de Roles (tarea 14)
+            sottoly_levels::sottoly_get_role_levels, // SOTTOLY: tarea 30
+            sottoly_levels::sottoly_set_role_level, // SOTTOLY: tarea 30
             sottoly_decisions::sottoly_get_decisions, // SOTTOLY: tarea 17
             sottoly_decisions::sottoly_save_decisions, // SOTTOLY: tarea 17
             sottoly_suggestions::sottoly_save_suggestions, // SOTTOLY: tarea 27
