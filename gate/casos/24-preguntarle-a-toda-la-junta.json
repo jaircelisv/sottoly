@@ -1,0 +1,19 @@
+{
+  "tarea": "24 · Preguntarle a toda la junta",
+  "origen": "agente",
+  "modulo": "scripts/sottoly/harness/panel.mjs",
+  "funcion": "specs_de",
+  "casos": [
+    {
+      "nombre": "las specs de Playwright de «Todos» en el chat (va primero, la pregunta le llega a cada Rol activo y cada uno responde con su nombre) y del eco con números en palabras o cifras pasan todas en WebKit",
+      "entrada": [
+        "junta-entera.spec.ts"
+      ],
+      "esperado": {
+        "pasan": 4,
+        "fallan": 0,
+        "saltadas": 0
+      }
+    }
+  ]
+}

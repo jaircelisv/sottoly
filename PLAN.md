@@ -39,6 +39,17 @@ Salen de la prueba con audio real del 2026-10-07 (20 Sugerencias, todas del CFO)
 ### Quinta etapa (2026-10-08, de la prueba con audio real en la pantalla nueva)
 
 23. **En vivo, versión 3** (diseño aprobado por Jair el 2026-10-08, canvas «1c»): lo que se ve en «En vivo» (transcripción, Sugerencias, chat y grabación) no se pierde al cambiar de pestaña; el chat muestra el formato de las respuestas en vez de asteriscos, con el Rol a la vista, respuestas cortas sin presentarse, preguntas de ejemplo y scroll hasta lo último; la transcripción va en bloques por hablante y oculta el eco (una frase del Usuario que repite lo que la Contraparte acaba de decir) con un aviso para usar audífonos; «Grabando» dice desde hace cuánto. Specs de Playwright con IPC simulado antes del código. ✅ hecha
+24. **Preguntarle a toda la junta** (pedido de Jair en la prueba del 2026-10-09): en el chat de «En vivo», «Todos» va primero entre los Roles; una pregunta a «Todos» le llega a cada Rol activo y cada uno responde con su nombre. Además, el eco se reconoce aunque una frase diga los números en palabras y la otra en cifras («cien» y «100»). Specs de Playwright con IPC simulado antes del código. ✅ hecha
+
+### Sexta etapa (2026-10-09, de la segunda prueba con audio; decisiones de Jair del mismo día)
+
+25. **Meetily y Sottoly se encuentran** (Meetily es la casa; canvas «4»): el menú de Meetily tiene una sección «Sottoly · tu junta» siempre visible (En vivo, Reuniones y Decisiones, Roles), y el panel tiene «Volver a Meetily» arriba del menú. Specs de Playwright antes del código.
+26. **El eco no llega a la Compuerta**: el Motor descarta un Segmento del Usuario que repite lo que la Contraparte acaba de decir (o al revés, si llegó primero), con los números en palabras o cifras, y lo registra en el log; la Compuerta y la Redacción ven la conversación real. Casos con una Reunión simulada con eco.
+27. **Detalle de la Reunión, versión 2** (canvas «5»): la pantalla hace scroll; el título se cambia con un clic; las Sugerencias de la junta se guardan con la Reunión y aparecen en la transcripción en su momento, con la marca Útil / No útil; «Guardar en mi Memoria» dice cuántas Decisiones faltan por revisar. Specs de Playwright antes del código.
+28. **El título lo propone el modelo**: al cerrar la Reunión, el `summary` trae un título corto de lo que se habló y la Reunión se guarda con él; el Usuario lo puede cambiar. Mensaje nuevo en `engine/src/protocol.ts` primero (la regla de integridad lo cubre), después el Motor, Rust y la pantalla.
+29. **Hablar con la junta después de la Reunión** (canvas «5»): el detalle tiene el chat a la derecha (con «Todos»); el Rol responde con la transcripción guardada de esa Reunión. El historial no se guarda. Protocolo primero, después Motor, Rust y pantalla.
+30. **Cuánto interviene cada Rol** (canvas «6»): en Roles, cada uno tiene «Solo lo importante» (el umbral calibrado), «Equilibrado» o «Más seguido»; la elección se guarda fuera del Rol y la Compuerta la usa sin tocar `gate_option`, `gate_definition` ni `calibrated_with`. Casos del Motor y specs de Playwright.
+31. **Crear un Rol conversando** (canvas «7»): el creador de Roles es un chat con un agente que pregunta con opciones de selección única o múltiple y un campo libre para lo que no esté; al lado se ve cómo va quedando el Rol. Escribe el mismo archivo de Rol que hoy (sin calibrar). Diseño aprobado antes de los casos.
 
 ## Lo que hace Jair (fuera del bucle)
 

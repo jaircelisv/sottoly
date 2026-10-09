@@ -10,6 +10,9 @@ import { appDataDir } from '@tauri-apps/api/path'
 import { useRouter } from 'next/navigation'
 import { ECHO_LOOKBACK, isEcho } from '@/lib/sottoly/echo'
 
+/** El «Rol» que es toda la junta: una pregunta a cada Rol activo (tarea 24). */
+export const ALL_ROLES = 'all'
+
 export interface RoleSummary {
   id: string
   role: string
@@ -312,18 +315,19 @@ export function LiveSessionProvider({ children }: { children: React.ReactNode })
 
   const send = async (preset?: string) => {
     const text = (preset ?? draft).trim()
-    const current = roles.find((r) => r.id === roleId)
-    if (!text || !current) return
+    // «Todos» (tarea 24): la misma pregunta a cada Rol activo, en el orden de la junta; cada uno responde aparte.
+    const targets = roleId === ALL_ROLES ? roles : roles.filter((r) => r.id === roleId)
+    if (!text || targets.length === 0) return
     setNotice(null)
-    const quote = replyTo && replyTo.role === current.id ? replyTo : null
     try {
-      const id = await invoke<string>('sottoly_chat_send', { role: current.id, text, replyTo: quote?.id ?? null })
       const at = Date.now()
-      setChat((c) => [
-        ...c,
-        { key: key(), from: 'user', text, roleId: current.id, quote: quote?.text, at },
-        { key: key(), from: 'role', text: '', roleId: current.id, id, pending: true, at },
-      ])
+      const replies: ChatEntry[] = []
+      for (const r of targets) {
+        const quote = replyTo && replyTo.role === r.id ? replyTo : null
+        const id = await invoke<string>('sottoly_chat_send', { role: r.id, text, replyTo: quote?.id ?? null })
+        replies.push({ key: key(), from: 'role', text: '', roleId: r.id, id, pending: true, at })
+      }
+      setChat((c) => [...c, { key: key(), from: 'user', text, roleId: roleId ?? '', quote: replyTo?.text, at }, ...replies])
       if (preset === undefined) setDraft('')
       setReplyTo(null)
     } catch {
