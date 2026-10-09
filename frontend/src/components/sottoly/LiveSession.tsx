@@ -10,8 +10,9 @@ import { appDataDir } from '@tauri-apps/api/path'
 import { useRouter } from 'next/navigation'
 import { ECHO_LOOKBACK, isEcho } from '@/lib/sottoly/echo'
 
-/** El «Rol» que es toda la junta: una pregunta a cada Rol activo (tarea 24). */
-export const ALL_ROLES = 'all'
+import { ALL_ROLES } from './JuntaChat'
+
+export { ALL_ROLES }
 
 export interface RoleSummary {
   id: string

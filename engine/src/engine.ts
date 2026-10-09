@@ -65,6 +65,8 @@ export interface EngineDeps {
 
 export class Engine {
   private board: Role[] = [];
+  /** `review`: una Reunión terminada, solo para el chat (tarea 29). */
+  private review = false;
   private segments: WindowSegment[] = [];
   private turns: TurnAssembler;
   private lastByRole = new Map<string, number>();
@@ -86,14 +88,18 @@ export class Engine {
       case "session":
         if (message.event === "start") {
           this.reset(message.roles);
+          this.review = message.mode === "review";
           return [];
         }
+        if (this.review) return [];
         return this.process(this.turns.flush());
       case "segment":
         if (this.dropEcho(message)) return [];
         this.segments.push(message);
+        if (this.review) return [];
         return this.process(this.turns.push(message));
       case "clock":
+        if (this.review) return [];
         return this.process(this.turns.tick(message.t));
       case "chat":
         await this.answer(message);
@@ -173,7 +179,8 @@ export class Engine {
    * llama al modelo; si el modelo falla, se registra y la Reunión se cierra sin `summary`.
    */
   async close(): Promise<SummaryMessage | null> {
-    if (!this.deps.summarize || this.segments.length === 0) return null;
+    // En revisión las Decisiones ya se propusieron al cerrar la Reunión de verdad: no se pisan.
+    if (this.review || !this.deps.summarize || this.segments.length === 0) return null;
     const now = new Date();
     const today = this.deps.today?.() ?? now.toISOString().slice(0, 10);
     // El título va en paralelo con las Decisiones; si falla, la Reunión se cierra igual, sin título.

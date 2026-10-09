@@ -3,12 +3,14 @@
 // Detalle de una Reunión con su transcripción (PLAN.md, tareas 12 y 27; canvas «5»): título que se cambia con un
 // clic, Decisiones por revisar y las Sugerencias de la junta en su momento. `?id=`: la exportación estática de
 // Next no admite rutas dinámicas sin generarlas al compilar.
-import { Suspense, useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import { LoadError } from '@/components/sottoly/PanelShell'
 import { DecisionsReview, type CandidateDecision } from '@/components/sottoly/DecisionsReview'
+import { useLiveSession } from '@/components/sottoly/LiveSession'
+import { ALL_ROLES, JuntaChat, type ChatEntry } from '@/components/sottoly/JuntaChat'
 
 interface TranscriptLine {
   id: string
@@ -81,8 +83,69 @@ interface DecisionsFile {
   decisions: CandidateDecision[]
 }
 
+// Preguntas de ejemplo para después de la Reunión (tarea 29).
+const EXAMPLES = ['¿Qué quedó pendiente?', '¿Qué me faltó preguntar?', 'Escribe el correo de seguimiento']
+
+/**
+ * El chat con la junta sobre una Reunión terminada (tarea 29): cada pregunta va al Motor con la transcripción
+ * guardada (`sottoly_review_chat_send`) y la respuesta llega por los mismos eventos del chat en vivo. El historial
+ * no se guarda.
+ */
+function useReviewChat(meetingId: string, roles: { id: string }[]) {
+  const [roleId, setRoleId] = useState<string | null>(null)
+  const [chat, setChat] = useState<ChatEntry[]>([])
+  const [draft, setDraft] = useState('')
+  const [notice, setNotice] = useState<string | null>(null)
+  const seq = useRef(0)
+  const key = () => `r${++seq.current}`
+
+  useEffect(() => {
+    setRoleId((cur) => cur ?? roles[0]?.id ?? null)
+  }, [roles])
+
+  useEffect(() => {
+    const offs = [
+      listen<{ id: string; text: string }>('chat_delta', ({ payload }) => {
+        setChat((c) => c.map((e) => (e.id === payload.id ? { ...e, text: payload.text } : e)))
+      }),
+      listen<{ id: string; text: string }>('chat_reply', ({ payload }) => {
+        setChat((c) => c.map((e) => (e.id === payload.id ? { ...e, text: payload.text, pending: false } : e)))
+      }),
+      listen<{ id: string }>('chat_error', ({ payload }) => {
+        setChat((c) => c.map((e) => (e.id === payload.id ? { ...e, pending: false, failed: true } : e)))
+      }),
+    ]
+    return () => {
+      offs.forEach((p) => p.then((off) => off()))
+    }
+  }, [])
+
+  const send = async (preset?: string) => {
+    const text = (preset ?? draft).trim()
+    const targets = roleId === ALL_ROLES ? roles : roles.filter((r) => r.id === roleId)
+    if (!text || targets.length === 0) return
+    setNotice(null)
+    try {
+      const at = Date.now()
+      const replies: ChatEntry[] = []
+      for (const r of targets) {
+        const id = await invoke<string>('sottoly_review_chat_send', { meetingId, role: r.id, text })
+        replies.push({ key: key(), from: 'role', text: '', roleId: r.id, id, pending: true, at })
+      }
+      setChat((c) => [...c, { key: key(), from: 'user', text, roleId: roleId ?? '', at }, ...replies])
+      if (preset === undefined) setDraft('')
+    } catch (e) {
+      setNotice(typeof e === 'string' && e ? e : 'No se pudo hablar con tu junta.')
+    }
+  }
+
+  return { roleId, setRoleId, chat, draft, setDraft, notice, send }
+}
+
 function Reunion() {
   const id = useSearchParams()?.get('id') ?? ''
+  const { roles } = useLiveSession()
+  const review = useReviewChat(id, roles)
   const [load, setLoad] = useState<Load>({ state: 'loading' })
   const [decisions, setDecisions] = useState<DecisionsFile | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
@@ -153,7 +216,8 @@ function Reunion() {
   const count = suggestions.length
   const meta = [dateLabel(meeting.created_at), proposed ? 'Título propuesto por Sottoly' : null, count ? `${count} ${count === 1 ? 'Sugerencia' : 'Sugerencias'} de tu junta` : null].filter(Boolean).join(' · ')
   return (
-    <>
+    <div className="flex flex-wrap items-start gap-6">
+      <div className="flex min-w-0 flex-[999_1_480px] flex-col gap-6">
       <header className="flex flex-col gap-1.5">
         {editing === null ? (
           <div className="flex items-center gap-1.5">
@@ -266,7 +330,25 @@ function Reunion() {
           </ol>
         )}
       </section>
-    </>
+      </div>
+      <JuntaChat
+        roles={roles}
+        roleId={review.roleId}
+        setRoleId={review.setRoleId}
+        chat={review.chat}
+        draft={review.draft}
+        setDraft={review.setDraft}
+        notice={review.notice}
+        send={(preset) => void review.send(preset)}
+        examples={EXAMPLES}
+        emptyText={(c) =>
+          c.all
+            ? 'Tu junta ya leyó esta Reunión. Pregúntale qué quedó pendiente, qué faltó negociar o cómo seguir.'
+            : `${c.persona} ya leyó esta Reunión. Pregúntale qué quedó pendiente, qué faltó negociar o cómo seguir.`
+        }
+        className="sticky top-6 h-[calc(100vh-56px)] min-h-[420px] max-w-[420px] flex-[1_1_340px]"
+      />
+    </div>
   )
 }
 

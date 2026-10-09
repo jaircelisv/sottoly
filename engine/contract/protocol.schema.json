@@ -59,6 +59,13 @@
               "type": "string",
               "pattern": "^[a-z][a-z0-9_]*$"
             }
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "live",
+              "review"
+            ]
           }
         },
         "required": [

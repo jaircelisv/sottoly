@@ -4,7 +4,7 @@
 //                                              deserializando con el mismo EngineEvent del puente.
 //   cargo run --example contract -- inbound    imprime los mensajes que Rust produce hacia el Motor.
 use app_lib::audio::speaker::Speaker;
-use app_lib::engine_bridge::{EngineEvent, EngineMessage, SessionEvent};
+use app_lib::engine_bridge::{EngineEvent, EngineMessage, SessionEvent, SessionMode};
 use std::io::BufRead;
 
 fn main() {
@@ -27,8 +27,9 @@ fn main() {
                 EngineMessage::Segment { speaker: Speaker::User, text: "¿Incluye soporte?".into(), t0: 1.0, t1: 2.5 },
                 EngineMessage::Segment { speaker: Speaker::Counterpart, text: "Son dos millones.".into(), t0: 3.0, t1: 4.2 },
                 EngineMessage::Segment { speaker: Speaker::Mixed, text: "Listo.".into(), t0: 5.0, t1: 5.4 },
-                EngineMessage::Session { event: SessionEvent::Start, roles: Some(vec!["cfo".into(), "ceo".into()]) },
-                EngineMessage::Session { event: SessionEvent::End, roles: None },
+                EngineMessage::Session { event: SessionEvent::Start, roles: Some(vec!["cfo".into(), "ceo".into()]), mode: None },
+                EngineMessage::Session { event: SessionEvent::End, roles: None, mode: None },
+                EngineMessage::Session { event: SessionEvent::Start, roles: Some(vec!["cfo".into()]), mode: Some(SessionMode::Review) },
                 EngineMessage::Clock { t: 6.1 },
                 EngineMessage::Chat { id: "c-1".into(), role: "cfo".into(), text: "¿Qué dijo del anticipo?".into(), reply_to: None },
                 EngineMessage::Chat { id: "c-2".into(), role: "cfo".into(), text: "¿Y si el IVA va aparte?".into(), reply_to: Some("s1".into()) },
