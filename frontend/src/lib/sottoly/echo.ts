@@ -2,14 +2,31 @@
 // transcripción lo atribuye al Usuario. Una frase del Usuario es eco si casi todas sus palabras están en una
 // frase reciente de la Contraparte (o al revés, si el eco llegó primero).
 
-/** Palabras de una frase, sin mayúsculas, tildes ni puntuación. */
+// La transcripción escribe un mismo número en palabras o en cifras según el canal («cien» y «100»): se comparan
+// como cifras. Solo números sueltos: «ciento veinte» queda «100 20», y solo empareja si la otra frase lo dice igual.
+const NUMBERS: Record<string, string> = Object.fromEntries(
+  (
+    'cero:0 uno:1 una:1 un:1 dos:2 tres:3 cuatro:4 cinco:5 seis:6 siete:7 ocho:8 nueve:9 diez:10 once:11 doce:12 ' +
+    'trece:13 catorce:14 quince:15 dieciseis:16 diecisiete:17 dieciocho:18 diecinueve:19 veinte:20 treinta:30 ' +
+    'cuarenta:40 cincuenta:50 sesenta:60 setenta:70 ochenta:80 noventa:90 cien:100 ciento:100 doscientos:200 ' +
+    'doscientas:200 trescientos:300 trescientas:300 cuatrocientos:400 cuatrocientas:400 quinientos:500 quinientas:500 ' +
+    'seiscientos:600 seiscientas:600 setecientos:700 setecientas:700 ochocientos:800 ochocientas:800 ' +
+    'novecientos:900 novecientas:900 mil:1000'
+  )
+    .split(' ')
+    .map((pair) => pair.split(':')),
+)
+
+/** Palabras de una frase, sin mayúsculas, tildes ni puntuación, con los números en cifras («1.650» = «1650»). */
 export function words(text: string): string[] {
   return text
     .toLowerCase()
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
-    .split(/[^a-z0-9ñ]+/)
+    .replace(/(\d)[.,](?=\d{3}\b)/g, '$1')
+    .split(/[^a-z0-9]+/)
     .filter(Boolean)
+    .map((w) => NUMBERS[w] ?? w)
 }
 
 /** Las frases cortas («sí», «claro, dale») se repiten sin ser eco: no se comparan. */

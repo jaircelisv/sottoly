@@ -5,7 +5,7 @@
 // LiveSessionProvider (layout de /sottoly): esta pantalla solo lo muestra.
 import { useEffect, useMemo, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
-import { useLiveSession, type Card, type Line } from '@/components/sottoly/LiveSession'
+import { ALL_ROLES, useLiveSession, type Card, type Line } from '@/components/sottoly/LiveSession'
 
 function clock(t: number | null): string {
   if (t === null) return ''
@@ -74,7 +74,12 @@ export default function EnVivoPage() {
 
   const tone = (roleId: string) => TONES[Math.max(0, s.roles.findIndex((r) => r.id === roleId)) % TONES.length]
   const persona = (id: string) => s.roles.find((r) => r.id === id)?.persona ?? 'El Rol'
-  const current = useMemo(() => s.roles.find((r) => r.id === s.roleId) ?? null, [s.roles, s.roleId])
+  // A quién le preguntas: un Rol, o «Todos» (tarea 24), que es toda la junta activa.
+  const current = useMemo(() => {
+    if (s.roleId === ALL_ROLES) return s.roles.length ? { all: true, persona: 'toda tu junta' } : null
+    const r = s.roles.find((x) => x.id === s.roleId)
+    return r ? { all: false, persona: r.persona } : null
+  }, [s.roles, s.roleId])
   const cardOf = (id: string) => s.cards[id] ?? { mode: 'open' as const, why: false, mark: null }
 
   const allCards = s.feed.filter((i): i is Card => i.kind === 'card')
@@ -337,6 +342,25 @@ export default function EnVivoPage() {
           <div className="flex flex-wrap items-center gap-2.5 border-b border-[#EDEDEA] px-4 py-3">
             <h2 className="m-0 flex-1 text-sm font-semibold">Tu junta</h2>
             <div role="group" aria-label="Con quién hablas" className="inline-flex flex-wrap gap-0.5 rounded-full bg-[#EFEFEC] p-[3px]">
+              {s.roles.length > 1 && (
+                <button
+                  type="button"
+                  aria-pressed={s.roleId === ALL_ROLES}
+                  aria-label="Todos · toda tu junta"
+                  title="Pregúntale a toda tu junta a la vez"
+                  onClick={() => s.setRoleId(ALL_ROLES)}
+                  className={`inline-flex h-[30px] items-center gap-1.5 rounded-full pl-1 pr-3 text-[13px] transition-colors ${focus} ${s.roleId === ALL_ROLES ? 'bg-white font-semibold text-[#18181A] shadow-sm' : 'bg-transparent text-[#4A4A4F]'}`}
+                >
+                  <span aria-hidden="true" className="flex -space-x-2">
+                    {s.roles.slice(0, 3).map((r) => (
+                      <span key={r.id} className="rounded-full ring-2 ring-[#EFEFEC]">
+                        <Avatar name={r.persona} tone={tone(r.id).solid} size={18} />
+                      </span>
+                    ))}
+                  </span>
+                  Todos
+                </button>
+              )}
               {s.roles.map((r) => {
                 const on = r.id === s.roleId
                 return (
@@ -360,7 +384,11 @@ export default function EnVivoPage() {
           <ol ref={chatRef} onScroll={onChatScroll} aria-label="Conversación" className="m-0 flex min-h-0 flex-1 list-none flex-col gap-3.5 overflow-y-auto p-4 text-sm leading-normal">
             {s.chat.length === 0 && (
               <li className="m-auto max-w-[280px] text-center text-[13px] text-[#5C5C63]">
-                {current ? `Pregúntale a ${current.persona} por lo que se está diciendo, o responde a una de sus Sugerencias.` : 'Activa un Rol en «Roles» para conversar con tu junta.'}
+                {current
+                  ? current.all
+                    ? 'Pregúntale a toda tu junta por lo que se está diciendo: cada Rol te responde aparte.'
+                    : `Pregúntale a ${current.persona} por lo que se está diciendo, o responde a una de sus Sugerencias.`
+                  : 'Activa un Rol en «Roles» para conversar con tu junta.'}
               </li>
             )}
             {s.chat.map((e) => {
