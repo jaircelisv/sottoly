@@ -1,0 +1,19 @@
+{
+  "tarea": "25 · Meetily y Sottoly se encuentran",
+  "origen": "agente",
+  "modulo": "scripts/sottoly/harness/panel.mjs",
+  "funcion": "specs_de",
+  "casos": [
+    {
+      "nombre": "las specs de Playwright de la navegación (el menú de Meetily tiene la sección «Sottoly · tu junta» con En vivo, Reuniones y Decisiones, y Roles; el panel tiene «Volver a Meetily») pasan todas en WebKit",
+      "entrada": [
+        "navegacion.spec.ts"
+      ],
+      "esperado": {
+        "pasan": 3,
+        "fallan": 0,
+        "saltadas": 0
+      }
+    }
+  ]
+}
