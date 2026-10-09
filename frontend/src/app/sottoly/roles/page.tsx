@@ -19,9 +19,58 @@ type Load = { state: 'loading' } | { state: 'error' } | { state: 'ready'; roles:
 
 const STATUS_LABEL: Record<string, string> = { active: 'Activo', experimental: 'Experimental' }
 
+// Cuánto interviene cada Rol (tarea 30; canvas «6»): sobre el umbral calibrado, sin tocar el Rol.
+const LEVELS = [
+  { id: 'important', label: 'Solo lo importante', help: 'Interviene solo con mucha certeza. Es como quedó calibrado.' },
+  { id: 'balanced', label: 'Equilibrado', help: 'Interviene con bastante certeza; casi siempre tiene algo que aportar.' },
+  { id: 'often', label: 'Más seguido', help: 'Interviene seguido. Algunas Sugerencias pueden sobrar.' },
+]
+
+const focus = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2F4A6B]'
+
+function LevelPicker({ persona, value, onChange }: { persona: string; value: string; onChange: (level: string) => void }) {
+  const current = LEVELS.find((l) => l.id === value) ?? LEVELS[0]!
+  return (
+    <div className="flex basis-full flex-col gap-1.5">
+      <div role="radiogroup" aria-label={`Cuánto interviene ${persona}`} className="inline-flex w-fit flex-wrap rounded-full bg-[#EFEFEC] p-[3px]">
+        {LEVELS.map((l) => (
+          <button
+            key={l.id}
+            type="button"
+            role="radio"
+            aria-checked={l.id === current.id}
+            onClick={() => onChange(l.id)}
+            className={`h-8 whitespace-nowrap rounded-full px-3.5 text-[13px] font-semibold transition-colors ${focus} ${l.id === current.id ? 'bg-white text-[#18181A] shadow-sm' : 'bg-transparent text-[#4A4A4F]'}`}
+          >
+            {l.label}
+          </button>
+        ))}
+      </div>
+      <span className="text-[13px] text-[#5C5C63]">{current.help}</span>
+    </div>
+  )
+}
+
 export default function RolesPage() {
   const [load, setLoad] = useState<Load>({ state: 'loading' })
   const [creating, setCreating] = useState(false)
+  const [levels, setLevels] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    invoke<Record<string, string> | null>('sottoly_get_role_levels')
+      .then((l) => setLevels(l ?? {}))
+      .catch(() => setLevels({}))
+  }, [])
+
+  const changeLevel = async (role: string, level: string) => {
+    const before = levels
+    setLevels({ ...levels, [role]: level })
+    try {
+      await invoke('sottoly_set_role_level', { role, level })
+    } catch {
+      setLevels(before)
+    }
+  }
 
   const fetchRoles = useCallback(async () => {
     setLoad({ state: 'loading' })
@@ -70,6 +119,7 @@ export default function RolesPage() {
                 <span className="rounded-full border border-[#F1D9B5] bg-[#FFF4E5] px-2.5 py-1 text-[13px] text-[#7A4A00]">Sin calibrar</span>
               )}
               <span className="text-sm text-[#4A4A4F]">{STATUS_LABEL[r.status] ?? r.status}</span>
+              {r.status === 'active' && <LevelPicker persona={r.persona} value={levels[r.id] ?? 'important'} onChange={(l) => void changeLevel(r.id, l)} />}
             </li>
           ))}
         </ul>
