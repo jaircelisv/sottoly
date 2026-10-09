@@ -2,6 +2,7 @@
 // Sin E/S: los proveedores se inyectan, así el pipeline completo se prueba con respuestas grabadas.
 import { evaluateGate, slideWindow, type ChoiceEvaluator, type GateDecision, type WindowSegment } from "./gate";
 import { buildDraftPrompt, finalizeDraft, headWords, sameIdea, type Drafter } from "./draft";
+import { ECHO_WINDOW_SECONDS, isEcho } from "./echo";
 import { buildChatPrompt, cleanReply, type Chatter, type ChatTurn } from "./chat";
 import type { Deduper } from "./dedupe";
 import type {
@@ -32,7 +33,8 @@ export interface EngineConfig {
 export type EngineLog =
   | { event: "gate_decision"; trigger: TurnEvent["kind"]; turn: number; decision: GateDecision; latency_ms: number }
   | { event: "suggestion_suppressed"; role: string; reason: SuppressReason }
-  | { event: "provider_failed"; stage: "gate" | "draft" | "summary" | "chat" | "dedupe"; error: string };
+  | { event: "provider_failed"; stage: "gate" | "draft" | "summary" | "chat" | "dedupe"; error: string }
+  | { event: "echo_dropped"; t0: number };
 
 export type SuppressReason = "cooldown" | "repeated" | "meeting_cap" | "invalid_draft" | "declined";
 
@@ -85,6 +87,7 @@ export class Engine {
         }
         return this.process(this.turns.flush());
       case "segment":
+        if (this.dropEcho(message)) return [];
         this.segments.push(message);
         return this.process(this.turns.push(message));
       case "clock":
@@ -93,6 +96,27 @@ export class Engine {
         await this.answer(message);
         return [];
     }
+  }
+
+  /**
+   * Eco (tarea 26): un Segmento del Usuario que repite uno reciente de la Contraparte no entra. Si el eco llegó
+   * antes que el original, al llegar el de la Contraparte se saca el del Usuario de la ventana.
+   */
+  private dropEcho(segment: WindowSegment): boolean {
+    const near = (s: WindowSegment) => Math.abs(s.t0 - segment.t0) <= ECHO_WINDOW_SECONDS;
+    if (segment.speaker === "user") {
+      const echoed = this.segments.some((s) => s.speaker === "counterpart" && near(s) && isEcho(segment.text, s.text));
+      if (echoed) this.deps.log?.({ event: "echo_dropped", t0: segment.t0 });
+      return echoed;
+    }
+    if (segment.speaker === "counterpart") {
+      this.segments = this.segments.filter((s) => {
+        const echoed = s.speaker === "user" && near(s) && isEcho(s.text, segment.text);
+        if (echoed) this.deps.log?.({ event: "echo_dropped", t0: s.t0 });
+        return !echoed;
+      });
+    }
+    return false;
   }
 
   private reset(roles: string[] | undefined) {
