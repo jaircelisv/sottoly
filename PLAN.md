@@ -38,7 +38,7 @@ Salen de la prueba con audio real del 2026-10-07 (20 Sugerencias, todas del CFO)
 
 ### Quinta etapa (2026-10-08, de la prueba con audio real en la pantalla nueva)
 
-23. **En vivo, versión 3** (diseño aprobado por Jair el 2026-10-08, canvas «1c»): lo que se ve en «En vivo» (transcripción, Sugerencias, chat y grabación) no se pierde al cambiar de pestaña; el chat muestra el formato de las respuestas en vez de asteriscos, con el Rol a la vista, respuestas cortas sin presentarse, preguntas de ejemplo y scroll hasta lo último; la transcripción va en bloques por hablante y oculta el eco (una frase del Usuario que repite lo que la Contraparte acaba de decir) con un aviso para usar audífonos; «Grabando» dice desde hace cuánto. Specs de Playwright con IPC simulado antes del código.
+23. **En vivo, versión 3** (diseño aprobado por Jair el 2026-10-08, canvas «1c»): lo que se ve en «En vivo» (transcripción, Sugerencias, chat y grabación) no se pierde al cambiar de pestaña; el chat muestra el formato de las respuestas en vez de asteriscos, con el Rol a la vista, respuestas cortas sin presentarse, preguntas de ejemplo y scroll hasta lo último; la transcripción va en bloques por hablante y oculta el eco (una frase del Usuario que repite lo que la Contraparte acaba de decir) con un aviso para usar audífonos; «Grabando» dice desde hace cuánto. Specs de Playwright con IPC simulado antes del código. ✅ hecha
 
 ## Lo que hace Jair (fuera del bucle)
 
