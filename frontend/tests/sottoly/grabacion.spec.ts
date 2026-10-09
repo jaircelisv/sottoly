@@ -7,10 +7,11 @@ import { join } from "node:path";
 const IPC = join(__dirname, "ipc.js");
 const roles = [{ id: "cfo", role: "CFO", persona: "Betty", gate_definition: "Cifras.", calibrated: true, status: "active" }];
 
-async function abrir(page: Page, ruta: string, extra: Record<string, unknown> = {}, grabando = false) {
+// Las funciones no cruzan a la página como argumento de addInitScript: los modos se arman allá.
+async function abrir(page: Page, ruta: string, extra: Record<string, unknown> = {}, grabando = false, modo: "normal" | "falla-al-iniciar" | "decisiones-tardias" = "normal") {
   await page.addInitScript({ path: IPC });
   await page.addInitScript(
-    ([r, e, g]) => {
+    ([r, e, g, m]) => {
       const w = window as any;
       w.__LLAMADAS__ = [];
       const anotar = (cmd: string) => (args: unknown) => {
@@ -25,8 +26,10 @@ async function abrir(page: Page, ruta: string, extra: Record<string, unknown> = 
         api_save_transcript: (args: unknown) => (w.__LLAMADAS__.push({ cmd: "save", args }), { meeting_id: "m9" }),
         ...e,
       };
+      if (m === "falla-al-iniciar") w.__SOTTOLY_IPC__.start_recording_with_devices_and_meeting = () => new Error("Permiso de micrófono denegado");
+      if (m === "decisiones-tardias") w.__SOTTOLY_IPC__.sottoly_get_decisions = () => w.__DECISIONES__ ?? null;
     },
-    [roles, extra, grabando] as const,
+    [roles, extra, grabando, modo] as const,
   );
   await page.goto(ruta);
 }
@@ -72,16 +75,13 @@ test("al detener, guarda la Reunión con toda la transcripción en vivo y con qu
 });
 
 test("si no se puede iniciar la grabación, lo dice", async ({ page }) => {
-  await abrir(page, "/sottoly/en-vivo", { start_recording_with_devices_and_meeting: () => new Error("Permiso de micrófono denegado") });
+  await abrir(page, "/sottoly/en-vivo", {}, false, "falla-al-iniciar");
   await page.getByRole("button", { name: "Iniciar grabación" }).click();
   await expect(page.getByRole("alert").filter({ hasText: "No se pudo iniciar la grabación" })).toBeVisible();
 });
 
 test("las Decisiones que el Motor propone después de abrir la Reunión aparecen sin recargar", async ({ page }) => {
-  await abrir(page, "/sottoly/reunion?id=m9", {
-    api_get_meeting: { id: "m9", title: "Reunión de prueba", created_at: "", updated_at: "", transcripts: [] },
-    sottoly_get_decisions: () => (window as any).__DECISIONES__ ?? null,
-  });
+  await abrir(page, "/sottoly/reunion?id=m9", { api_get_meeting: { id: "m9", title: "Reunión de prueba", created_at: "", updated_at: "", transcripts: [] } }, false, "decisiones-tardias");
   await expect(page.getByRole("heading", { level: 1, name: "Reunión de prueba" })).toBeVisible();
   await expect(page.getByRole("region", { name: "Decisiones por revisar" })).toHaveCount(0);
   await page.evaluate(() => {

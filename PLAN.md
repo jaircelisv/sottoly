@@ -33,7 +33,7 @@ Salen de la prueba con audio real del 2026-10-07 (20 Sugerencias, todas del CFO)
 
 ### Cuarta etapa (2026-10-08, para probar con audio real sin la consola)
 
-21. **Grabar desde el panel**: «En vivo» tiene «Iniciar grabación» y «Detener y revisar Decisiones»; al detener guarda la Reunión con toda la transcripción que vio el panel (con quién habló) y abre su detalle, donde las Decisiones aparecen en cuanto el Motor las propone. El menú de Meetily tiene un enlace al panel. Specs de Playwright con IPC simulado antes del código.
+21. **Grabar desde el panel**: «En vivo» tiene «Iniciar grabación» y «Detener y revisar Decisiones»; al detener guarda la Reunión con toda la transcripción que vio el panel (con quién habló) y abre su detalle, donde las Decisiones aparecen en cuanto el Motor las propone. El menú de Meetily tiene un enlace al panel. Specs de Playwright con IPC simulado antes del código. ✅ hecha
 
 ## Lo que hace Jair (fuera del bucle)
 

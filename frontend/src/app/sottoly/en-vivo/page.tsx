@@ -5,6 +5,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
+import { appDataDir } from '@tauri-apps/api/path'
+import { useRouter } from 'next/navigation'
 
 interface RoleSummary {
   id: string
@@ -30,6 +32,17 @@ interface Card {
   roleLabel: string
   text: string
   reason: string
+}
+
+/** Lo que se guarda de cada frase con la Reunión (api::TranscriptSegment). */
+interface SavedLine {
+  id: string
+  text: string
+  timestamp: string
+  audio_start_time?: number
+  audio_end_time?: number
+  duration?: number
+  speaker?: string
 }
 
 interface ChatEntry {
@@ -66,6 +79,13 @@ export default function EnVivoPage() {
   const [draft, setDraft] = useState('')
   const [replyTo, setReplyTo] = useState<Card | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+  // Grabación desde el panel (tarea 21): estado, error al iniciar y la transcripción que se guarda al detener.
+  const router = useRouter()
+  const [recording, setRecording] = useState(false)
+  const [stopping, setStopping] = useState(false)
+  const [recError, setRecError] = useState<string | null>(null)
+  const recordingRef = useRef(false)
+  const transcriptRef = useRef<SavedLine[]>([])
   const seq = useRef(0)
   const key = () => `k${++seq.current}`
 
@@ -80,9 +100,50 @@ export default function EnVivoPage() {
   }, [])
 
   useEffect(() => {
+    invoke<{ is_recording: boolean } | null>('get_recording_state')
+      .then((st) => {
+        recordingRef.current = Boolean(st?.is_recording)
+        setRecording(recordingRef.current)
+      })
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
     const offs = [
-      listen<{ text: string; is_partial: boolean; speaker?: string; audio_start_time?: number }>('transcript-update', ({ payload }) => {
+      listen('recording-started', () => {
+        recordingRef.current = true
+        setRecording(true)
+        setRecError(null)
+      }),
+      // Al detenerse, la Reunión se guarda con lo que vio el panel (la pantalla de Meetily no está montada).
+      listen<{ folder_path?: string; meeting_name?: string }>('recording-stopped', async ({ payload }) => {
+        if (!recordingRef.current) return
+        recordingRef.current = false
+        setRecording(false)
+        try {
+          const res = await invoke<{ meeting_id: string }>('api_save_transcript', {
+            meetingTitle: payload.meeting_name ?? 'Reunión',
+            transcripts: transcriptRef.current,
+            folderPath: payload.folder_path ?? null,
+          })
+          transcriptRef.current = []
+          router.push(`/sottoly/reunion?id=${encodeURIComponent(res.meeting_id)}`)
+        } catch {
+          setStopping(false)
+          setRecError('La grabación se detuvo, pero no se pudo guardar la Reunión.')
+        }
+      }),
+      listen<{ text: string; is_partial: boolean; speaker?: string; audio_start_time?: number; audio_end_time?: number; duration?: number; timestamp?: string }>('transcript-update', ({ payload }) => {
         if (payload.is_partial || !payload.text?.trim()) return
+        transcriptRef.current.push({
+          id: `${Date.now()}-${transcriptRef.current.length}`,
+          text: payload.text,
+          timestamp: payload.timestamp ?? new Date().toISOString(),
+          audio_start_time: payload.audio_start_time,
+          audio_end_time: payload.audio_end_time,
+          duration: payload.duration,
+          speaker: payload.speaker,
+        })
         setFeed((f) => [...f, { kind: 'line', key: key(), text: payload.text, who: who(payload.speaker), t: payload.audio_start_time ?? null }])
       }),
       listen<{ id: string; role: string; persona: string; role_label: string; text: string; reason: string }>('suggestion', ({ payload }) => {
@@ -105,6 +166,29 @@ export default function EnVivoPage() {
       offs.forEach((p) => p.then((off) => off()))
     }
   }, [])
+
+  const startRecording = async () => {
+    setRecError(null)
+    try {
+      const now = new Date()
+      const name = `Reunión ${now.toISOString().slice(0, 10)} ${now.toTimeString().slice(0, 5)}`
+      await invoke('start_recording_with_devices_and_meeting', { micDeviceName: null, systemDeviceName: null, meetingName: name })
+    } catch (e) {
+      setRecError(`No se pudo iniciar la grabación${typeof e === 'string' && e ? `: ${e}` : '.'}`)
+    }
+  }
+
+  const stopRecording = async () => {
+    setStopping(true)
+    try {
+      const dir = await appDataDir().catch(() => '')
+      const stamp = new Date().toISOString().replace(/[:.]/g, '-')
+      await invoke('stop_recording', { args: { save_path: `${dir}/recording-${stamp}.wav` } })
+    } catch {
+      setStopping(false)
+      setRecError('No se pudo detener la grabación.')
+    }
+  }
 
   const current = useMemo(() => roles.find((r) => r.id === roleId) ?? null, [roles, roleId])
   const persona = (id: string) => roles.find((r) => r.id === id)?.persona ?? 'El Rol'
@@ -135,10 +219,41 @@ export default function EnVivoPage() {
 
   return (
     <>
-      <header className="flex flex-col gap-1">
-        <h1 className="m-0 text-[26px] font-semibold tracking-tight">En vivo</h1>
-        <p className="m-0 text-sm text-[#5C5C63]">Lo que se dice en la Reunión, lo que sugiere tu junta y tu conversación con ella.</p>
+      <header className="flex flex-wrap items-center gap-4">
+        <div className="flex min-w-0 flex-[1_1_260px] flex-col gap-1">
+          <h1 className="m-0 text-[26px] font-semibold tracking-tight">En vivo</h1>
+          <p className="m-0 text-sm text-[#5C5C63]">Lo que se dice en la Reunión, lo que sugiere tu junta y tu conversación con ella.</p>
+        </div>
+        {recording ? (
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="flex items-center gap-2 text-sm text-[#5C5C63]">
+              <span aria-hidden="true" className="h-2 w-2 rounded-full bg-[#B42318]" />
+              <span>Grabando</span>
+            </span>
+            <button
+              type="button"
+              onClick={stopRecording}
+              disabled={stopping}
+              className="h-11 rounded-full border border-[#D4D4D0] bg-white px-[18px] text-[15px] font-semibold text-[#18181A] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2F4A6B] disabled:opacity-50"
+            >
+              {stopping ? 'Guardando la Reunión…' : 'Detener y revisar Decisiones'}
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={startRecording}
+            className="h-11 rounded-full border border-[#18181A] bg-[#18181A] px-5 text-[15px] font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2F4A6B]"
+          >
+            Iniciar grabación
+          </button>
+        )}
       </header>
+      {recError && (
+        <p role="alert" className="m-0 rounded-lg bg-[#FBF3F2] px-3 py-2 text-sm text-[#5A1A12]">
+          {recError}
+        </p>
+      )}
 
       <div className="flex min-h-[560px] flex-wrap gap-6">
         <section aria-label="Transcripción" className="flex min-w-0 flex-[999_1_420px] flex-col gap-4">
