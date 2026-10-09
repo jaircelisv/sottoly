@@ -1,0 +1,30 @@
+{
+  "tarea": "21 · Grabar desde el panel",
+  "origen": "agente",
+  "modulo": "scripts/sottoly/harness/panel.mjs",
+  "funcion": "specs_de",
+  "casos": [
+    {
+      "nombre": "las specs de Playwright de grabar desde el panel (iniciar, en curso, detener y guardar con quién habló, error, Decisiones que llegan después) pasan todas en WebKit",
+      "entrada": [
+        "grabacion.spec.ts"
+      ],
+      "esperado": {
+        "pasan": 5,
+        "fallan": 0,
+        "saltadas": 0
+      }
+    },
+    {
+      "nombre": "el menú de Meetily tiene un enlace al panel de Sottoly",
+      "entrada": [
+        "meetily-enlace.spec.ts"
+      ],
+      "esperado": {
+        "pasan": 1,
+        "fallan": 0,
+        "saltadas": 0
+      }
+    }
+  ]
+}

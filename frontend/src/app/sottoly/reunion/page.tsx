@@ -5,6 +5,7 @@
 import { Suspense, useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { invoke } from '@tauri-apps/api/core'
+import { listen } from '@tauri-apps/api/event'
 import { LoadError } from '@/components/sottoly/PanelShell'
 import { DecisionsReview, type CandidateDecision } from '@/components/sottoly/DecisionsReview'
 
@@ -66,6 +67,17 @@ function Reunion() {
   useEffect(() => {
     if (id) void fetchMeeting()
   }, [id, fetchMeeting])
+
+  // Las Decisiones llegan cuando el Motor termina de proponerlas, a veces después de abrir la Reunión (tarea 21).
+  useEffect(() => {
+    if (!id) return
+    const off = listen('summary', async () => {
+      setDecisions(await invoke<DecisionsFile | null>('sottoly_get_decisions', { meetingId: id }).catch(() => null))
+    })
+    return () => {
+      off.then((f) => f())
+    }
+  }, [id])
 
   if (load.state === 'loading') return <p className="m-0 text-[15px] text-[#5C5C63]">Cargando…</p>
   if (load.state === 'error') return <LoadError message="No se pudo abrir esta Reunión." onRetry={fetchMeeting} />

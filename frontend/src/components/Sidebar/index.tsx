@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { ChevronDown, ChevronRight, File, Settings, ChevronLeftCircle, ChevronRightCircle, Calendar, StickyNote, Home, Trash2, Mic, Square, Plus, Search, Pencil, NotebookPen, SearchIcon, X, Upload } from 'lucide-react';
+import { ChevronDown, ChevronRight, File, Settings, ChevronLeftCircle, ChevronRightCircle, Calendar, StickyNote, Home, Trash2, Mic, Square, Plus, Search, Pencil, NotebookPen, SearchIcon, X, Upload, Users } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
+import Link from 'next/link'; // SOTTOLY: enlace al panel
 import { useSidebar } from './SidebarProvider';
 import type { CurrentMeeting } from '@/components/Sidebar/SidebarProvider';
 import { ConfirmationModal } from '../ConfirmationModel/confirmation-modal';
@@ -524,6 +525,18 @@ const Sidebar: React.FC = () => {
             </TooltipContent>
           </Tooltip>
 
+          {/* SOTTOLY: enlace al panel de Sottoly (tarea 21) */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link href="/sottoly/en-vivo" aria-label="Sottoly · En vivo" className="p-2 rounded-lg transition-colors duration-150 hover:bg-gray-100">
+                <Users className="w-5 h-5 text-gray-600" />
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              <p>Sottoly · En vivo</p>
+            </TooltipContent>
+          </Tooltip>
+
           <Tooltip>
             <TooltipTrigger asChild>
               <button
@@ -802,6 +815,14 @@ const Sidebar: React.FC = () => {
               </button>
             )}
 
+            {/* SOTTOLY: enlace al panel de Sottoly (tarea 21) */}
+            <Link
+              href="/sottoly/en-vivo"
+              className="w-full flex items-center justify-center px-3 py-1.5 mt-1 text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 rounded-lg transition-colors shadow-sm"
+            >
+              <Users className="w-4 h-4 mr-2" />
+              <span>Sottoly · En vivo</span>
+            </Link>
             <button
               onClick={() => router.push('/settings')}
               className="w-full flex items-center justify-center px-3 py-1.5 mt-1 mb-1 text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors shadow-sm"
