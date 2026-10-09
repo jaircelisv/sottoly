@@ -86,8 +86,10 @@ test("la transcripción tiene su propio scroll e «Ir a lo último» aparece al 
     await emitir(page, "transcript-update", { text: `Frase número ${i + 1} de la Reunión.`, speaker: "counterpart", is_partial: false, audio_start_time: i * 3 });
   }
   const lista = page.getByRole("list", { name: "Transcripción en vivo" });
-  const medida = await lista.evaluate((el) => ({ overflow: getComputedStyle(el).overflowY, cabe: el.scrollHeight <= el.clientHeight, abajo: el.scrollTop + el.clientHeight >= el.scrollHeight - 4 }));
-  expect(medida).toEqual({ overflow: "auto", cabe: false, abajo: true });
+  const medida = await lista.evaluate((el) => ({ overflow: getComputedStyle(el).overflowY, cabe: el.scrollHeight <= el.clientHeight }));
+  expect(medida).toEqual({ overflow: "auto", cabe: false });
+  // Lo nuevo la sigue hasta abajo: se espera al render (en CI, medir en el acto adelantaba al efecto de scroll).
+  await expect.poll(() => lista.evaluate((el) => el.scrollTop + el.clientHeight >= el.scrollHeight - 4)).toBe(true);
   await expect(page.getByRole("heading", { level: 1, name: "En vivo" })).toBeInViewport();
   await lista.evaluate((el) => el.scrollTo({ top: 0 }));
   await page.getByRole("button", { name: "Ir a lo último" }).click();
