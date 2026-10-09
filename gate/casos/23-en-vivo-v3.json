@@ -1,0 +1,19 @@
+{
+  "tarea": "23 · En vivo, versión 3",
+  "origen": "agente",
+  "modulo": "scripts/sottoly/harness/panel.mjs",
+  "funcion": "specs_de",
+  "casos": [
+    {
+      "nombre": "las specs de Playwright de En vivo v3 (la sesión sobrevive al cambio de pestaña, formato y scroll del chat, preguntas de ejemplo, eco oculto con aviso y sin guardar, tiempo de grabación) pasan todas en WebKit",
+      "entrada": [
+        "en-vivo-v3.spec.ts"
+      ],
+      "esperado": {
+        "pasan": 7,
+        "fallan": 0,
+        "saltadas": 0
+      }
+    }
+  ]
+}

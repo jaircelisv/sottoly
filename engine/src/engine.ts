@@ -2,7 +2,7 @@
 // Sin E/S: los proveedores se inyectan, así el pipeline completo se prueba con respuestas grabadas.
 import { evaluateGate, slideWindow, type ChoiceEvaluator, type GateDecision, type WindowSegment } from "./gate";
 import { buildDraftPrompt, finalizeDraft, headWords, sameIdea, type Drafter } from "./draft";
-import { buildChatPrompt, type Chatter, type ChatTurn } from "./chat";
+import { buildChatPrompt, cleanReply, type Chatter, type ChatTurn } from "./chat";
 import type { Deduper } from "./dedupe";
 import type {
   ChatDelta,
@@ -123,14 +123,15 @@ export class Engine {
     });
     let last = "";
     try {
-      const text = (
+      const raw = (
         await this.deps.chat(prompt, (acc) => {
-          const t = acc.trim();
+          const t = cleanReply(acc, role.persona);
           if (!t || t === last) return;
           last = t;
           emit({ type: "chat_delta", id: message.id, role: role.id, text: t });
         })
       ).trim();
+      const text = cleanReply(raw, role.persona);
       if (!text) throw new Error("respuesta vacía");
       this.chatHistory.set(role.id, [...history, { question: message.text, answer: text }]);
       emit({ type: "chat_reply", id: message.id, role: role.id, text });

@@ -36,6 +36,10 @@ Salen de la prueba con audio real del 2026-10-07 (20 Sugerencias, todas del CFO)
 21. **Grabar desde el panel**: «En vivo» tiene «Iniciar grabación» y «Detener y revisar Decisiones»; al detener guarda la Reunión con toda la transcripción que vio el panel (con quién habló) y abre su detalle, donde las Decisiones aparecen en cuanto el Motor las propone. El menú de Meetily tiene un enlace al panel. Specs de Playwright con IPC simulado antes del código. ✅ hecha
 22. **En vivo, versión 2** (diseño aprobado por Jair el 2026-10-08, canvas «1b»): tarjetas compactas que se contraen a una línea o se ignoran (con Deshacer; ignorar marca «No útil»), el motivo detrás de «Por qué», Útil / No útil, filtro «Todo / Solo Sugerencias» con contador, y scroll propio en la transcripción y en el chat con «Ir a lo último». Además, `make demo` deja de mostrar tarjetas de demostración salvo con `DEMO=1`, y en desarrollo el panel tiene un interruptor para prenderlas o apagarlas sin reiniciar (pedido de Jair). ✅ hecha
 
+### Quinta etapa (2026-10-08, de la prueba con audio real en la pantalla nueva)
+
+23. **En vivo, versión 3** (diseño aprobado por Jair el 2026-10-08, canvas «1c»): lo que se ve en «En vivo» (transcripción, Sugerencias, chat y grabación) no se pierde al cambiar de pestaña; el chat muestra el formato de las respuestas en vez de asteriscos, con el Rol a la vista, respuestas cortas sin presentarse, preguntas de ejemplo y scroll hasta lo último; la transcripción va en bloques por hablante y oculta el eco (una frase del Usuario que repite lo que la Contraparte acaba de decir) con un aviso para usar audífonos; «Grabando» dice desde hace cuánto. Specs de Playwright con IPC simulado antes del código. ✅ hecha
+
 ## Lo que hace Jair (fuera del bucle)
 
 - **Integrar los PRs**, solo con checks en verde. Pendientes hoy: #25 → #28 (documentación) y #26 (`check_local_model`).
