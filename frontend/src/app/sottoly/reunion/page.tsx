@@ -1,7 +1,8 @@
 'use client'
 
-// Detalle de una Reunión con su transcripción (PLAN.md, tarea 12). `?id=`: la exportación estática
-// de Next no admite rutas dinámicas sin generarlas al compilar.
+// Detalle de una Reunión con su transcripción (PLAN.md, tareas 12 y 27; canvas «5»): título que se cambia con un
+// clic, Decisiones por revisar y las Sugerencias de la junta en su momento. `?id=`: la exportación estática de
+// Next no admite rutas dinámicas sin generarlas al compilar.
 import { Suspense, useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { invoke } from '@tauri-apps/api/core'
@@ -41,6 +42,40 @@ function clock(line: TranscriptLine): string {
 
 type Load = { state: 'loading' } | { state: 'error' } | { state: 'ready'; meeting: MeetingDetails }
 
+/** Una Sugerencia guardada con la Reunión (sottoly_suggestions.rs). */
+interface SavedSuggestion {
+  id: string
+  role: string
+  persona: string
+  role_label: string
+  text: string
+  reason: string
+  at: number | null
+  useful: boolean | null
+}
+
+type Item = { kind: 'line'; line: TranscriptLine } | { kind: 'card'; s: SavedSuggestion }
+
+/** La transcripción con cada Sugerencia en su momento (después de lo que se dijo antes de ella). */
+function interleave(lines: TranscriptLine[], suggestions: SavedSuggestion[]): Item[] {
+  const items: Item[] = []
+  const pending = [...suggestions].sort((a, b) => (a.at ?? Infinity) - (b.at ?? Infinity))
+  for (const line of lines) {
+    const t = line.audio_start_time
+    while (pending.length && typeof t === 'number' && (pending[0]!.at ?? Infinity) < t) items.push({ kind: 'card', s: pending.shift()! })
+    items.push({ kind: 'line', line })
+  }
+  for (const s of pending) items.push({ kind: 'card', s })
+  return items
+}
+
+function dateLabel(iso: string): string {
+  const d = new Date(iso)
+  return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString('es', { day: 'numeric', month: 'short' })
+}
+
+const focus = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2F4A6B]'
+
 interface DecisionsFile {
   reviewed: boolean
   decisions: CandidateDecision[]
@@ -51,6 +86,9 @@ function Reunion() {
   const [load, setLoad] = useState<Load>({ state: 'loading' })
   const [decisions, setDecisions] = useState<DecisionsFile | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+  const [suggestions, setSuggestions] = useState<SavedSuggestion[]>([])
+  const [editing, setEditing] = useState<string | null>(null)
+  const [titleError, setTitleError] = useState<string | null>(null)
 
   const fetchMeeting = useCallback(async () => {
     setLoad({ state: 'loading' })
@@ -59,6 +97,8 @@ function Reunion() {
       setLoad(meeting ? { state: 'ready', meeting } : { state: 'error' })
       // Las Decisiones del cierre (tarea 17): si no hay, o no se pueden leer, la Reunión se ve igual.
       setDecisions(await invoke<DecisionsFile | null>('sottoly_get_decisions', { meetingId: id }).catch(() => null))
+      // Las Sugerencias de la junta (tarea 27): si no hay, la transcripción se ve igual.
+      setSuggestions((await invoke<SavedSuggestion[] | null>('sottoly_get_suggestions', { meetingId: id }).catch(() => null)) ?? [])
     } catch {
       setLoad({ state: 'error' })
     }
@@ -83,10 +123,72 @@ function Reunion() {
   if (load.state === 'error') return <LoadError message="No se pudo abrir esta Reunión." onRetry={fetchMeeting} />
 
   const { meeting } = load
+  const saveTitle = async () => {
+    const title = (editing ?? '').trim()
+    if (!title || title === meeting.title) {
+      setEditing(null)
+      return
+    }
+    try {
+      await invoke('api_save_meeting_title', { meetingId: meeting.id, title })
+      setLoad({ state: 'ready', meeting: { ...meeting, title } })
+      setEditing(null)
+      setTitleError(null)
+    } catch {
+      setTitleError('No se pudo cambiar el título.')
+    }
+  }
+  const count = suggestions.length
+  const meta = [dateLabel(meeting.created_at), count ? `${count} ${count === 1 ? 'Sugerencia' : 'Sugerencias'} de tu junta` : null].filter(Boolean).join(' · ')
   return (
     <>
-      <header className="flex flex-col gap-1">
-        <h1 className="m-0 text-[26px] font-semibold tracking-tight">{meeting.title}</h1>
+      <header className="flex flex-col gap-1.5">
+        {editing === null ? (
+          <div className="flex items-center gap-1.5">
+            <h1 className="m-0 text-[26px] font-semibold tracking-tight">{meeting.title}</h1>
+            <button
+              type="button"
+              aria-label="Cambiar el título"
+              title="Cambiar el título"
+              onClick={() => setEditing(meeting.title)}
+              className={`flex h-8 w-8 flex-none items-center justify-center rounded-lg text-[#4A4A4F] hover:bg-[#EFEFEC] ${focus}`}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12 20h9" />
+                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+              </svg>
+            </button>
+          </div>
+        ) : (
+          <form
+            className="flex flex-wrap items-center gap-2"
+            onSubmit={(ev) => {
+              ev.preventDefault()
+              void saveTitle()
+            }}
+          >
+            <input
+              autoFocus
+              aria-label="Título de la Reunión"
+              value={editing}
+              onChange={(ev) => setEditing(ev.target.value)}
+              onKeyDown={(ev) => ev.key === 'Escape' && setEditing(null)}
+              className={`min-w-0 flex-1 rounded-lg border border-[#D4D4D0] bg-white px-3 py-1.5 text-[22px] font-semibold tracking-tight ${focus}`}
+            />
+            <button type="submit" className={`h-9 rounded-full bg-[#18181A] px-4 text-sm font-semibold text-white ${focus}`}>
+              Guardar
+            </button>
+            <button type="button" onClick={() => setEditing(null)} className={`h-9 rounded-full border border-[#D4D4D0] bg-white px-4 text-sm ${focus}`}>
+              Cancelar
+            </button>
+          </form>
+        )}
+        {meta && <p className="m-0 text-[13px] text-[#5C5C63]">{meta}</p>}
+        {titleError && (
+          <p role="alert" className="m-0 text-sm text-[#8A1C12]">
+            {titleError}
+          </p>
+        )}
       </header>
       {notice && (
         <p role="status" className="m-0 text-[15px] text-[#2F4A6B]">
@@ -118,7 +220,26 @@ function Reunion() {
           <p className="m-0 text-[15px] text-[#4A4A4F]">Esta Reunión no tiene transcripción guardada.</p>
         ) : (
           <ol aria-label="Transcripción" className="m-0 flex list-none flex-col gap-4 p-0">
-            {meeting.transcripts.map((line) => {
+            {interleave(meeting.transcripts, suggestions).map((item) => {
+              if (item.kind === 'card') {
+                const c = item.s
+                return (
+                  <li key={`s-${c.id}`} className="grid grid-cols-[72px_minmax(0,1fr)] gap-x-4">
+                    <span className="pt-3 font-mono text-xs text-[#6B6B72]">{typeof c.at === 'number' ? clock({ id: '', text: '', timestamp: '', audio_start_time: c.at }) : ''}</span>
+                    <article aria-label={`Sugerencia de ${c.persona}`} className="flex max-w-[68ch] flex-col gap-1 rounded-[10px] border border-[#C9D4E2] bg-[#F5F7FA] px-3.5 py-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="flex-1 text-xs font-semibold text-[#2F4A6B]">{`${c.persona} · ${c.role_label}`}</span>
+                        {c.useful !== null && (
+                          <span className={`text-xs font-semibold ${c.useful ? 'text-[#2E6B3F]' : 'text-[#6B6B72]'}`}>{c.useful ? 'Marcaste: Útil' : 'Marcaste: No útil'}</span>
+                        )}
+                      </div>
+                      <span className="text-[15px] font-semibold leading-snug">{c.text}</span>
+                      {c.reason && <span className="text-[13px] text-[#4A4A4F]">{c.reason}</span>}
+                    </article>
+                  </li>
+                )
+              }
+              const line = item.line
               const who = speakerLabel(line.speaker)
               return (
                 <li key={line.id} className="grid grid-cols-[72px_minmax(0,1fr)] gap-x-4 text-base leading-relaxed">
