@@ -16,6 +16,9 @@ PORT     := 3118
 LOG      ?= $(ROOT)/app.log
 # Salidas de cada suite de `make verify`, para sumar el total al final (tarea 20).
 VERIFY_OUT := $(ROOT)/.verify
+# Tarjetas de demostración en el overlay al arrancar (make demo DEMO=1). Se prenden y apagan también desde el panel.
+DEMO     ?= 0
+DEMO_SUGGESTIONS := $(if $(filter 1,$(DEMO)),1,0)
 
 WORKTREES_DIR ?= $(HOME)/orca/workspaces/Sottoly
 PRIVATE       := $(HOME)/.sottoly/CLAUDE.private.md
@@ -30,7 +33,7 @@ endif
 LLAMA_HELPER   := $(BINARIES)/llama-helper-$(TRIPLE)
 SOTTOLY_ENGINE := $(BINARIES)/sottoly-engine-$(TRIPLE)
 
-.PHONY: verify verify-start verify-engine verify-overlay verify-panel verify-rust sidecars demo measure limpiar deps worktree
+.PHONY: demo-env verify verify-start verify-engine verify-overlay verify-panel verify-rust sidecars demo measure limpiar deps worktree
 
 # ── Dependencias ─────────────────────────────────────────────────────────────
 
@@ -99,8 +102,12 @@ demo: frontend/node_modules
 	curl -s -o /dev/null localhost:$(PORT)/_next/static/chunks/app/layout.js || true; \
 	echo "App web lista en http://localhost:$(PORT)"; \
 	$(MAKE) --no-print-directory sidecars; \
-	cd frontend && SOTTOLY_DEMO_SUGGESTIONS=1 RUST_LOG=$${RUST_LOG:-info} \
+	cd frontend && SOTTOLY_DEMO_SUGGESTIONS=$(DEMO_SUGGESTIONS) RUST_LOG=$${RUST_LOG:-info} \
 	  pnpm tauri dev --config '{"build":{"beforeDevCommand":""}}' -- --features coreml
+
+# Cómo arrancaría `make demo` (sin arrancarla): lo usa el gate (tarea 22).
+demo-env:
+	@echo SOTTOLY_DEMO_SUGGESTIONS=$(DEMO_SUGGESTIONS)
 
 # ── measure ──────────────────────────────────────────────────────────────────
 

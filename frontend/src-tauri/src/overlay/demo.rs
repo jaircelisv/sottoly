@@ -76,19 +76,35 @@ pub fn suggestion(n: usize) -> DemoSuggestion {
     DemoSuggestion { kind: "suggestion", id: format!("demo-{n}"), role, role_label, persona, text, reason, confidence }
 }
 
-/// Arranca la demo si corresponde. Llamado desde overlay::init.
+/// SOTTOLY: prendida o apagada en caliente desde el panel (tarea 22). Arranca según la variable.
+static ON: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+pub fn is_on() -> bool {
+    ON.load(std::sync::atomic::Ordering::SeqCst)
+}
+
+pub fn set_on(on: bool) {
+    ON.store(on, std::sync::atomic::Ordering::SeqCst);
+    log::warn!("overlay: tarjetas de demostración {}", if on { "prendidas" } else { "apagadas" });
+}
+
+/// Deja lista la demo. Solo emite mientras esté prendida (variable al arrancar, o el panel).
 pub fn start<R: Runtime>(app: &AppHandle<R>) {
     let env_value = std::env::var(ENV_VAR).ok();
-    if !enabled(cfg!(debug_assertions), env_value.as_deref()) {
+    if !cfg!(debug_assertions) {
         return;
     }
-    log::warn!("overlay: modo demo activo ({ENV_VAR}=1), Sugerencias de prueba cada {INTERVAL:?}");
+    set_on(enabled(true, env_value.as_deref()));
     let app = app.clone();
     tauri::async_runtime::spawn(async move {
         tokio::time::sleep(FIRST_DELAY).await;
-        for n in 0.. {
-            if let Err(e) = app.emit_to(super::LABEL, "suggestion", suggestion(n)) {
-                log::warn!("overlay: demo no pudo emitir suggestion: {e}");
+        let mut n = 0;
+        loop {
+            if is_on() {
+                if let Err(e) = app.emit_to(super::LABEL, "suggestion", suggestion(n)) {
+                    log::warn!("overlay: demo no pudo emitir suggestion: {e}");
+                }
+                n += 1;
             }
             tokio::time::sleep(INTERVAL).await;
         }
